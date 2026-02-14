@@ -327,8 +327,9 @@ export function Settings() {
             >
               <option value="openai">OpenAI</option>
               <option value="anthropic">Anthropic</option>
-              <option value="google">Google</option>
+              <option value="google">Google (Gemini)</option>
               <option value="mistral">Mistral</option>
+              <option value="groq">Groq</option>
             </select>
           </div>
           <Input

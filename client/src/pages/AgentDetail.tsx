@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save, CheckCircle, AlertCircle, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Save, CheckCircle, AlertCircle, MessageSquare, Clock } from 'lucide-react';
 import { apiGet, apiPatch } from '../api/client';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -9,6 +9,7 @@ import { Input } from '../components/ui/Input';
 import { Badge } from '../components/ui/Badge';
 import { Spinner } from '../components/ui/Spinner';
 import { AgentChat } from '../components/AgentChat';
+import { CronJobManager } from '../components/CronJobManager';
 import type { Agent, AgentLevel, AgentStatus } from '../types';
 
 const AVATAR_COLORS = [
@@ -30,6 +31,7 @@ const TABS = [
   { id: 'instructions', label: 'Instructions' },
   { id: 'capabilities', label: 'Capabilities' },
   { id: 'heartbeat', label: 'Heartbeat' },
+  { id: 'cron', label: 'Cron Jobs', icon: Clock },
   { id: 'model', label: 'Model Config' },
   { id: 'stats', label: 'Stats' },
 ] as const;
@@ -286,6 +288,10 @@ export function AgentDetail() {
         </Card>
       )}
 
+      {activeTab === 'cron' && id && (
+        <CronJobManager agentId={id} />
+      )}
+
       {activeTab === 'model' && (
         <Card>
           <div className="space-y-4 max-w-xl">
@@ -330,7 +336,7 @@ export function AgentDetail() {
         </Card>
       )}
 
-      {activeTab !== 'stats' && activeTab !== 'chat' && (
+      {activeTab !== 'stats' && activeTab !== 'chat' && activeTab !== 'cron' && (
         <div className="flex items-center gap-4">
           <Button onClick={handleSave} disabled={mutation.isPending} size="lg">
             {mutation.isPending ? <Spinner size="sm" className="mr-2" /> : <Save size={18} className="mr-2" />}

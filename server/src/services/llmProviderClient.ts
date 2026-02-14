@@ -41,6 +41,15 @@ const MODEL_PRICING: Record<string, { input: number; output: number }> = {
   'gpt-3.5-turbo': { input: 0.5 / 1_000_000, output: 1.5 / 1_000_000 },
   'claude-3-5-sonnet-20241022': { input: 3 / 1_000_000, output: 15 / 1_000_000 },
   'claude-3-haiku-20240307': { input: 0.25 / 1_000_000, output: 1.25 / 1_000_000 },
+  'gemini-2.0-flash': { input: 0.1 / 1_000_000, output: 0.4 / 1_000_000 },
+  'gemini-1.5-pro': { input: 1.25 / 1_000_000, output: 5.0 / 1_000_000 },
+  'gemini-1.5-flash': { input: 0.075 / 1_000_000, output: 0.3 / 1_000_000 },
+  'mistral-large-latest': { input: 2.0 / 1_000_000, output: 6.0 / 1_000_000 },
+  'mistral-small-latest': { input: 0.2 / 1_000_000, output: 0.6 / 1_000_000 },
+  'open-mistral-nemo': { input: 0.15 / 1_000_000, output: 0.15 / 1_000_000 },
+  'llama-3.3-70b-versatile': { input: 0.59 / 1_000_000, output: 0.79 / 1_000_000 },
+  'llama-3.1-8b-instant': { input: 0.05 / 1_000_000, output: 0.08 / 1_000_000 },
+  'mixtral-8x7b-32768': { input: 0.24 / 1_000_000, output: 0.24 / 1_000_000 },
 };
 
 async function getApiKey(tenantId: string, provider: string): Promise<string> {
@@ -57,17 +66,23 @@ async function getApiKey(tenantId: string, provider: string): Promise<string> {
 }
 
 function createOpenAIClient(apiKey: string, provider: string): OpenAI {
-  if (provider === 'anthropic') {
-    return new OpenAI({
-      apiKey,
+  const configs: Record<string, { baseURL: string; defaultHeaders?: Record<string, string> }> = {
+    openai: { baseURL: 'https://api.openai.com/v1' },
+    anthropic: {
       baseURL: 'https://api.anthropic.com/v1/',
-      defaultHeaders: {
-        'anthropic-version': '2023-06-01',
-      },
-    });
-  }
+      defaultHeaders: { 'anthropic-version': '2023-06-01' },
+    },
+    google: { baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/' },
+    mistral: { baseURL: 'https://api.mistral.ai/v1' },
+    groq: { baseURL: 'https://api.groq.com/openai/v1' },
+  };
 
-  return new OpenAI({ apiKey });
+  const config = configs[provider] || configs.openai;
+  return new OpenAI({
+    apiKey,
+    baseURL: config.baseURL,
+    ...(config.defaultHeaders ? { defaultHeaders: config.defaultHeaders } : {}),
+  });
 }
 
 export async function chatCompletion(

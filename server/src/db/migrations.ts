@@ -256,6 +256,9 @@ export async function runMigrations(): Promise<void> {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_sessions_tenant_agent ON sessions(tenant_id, agent_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_sessions_last_active ON sessions(tenant_id, last_active_at DESC)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_memory_entries_agent_type ON memory_entries(tenant_id, agent_id, memory_type)`);
+    await client.query(`ALTER TABLE memory_entries ADD COLUMN IF NOT EXISTS embedding vector(1536)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_memory_embedding ON memory_entries USING hnsw (embedding vector_cosine_ops)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_memory_content_fts ON memory_entries USING gin(to_tsvector('english', content))`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_deliverables_tenant_task ON deliverables(tenant_id, task_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cron_jobs_tenant ON cron_jobs(tenant_id)`);
     await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_usage_records_tenant_agent_date ON usage_records(tenant_id, agent_id, date)`);

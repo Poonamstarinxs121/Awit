@@ -9,6 +9,7 @@ import {
   compactSession,
 } from './sessionManager.js';
 import { logActivity } from './activityService.js';
+import { hybridMemorySearch, loadRecentMemories, saveMemoryWithEmbedding } from './memorySearchService.js';
 
 export interface AgentTurnResult {
   response: string;
@@ -48,21 +49,19 @@ async function loadAgent(tenantId: string, agentId: string): Promise<AgentRow> {
   return agent;
 }
 
-async function loadAgentMemories(tenantId: string, agentId: string): Promise<string> {
-  const result = await pool.query(
-    `SELECT memory_type, content FROM memory_entries
-     WHERE tenant_id = $1 AND agent_id = $2
-     ORDER BY updated_at DESC LIMIT 10`,
-    [tenantId, agentId]
-  );
+async function loadAgentMemories(tenantId: string, agentId: string, queryContext?: string): Promise<string> {
+  let memories;
 
-  if (result.rows.length === 0) return '';
+  if (queryContext && queryContext.length > 5) {
+    memories = await hybridMemorySearch(tenantId, agentId, queryContext, 5);
+  } else {
+    memories = await loadRecentMemories(tenantId, agentId, 10);
+  }
 
-  const memories = result.rows.map((r: { memory_type: string; content: string }) =>
-    `[${r.memory_type}] ${r.content}`
-  ).join('\n');
+  if (memories.length === 0) return '';
 
-  return `\n## Relevant Memories\n${memories}`;
+  const memoryText = memories.map(m => `[${m.memory_type}] ${m.content}`).join('\n');
+  return `\n## Relevant Memories\n${memoryText}`;
 }
 
 async function loadAgentTasks(tenantId: string, agentId: string): Promise<string> {
@@ -102,7 +101,7 @@ export async function executeAgentTurn(
   };
 
   const [memories, tasks] = await Promise.all([
-    loadAgentMemories(tenantId, agentId),
+    loadAgentMemories(tenantId, agentId, userMessage),
     loadAgentTasks(tenantId, agentId),
   ]);
 
@@ -127,11 +126,7 @@ export async function executeAgentTurn(
       const flushResult = await chatCompletion(tenantId, agentId, flushPrompt, flushConfig);
 
       if (!flushResult.content.includes('NOTHING_TO_REMEMBER') && flushResult.content.trim().length > 10) {
-        await pool.query(
-          `INSERT INTO memory_entries (tenant_id, agent_id, memory_type, content)
-           VALUES ($1, $2, 'long_term', $3)`,
-          [tenantId, agentId, flushResult.content]
-        );
+        await saveMemoryWithEmbedding(tenantId, agentId, 'long_term', flushResult.content);
       }
     } catch (flushError) {
       console.error('Memory flush failed (non-fatal):', flushError instanceof Error ? flushError.message : flushError);
@@ -216,7 +211,7 @@ export async function executeAgentTurnStream(
   };
 
   const [memories, tasks] = await Promise.all([
-    loadAgentMemories(tenantId, agentId),
+    loadAgentMemories(tenantId, agentId, userMessage),
     loadAgentTasks(tenantId, agentId),
   ]);
 
