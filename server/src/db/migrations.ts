@@ -317,12 +317,67 @@ export async function runMigrations(): Promise<void> {
 
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_saas_admin BOOLEAN NOT NULL DEFAULT false`);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS telegram_configs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id) UNIQUE,
+        bot_token_encrypted TEXT NOT NULL,
+        bot_username TEXT,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS telegram_chat_links (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
+        chat_id TEXT NOT NULL,
+        chat_type TEXT NOT NULL DEFAULT 'private',
+        linked_by UUID REFERENCES users(id),
+        notifications_enabled BOOLEAN DEFAULT true,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(tenant_id, chat_id)
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_telegram_chat_links_tenant ON telegram_chat_links(tenant_id)`);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS telegram_notification_queue (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
+        chat_id TEXT NOT NULL,
+        message TEXT NOT NULL,
+        sent BOOLEAN DEFAULT false,
+        sent_at TIMESTAMPTZ,
+        error TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_telegram_queue_unsent ON telegram_notification_queue(sent, created_at) WHERE sent = false`);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS tenant_settings (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
+        key TEXT NOT NULL,
+        value TEXT NOT NULL DEFAULT '',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(tenant_id, key)
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_tenant_settings ON tenant_settings(tenant_id, key)`);
+
     // Enable RLS on all tenant-scoped tables
     const rlsTables = [
       'tenants', 'users', 'api_keys', 'agents', 'tasks', 'comments',
       'activities', 'sessions', 'memory_entries', 'deliverables', 'task_deliverables',
       'cron_jobs', 'usage_records', 'notifications', 'standups', 'audit_log',
-      'thread_subscriptions', 'webhooks', 'webhook_deliveries'
+      'thread_subscriptions', 'webhooks', 'webhook_deliveries',
+      'telegram_configs', 'telegram_chat_links', 'telegram_notification_queue',
+      'tenant_settings'
     ];
 
     for (const table of rlsTables) {

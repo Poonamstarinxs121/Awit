@@ -5,8 +5,20 @@ import { getSessionHistory, clearSession } from '../services/sessionManager.js';
 import { triggerHeartbeat } from '../services/heartbeatService.js';
 import { requestAgentCollaboration } from '../services/interAgentService.js';
 import { requireMinRole } from '../middleware/rbac.js';
+import { getAgentMetrics, getAllAgentMetrics } from '../services/analyticsService.js';
 
 const router = Router();
+
+router.get('/analytics', requireMinRole('viewer'), async (req: Request, res: Response) => {
+  try {
+    const days = parseInt(req.query.days as string) || 30;
+    const metrics = await getAllAgentMetrics(req.user!.tenantId, days);
+    res.json(metrics);
+  } catch (error) {
+    console.error('Analytics error:', error);
+    res.status(500).json({ error: 'Failed to load analytics' });
+  }
+});
 
 router.get('/', requireMinRole('viewer'), async (req: Request, res: Response) => {
   try {
@@ -68,6 +80,16 @@ router.post('/', requireMinRole('admin'), async (req: Request, res: Response) =>
   } catch (error) {
     console.error('Create agent error:', error);
     res.status(500).json({ error: 'Failed to create agent' });
+  }
+});
+
+router.get('/:id/analytics', requireMinRole('viewer'), async (req: Request, res: Response) => {
+  try {
+    const days = parseInt(req.query.days as string) || 30;
+    const metrics = await getAgentMetrics(req.user!.tenantId, req.params.id, days);
+    res.json(metrics);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load agent analytics' });
   }
 });
 

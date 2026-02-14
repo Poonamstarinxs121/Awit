@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save, CheckCircle, AlertCircle, MessageSquare, Clock } from 'lucide-react';
+import { ArrowLeft, Save, CheckCircle, AlertCircle, MessageSquare, Clock, BarChart3 } from 'lucide-react';
 import { apiGet, apiPatch } from '../api/client';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -9,6 +9,7 @@ import { Input } from '../components/ui/Input';
 import { Badge } from '../components/ui/Badge';
 import { Spinner } from '../components/ui/Spinner';
 import { AgentChat } from '../components/AgentChat';
+import { AgentAnalytics } from '../components/AgentAnalytics';
 import { CronJobManager } from '../components/CronJobManager';
 import type { Agent, AgentLevel, AgentStatus } from '../types';
 
@@ -32,6 +33,7 @@ const TABS = [
   { id: 'capabilities', label: 'Capabilities' },
   { id: 'heartbeat', label: 'Heartbeat' },
   { id: 'cron', label: 'Cron Jobs', icon: Clock },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'model', label: 'Model Config' },
   { id: 'stats', label: 'Stats' },
 ] as const;
@@ -292,6 +294,10 @@ export function AgentDetail() {
         <CronJobManager agentId={id} />
       )}
 
+      {activeTab === 'analytics' && id && (
+        <AgentAnalytics agentId={id} />
+      )}
+
       {activeTab === 'model' && (
         <Card>
           <div className="space-y-4 max-w-xl">
@@ -336,7 +342,7 @@ export function AgentDetail() {
         </Card>
       )}
 
-      {activeTab !== 'stats' && activeTab !== 'chat' && activeTab !== 'cron' && (
+      {activeTab !== 'stats' && activeTab !== 'chat' && activeTab !== 'cron' && activeTab !== 'analytics' && (
         <div className="flex items-center gap-4">
           <Button onClick={handleSave} disabled={mutation.isPending} size="lg">
             {mutation.isPending ? <Spinner size="sm" className="mr-2" /> : <Save size={18} className="mr-2" />}

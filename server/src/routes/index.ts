@@ -11,6 +11,7 @@ import cronJobsRoutes from './cronJobs.js';
 import notificationsRoutes from './notifications.js';
 import deliverablesRoutes from './deliverables.js';
 import webhookRoutes from './webhooks.js';
+import telegramRoutes from './telegram.js';
 
 const router = Router();
 
@@ -25,5 +26,6 @@ router.use('/v1/cron-jobs', authMiddleware, tenantMiddleware, cronJobsRoutes);
 router.use('/v1/notifications', authMiddleware, tenantMiddleware, notificationsRoutes);
 router.use('/v1/deliverables', authMiddleware, tenantMiddleware, deliverablesRoutes);
 router.use('/v1/webhooks', authMiddleware, tenantMiddleware, webhookRoutes);
+router.use('/v1/telegram', authMiddleware, tenantMiddleware, telegramRoutes);
 
 export default router;

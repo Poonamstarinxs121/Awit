@@ -2,8 +2,30 @@ import { Router, Request, Response } from 'express';
 import { pool } from '../db/index.js';
 import { requireMinRole } from '../middleware/rbac.js';
 import { generateStandup } from '../services/standupService.js';
+import { getDeliveryConfig, saveDeliveryConfig } from '../services/standupDeliveryService.js';
 
 const router = Router();
+
+router.get('/delivery-config', async (req: Request, res: Response) => {
+  try {
+    const config = await getDeliveryConfig(req.user!.tenantId);
+    res.json(config);
+  } catch (error) {
+    console.error('Get delivery config error:', error);
+    res.status(500).json({ error: 'Failed to load delivery config' });
+  }
+});
+
+router.put('/delivery-config', requireMinRole('admin'), async (req: Request, res: Response) => {
+  try {
+    await saveDeliveryConfig(req.user!.tenantId, req.body);
+    const config = await getDeliveryConfig(req.user!.tenantId);
+    res.json(config);
+  } catch (error) {
+    console.error('Save delivery config error:', error);
+    res.status(500).json({ error: 'Failed to save delivery config' });
+  }
+});
 
 router.get('/', async (req: Request, res: Response) => {
   try {

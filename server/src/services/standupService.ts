@@ -2,6 +2,7 @@ import { pool } from '../db/index.js';
 import { chatCompletion, type ChatMessage } from './llmProviderClient.js';
 import { logActivity } from './activityService.js';
 import { fireWebhookEvent } from './webhookService.js';
+import { deliverStandup } from './standupDeliveryService.js';
 
 interface AgentSummary {
   agentId: string;
@@ -93,6 +94,10 @@ export async function generateStandup(tenantId: string): Promise<StandupResult> 
   };
 
   fireWebhookEvent(tenantId, 'standup.generated', { standup }).catch(() => {});
+
+  deliverStandup(tenantId, summary, today).catch(err =>
+    console.error('Standup delivery error:', err)
+  );
 
   return standup;
 }
