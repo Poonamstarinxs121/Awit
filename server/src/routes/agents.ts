@@ -3,10 +3,11 @@ import { listAgents, createAgent, getAgent, updateAgent, getAgentStats } from '.
 import { executeAgentTurn, executeAgentTurnStream } from '../services/orchestrationEngine.js';
 import { getSessionHistory, clearSession } from '../services/sessionManager.js';
 import { triggerHeartbeat } from '../services/heartbeatService.js';
+import { requireMinRole } from '../middleware/rbac.js';
 
 const router = Router();
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', requireMinRole('viewer'), async (req: Request, res: Response) => {
   try {
     const agents = await listAgents(req.user!.tenantId);
     res.json({ agents });
@@ -16,7 +17,7 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', requireMinRole('admin'), async (req: Request, res: Response) => {
   try {
     const { name, role, soul_md, agents_md, tools_md, heartbeat_md, model_config, level } = req.body;
 
@@ -35,7 +36,7 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/:id/stats', async (req: Request, res: Response) => {
+router.get('/:id/stats', requireMinRole('viewer'), async (req: Request, res: Response) => {
   try {
     const stats = await getAgentStats(req.user!.tenantId, req.params.id);
     res.json({ stats });
@@ -45,7 +46,7 @@ router.get('/:id/stats', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', requireMinRole('viewer'), async (req: Request, res: Response) => {
   try {
     const agent = await getAgent(req.user!.tenantId, req.params.id);
     if (!agent) {
@@ -59,7 +60,7 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.patch('/:id', async (req: Request, res: Response) => {
+router.patch('/:id', requireMinRole('admin'), async (req: Request, res: Response) => {
   try {
     const agent = await updateAgent(req.user!.tenantId, req.params.id, req.body);
     if (!agent) {
@@ -73,7 +74,7 @@ router.patch('/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/:id/message', async (req: Request, res: Response) => {
+router.post('/:id/message', requireMinRole('operator'), async (req: Request, res: Response) => {
   try {
     const { message, session_key, stream } = req.body;
 
@@ -132,7 +133,7 @@ router.post('/:id/message', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/:id/history', async (req: Request, res: Response) => {
+router.get('/:id/history', requireMinRole('viewer'), async (req: Request, res: Response) => {
   try {
     const sessionKey = req.query.session_key as string | undefined;
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
@@ -144,7 +145,7 @@ router.get('/:id/history', async (req: Request, res: Response) => {
   }
 });
 
-router.delete('/:id/history', async (req: Request, res: Response) => {
+router.delete('/:id/history', requireMinRole('operator'), async (req: Request, res: Response) => {
   try {
     const sessionKey = req.query.session_key as string | undefined;
     await clearSession(req.user!.tenantId, req.params.id, sessionKey);
@@ -155,7 +156,7 @@ router.delete('/:id/history', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/:id/heartbeat', async (req: Request, res: Response) => {
+router.post('/:id/heartbeat', requireMinRole('admin'), async (req: Request, res: Response) => {
   try {
     const result = await triggerHeartbeat(req.user!.tenantId, req.params.id);
     res.json({ message: result });

@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { listProviders, connectProvider, disconnectProvider, getUsageStats } from '../services/configService.js';
+import { requireMinRole } from '../middleware/rbac.js';
 
 const router = Router();
 
-router.get('/providers', async (req: Request, res: Response) => {
+router.get('/providers', requireMinRole('viewer'), async (req: Request, res: Response) => {
   try {
     const providers = await listProviders(req.user!.tenantId);
     res.json({ providers });
@@ -13,7 +14,7 @@ router.get('/providers', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/providers', async (req: Request, res: Response) => {
+router.post('/providers', requireMinRole('owner'), async (req: Request, res: Response) => {
   try {
     const { provider, api_key } = req.body;
 
@@ -30,7 +31,7 @@ router.post('/providers', async (req: Request, res: Response) => {
   }
 });
 
-router.delete('/providers/:id', async (req: Request, res: Response) => {
+router.delete('/providers/:id', requireMinRole('owner'), async (req: Request, res: Response) => {
   try {
     const result = await disconnectProvider(req.user!.tenantId, req.params.id);
     if (!result) {
@@ -44,7 +45,7 @@ router.delete('/providers/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/usage', async (req: Request, res: Response) => {
+router.get('/usage', requireMinRole('viewer'), async (req: Request, res: Response) => {
   try {
     const usage = await getUsageStats(req.user!.tenantId);
     res.json({ usage });

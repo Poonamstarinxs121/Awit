@@ -1,12 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { pool } from '../db/index.js';
 import { logActivity } from '../services/activityService.js';
+import { requireMinRole } from '../middleware/rbac.js';
 
 const router = Router();
 
 const PRIORITY_ORDER: Record<string, number> = { critical: 1, high: 2, medium: 3, low: 4 };
 
-router.get('/stats', async (req: Request, res: Response) => {
+router.get('/stats', requireMinRole('viewer'), async (req: Request, res: Response) => {
   try {
     const result = await pool.query(
       `SELECT status, COUNT(*)::int as count FROM tasks WHERE tenant_id = $1 GROUP BY status`,
@@ -19,7 +20,7 @@ router.get('/stats', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', requireMinRole('viewer'), async (req: Request, res: Response) => {
   try {
     const { status, assignee, priority, search } = req.query;
     const tenantId = req.user!.tenantId;
@@ -68,7 +69,7 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', requireMinRole('operator'), async (req: Request, res: Response) => {
   try {
     const { title, description, status, priority, assignees, tags, due_date, parent_task } = req.body;
     const tenantId = req.user!.tenantId;
@@ -110,7 +111,7 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', requireMinRole('viewer'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
     const taskId = req.params.id;
@@ -162,7 +163,7 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.patch('/:id', async (req: Request, res: Response) => {
+router.patch('/:id', requireMinRole('operator'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
     const taskId = req.params.id;
@@ -232,7 +233,7 @@ router.patch('/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/:id/comments', async (req: Request, res: Response) => {
+router.post('/:id/comments', requireMinRole('operator'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
     const taskId = req.params.id;
