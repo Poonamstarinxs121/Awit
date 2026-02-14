@@ -9,9 +9,10 @@ requiredFiles = [".replit", "replit.nix", "package.json", "package-lock.json"]
 channel = "stable-24_11"
 
 [deployment]
-run = ["node", "index.js"]
+run = ["bash", "-c", "cd /home/runner/workspace/server && NODE_ENV=production node --import tsx src/index.ts"]
 deploymentTarget = "autoscale"
 ignorePorts = false
+build = ["bash", "-c", "cd client && npm run build"]
 
 [agent]
 expertMode = true
