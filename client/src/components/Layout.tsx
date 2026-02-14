@@ -1,8 +1,8 @@
 import { Outlet } from 'react-router-dom';
-import { Bell } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { useAuth } from '../hooks/useAuth';
 import { Badge } from './ui/Badge';
+import { NotificationBell } from './NotificationBell';
 
 export function Layout() {
   const { user } = useAuth();
@@ -22,12 +22,7 @@ export function Layout() {
             {user && (
               <>
                 <Badge variant="info">{user.role}</Badge>
-                <button
-                  className="text-gray-400 hover:text-white transition-colors relative"
-                  title="Notifications"
-                >
-                  <Bell size={18} />
-                </button>
+                <NotificationBell />
               </>
             )}
           </div>

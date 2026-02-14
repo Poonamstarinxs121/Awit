@@ -4,12 +4,14 @@ dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import http from 'http';
 import { fileURLToPath } from 'url';
 import routes from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { runMigrations } from './db/migrations.js';
 import { startHeartbeatService } from './services/heartbeatService.js';
 import { startCronScheduler } from './services/cronScheduler.js';
+import { initWebSocket } from './services/realtimeService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,7 +48,9 @@ app.use(errorHandler);
 async function start() {
   try {
     await runMigrations();
-    app.listen(PORT, '0.0.0.0', () => {
+    const server = http.createServer(app);
+    initWebSocket(server);
+    server.listen(PORT, '0.0.0.0', () => {
       console.log(`SquidJob server running on port ${PORT} (${isProduction ? 'production' : 'development'})`);
       startHeartbeatService();
       startCronScheduler();

@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { pool } from '../db/index.js';
 import { logActivity } from '../services/activityService.js';
 import { requireMinRole } from '../middleware/rbac.js';
+import { emitTaskEvent, emitActivityEvent } from '../services/eventEmitter.js';
+import { parseMentionsAndNotify } from '../services/notificationService.js';
 
 const router = Router();
 
@@ -103,6 +105,8 @@ router.post('/', requireMinRole('operator'), async (req: Request, res: Response)
         );
       }
     }
+
+    try { await emitTaskEvent(tenantId, 'created', task); } catch (err) { console.error('Emit task created event error:', err); }
 
     res.status(201).json({ task });
   } catch (error) {
@@ -226,6 +230,8 @@ router.patch('/:id', requireMinRole('operator'), async (req: Request, res: Respo
       }
     }
 
+    try { await emitTaskEvent(tenantId, 'updated', task); } catch (err) { console.error('Emit task updated event error:', err); }
+
     res.json({ task });
   } catch (error) {
     console.error('Update task error:', error);
@@ -267,20 +273,10 @@ router.post('/:id/comments', requireMinRole('operator'), async (req: Request, re
       comment_id: comment.id, title: taskCheck.rows[0].title,
     });
 
-    if (mentions && mentions.length > 0) {
-      const agentResult = await pool.query(
-        `SELECT id, name FROM agents WHERE tenant_id = $1 AND name = ANY($2)`,
-        [tenantId, mentions]
-      );
+    parseMentionsAndNotify(tenantId, content, taskId, comment.id, req.user!.userId)
+      .catch(err => console.error('Mention processing error:', err));
 
-      for (const agent of agentResult.rows) {
-        await pool.query(
-          `INSERT INTO notifications (tenant_id, recipient_id, recipient_type, type, source_task_id, source_comment_id, message)
-           VALUES ($1, $2, 'agent', 'mention', $3, $4, $5)`,
-          [tenantId, agent.id, taskId, comment.id, `Mentioned in comment on: ${taskCheck.rows[0].title}`]
-        );
-      }
-    }
+    try { await emitActivityEvent(tenantId, { action: 'comment_added', taskId, comment }); } catch (err) { console.error('Emit comment activity event error:', err); }
 
     res.status(201).json({ comment });
   } catch (error) {

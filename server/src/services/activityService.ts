@@ -1,4 +1,5 @@
 import { pool } from '../db/index.js';
+import { emitActivityEvent } from './eventEmitter.js';
 
 export async function logActivity(
   tenantId: string,
@@ -13,6 +14,7 @@ export async function logActivity(
      VALUES ($1, $2, $3, $4, $5, $6)`,
     [tenantId, actorId, action, targetType, targetId, JSON.stringify(metadata)]
   );
+  try { await emitActivityEvent(tenantId, { actorId, action, targetType, targetId, metadata }); } catch (err) { console.error('Emit activity event error:', err); }
 }
 
 export async function listActivities(
