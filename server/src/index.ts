@@ -9,6 +9,7 @@ import routes from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { runMigrations } from './db/migrations.js';
 import { startHeartbeatService } from './services/heartbeatService.js';
+import { startCronScheduler } from './services/cronScheduler.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,6 +49,7 @@ async function start() {
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`SquidJob server running on port ${PORT} (${isProduction ? 'production' : 'development'})`);
       startHeartbeatService();
+      startCronScheduler();
     });
   } catch (error) {
     console.error('Failed to start server:', error);

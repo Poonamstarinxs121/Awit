@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { pool } from '../db/index.js';
+import { requireMinRole } from '../middleware/rbac.js';
+import { generateStandup } from '../services/standupService.js';
 
 const router = Router();
 
@@ -26,6 +28,16 @@ router.get('/latest', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Get latest standup error:', error);
     res.status(500).json({ error: 'Failed to get latest standup' });
+  }
+});
+
+router.post('/generate', requireMinRole('admin'), async (req: Request, res: Response) => {
+  try {
+    const standup = await generateStandup(req.user!.tenantId);
+    res.json({ standup });
+  } catch (error) {
+    console.error('Generate standup error:', error);
+    res.status(500).json({ error: 'Failed to generate standup' });
   }
 });
 

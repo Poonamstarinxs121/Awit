@@ -7,6 +7,7 @@ import tasksRoutes from './tasks.js';
 import activityRoutes from './activity.js';
 import standupsRoutes from './standups.js';
 import configRoutes from './config.js';
+import cronJobsRoutes from './cronJobs.js';
 
 const router = Router();
 
@@ -17,5 +18,6 @@ router.use('/v1/tasks', authMiddleware, tenantMiddleware, tasksRoutes);
 router.use('/v1/activity', authMiddleware, tenantMiddleware, activityRoutes);
 router.use('/v1/standups', authMiddleware, tenantMiddleware, standupsRoutes);
 router.use('/v1/config', authMiddleware, tenantMiddleware, configRoutes);
+router.use('/v1/cron-jobs', authMiddleware, tenantMiddleware, cronJobsRoutes);
 
 export default router;
