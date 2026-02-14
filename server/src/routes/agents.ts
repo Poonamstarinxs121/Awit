@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { listAgents, createAgent, getAgent, updateAgent, getAgentStats } from '../services/agentService.js';
+import { executeAgentTurn, executeAgentTurnStream } from '../services/orchestrationEngine.js';
+import { getSessionHistory, clearSession } from '../services/sessionManager.js';
 
 const router = Router();
 
@@ -67,6 +69,88 @@ router.patch('/:id', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Update agent error:', error);
     res.status(500).json({ error: 'Failed to update agent' });
+  }
+});
+
+router.post('/:id/message', async (req: Request, res: Response) => {
+  try {
+    const { message, session_key, stream } = req.body;
+
+    if (!message) {
+      res.status(400).json({ error: 'Missing required field: message' });
+      return;
+    }
+
+    if (stream) {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.flushHeaders();
+
+      const result = await executeAgentTurnStream(
+        req.user!.tenantId,
+        req.params.id,
+        message,
+        (chunk: string) => {
+          res.write(`data: ${JSON.stringify({ type: 'chunk', content: chunk })}\n\n`);
+        },
+        session_key
+      );
+
+      res.write(`data: ${JSON.stringify({
+        type: 'done',
+        session_id: result.sessionId,
+        tokens_in: result.tokensIn,
+        tokens_out: result.tokensOut,
+        model: result.model,
+        provider: result.provider,
+      })}\n\n`);
+
+      res.end();
+    } else {
+      const result = await executeAgentTurn(
+        req.user!.tenantId,
+        req.params.id,
+        message,
+        session_key
+      );
+
+      res.json({
+        response: result.response,
+        session_id: result.sessionId,
+        tokens_in: result.tokensIn,
+        tokens_out: result.tokensOut,
+        model: result.model,
+        provider: result.provider,
+      });
+    }
+  } catch (error: unknown) {
+    console.error('Agent message error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to process message';
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
+router.get('/:id/history', async (req: Request, res: Response) => {
+  try {
+    const sessionKey = req.query.session_key as string | undefined;
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+    const messages = await getSessionHistory(req.user!.tenantId, req.params.id, sessionKey, limit);
+    res.json({ messages });
+  } catch (error) {
+    console.error('Get history error:', error);
+    res.status(500).json({ error: 'Failed to get conversation history' });
+  }
+});
+
+router.delete('/:id/history', async (req: Request, res: Response) => {
+  try {
+    const sessionKey = req.query.session_key as string | undefined;
+    await clearSession(req.user!.tenantId, req.params.id, sessionKey);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Clear history error:', error);
+    res.status(500).json({ error: 'Failed to clear conversation history' });
   }
 });
 
