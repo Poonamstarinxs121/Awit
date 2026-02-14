@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Columns3, Users, Clock, Settings } from 'lucide-react';
+import { LayoutDashboard, Columns3, Users, Clock, Settings, LogOut } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -10,6 +11,8 @@ const navItems = [
 ];
 
 export function Sidebar() {
+  const { user, logout } = useAuth();
+
   return (
     <aside className="w-[260px] h-screen bg-surface-sidebar border-r border-gray-800 flex flex-col shrink-0">
       <div className="px-6 py-5 border-b border-gray-800">
@@ -40,7 +43,26 @@ export function Sidebar() {
       </nav>
 
       <div className="px-4 py-3 border-t border-gray-800">
-        <p className="text-xs text-gray-600">v1.0.0</p>
+        {user && (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-brand-accent/20 flex items-center justify-center shrink-0">
+              <span className="text-brand-accent font-semibold text-xs">
+                {user.name.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-white truncate">{user.name}</p>
+              <p className="text-xs text-gray-500 capitalize">{user.role}</p>
+            </div>
+            <button
+              onClick={logout}
+              className="text-gray-400 hover:text-red-400 transition-colors p-1"
+              title="Sign out"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );

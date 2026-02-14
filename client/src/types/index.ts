@@ -75,6 +75,7 @@ export interface Activity {
   id: string;
   tenant_id: string;
   actor_id: string;
+  actor_name?: string;
   action: string;
   target_type: string;
   target_id: string;
@@ -187,10 +188,24 @@ export interface AuthUser {
   name: string;
   role: UserRole;
   tenantId: string;
+  tenantName?: string;
 }
 
 export interface LoginResponse {
   token: string;
+  userId: string;
+  tenantId: string;
+  role: UserRole;
+}
+
+export interface RegisterResponse {
+  token: string;
+  userId: string;
+  tenantId: string;
+  role: UserRole;
+}
+
+export interface MeResponse {
   user: AuthUser;
 }
 

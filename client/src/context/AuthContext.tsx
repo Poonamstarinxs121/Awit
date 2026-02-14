@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { apiPost, apiGet } from '../api/client';
-import type { AuthUser, LoginResponse } from '../types';
+import type { AuthUser, LoginResponse, RegisterResponse, MeResponse } from '../types';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -25,12 +25,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(localStorage.getItem('squidjob_token'));
   const [loading, setLoading] = useState(true);
 
+  const fetchMe = useCallback(async () => {
+    const data = await apiGet<MeResponse>('/auth/me');
+    setUser(data.user);
+    return data.user;
+  }, []);
+
   useEffect(() => {
     if (token) {
-      apiGet<{ user: AuthUser }>('/auth/me')
-        .then((data) => {
-          setUser(data.user);
-        })
+      fetchMe()
         .catch(() => {
           localStorage.removeItem('squidjob_token');
           setToken(null);
@@ -40,20 +43,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     const data = await apiPost<LoginResponse>('/auth/login', { email, password });
     localStorage.setItem('squidjob_token', data.token);
     setToken(data.token);
-    setUser(data.user);
+    const meData = await apiGet<MeResponse>('/auth/me');
+    setUser(meData.user);
   }, []);
 
   const register = useCallback(async (email: string, password: string, name: string, companyName: string) => {
-    const data = await apiPost<LoginResponse>('/auth/register', { email, password, name, companyName });
+    const data = await apiPost<RegisterResponse>('/auth/register', { email, password, name, companyName });
     localStorage.setItem('squidjob_token', data.token);
     setToken(data.token);
-    setUser(data.user);
+    const meData = await apiGet<MeResponse>('/auth/me');
+    setUser(meData.user);
   }, []);
 
   const logout = useCallback(() => {
