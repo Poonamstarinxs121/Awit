@@ -10,6 +10,7 @@ import {
 } from './sessionManager.js';
 import { logActivity } from './activityService.js';
 import { hybridMemorySearch, loadRecentMemories, saveMemoryWithEmbedding } from './memorySearchService.js';
+import { allocateContextBudget } from './tokenBudgetAllocator.js';
 
 export interface AgentTurnResult {
   response: string;
@@ -105,14 +106,29 @@ export async function executeAgentTurn(
     loadAgentTasks(tenantId, agentId),
   ]);
 
-  let systemPrompt = buildSystemPrompt(agent, session.compactionSummary);
-  if (memories) systemPrompt += memories;
-  if (tasks) systemPrompt += tasks;
+  let soulContent = buildSystemPrompt(agent, session.compactionSummary);
+  const historyContent = session.messages.map(m => `${m.role}: ${m.content}`).join('\n');
+
+  let budget = allocateContextBudget(modelConfig.model || 'gpt-4o-mini', {
+    soul: soulContent,
+    memories: memories || '',
+    tasks: tasks || '',
+    history: historyContent,
+    userMessage: userMessage,
+  });
+
+  if (budget.sectionsInfo.some(s => s.truncated)) {
+    console.log(`[Budget] Context trimmed for ${agentId}: ${budget.sectionsInfo.filter(s => s.truncated).map(s => s.name).join(', ')} (${budget.budgetUsed}% used)`);
+  }
+
+  let systemPrompt = budget.soul;
+  if (budget.memories) systemPrompt += budget.memories;
+  if (budget.tasks) systemPrompt += budget.tasks;
 
   const conversationMessages: ChatMessage[] = [
     { role: 'system', content: systemPrompt },
     ...session.messages,
-    { role: 'user', content: userMessage },
+    { role: 'user', content: budget.userMessage },
   ];
 
   if (needsCompaction(estimateTokenCount(conversationMessages))) {
@@ -147,15 +163,26 @@ export async function executeAgentTurn(
     );
 
     const refreshedSession = await getOrCreateSession(tenantId, agentId, sessionKey);
-    systemPrompt = buildSystemPrompt(agent, refreshedSession.compactionSummary);
-    if (memories) systemPrompt += memories;
-    if (tasks) systemPrompt += tasks;
+    soulContent = buildSystemPrompt(agent, refreshedSession.compactionSummary);
+    const refreshedHistory = refreshedSession.messages.map(m => `${m.role}: ${m.content}`).join('\n');
+
+    budget = allocateContextBudget(modelConfig.model || 'gpt-4o-mini', {
+      soul: soulContent,
+      memories: memories || '',
+      tasks: tasks || '',
+      history: refreshedHistory,
+      userMessage: userMessage,
+    });
+
+    systemPrompt = budget.soul;
+    if (budget.memories) systemPrompt += budget.memories;
+    if (budget.tasks) systemPrompt += budget.tasks;
 
     conversationMessages.length = 0;
     conversationMessages.push(
       { role: 'system', content: systemPrompt },
       ...refreshedSession.messages,
-      { role: 'user', content: userMessage },
+      { role: 'user', content: budget.userMessage },
     );
   }
 
@@ -215,14 +242,29 @@ export async function executeAgentTurnStream(
     loadAgentTasks(tenantId, agentId),
   ]);
 
-  let systemPrompt = buildSystemPrompt(agent, session.compactionSummary);
-  if (memories) systemPrompt += memories;
-  if (tasks) systemPrompt += tasks;
+  const soulContent = buildSystemPrompt(agent, session.compactionSummary);
+  const historyContent = session.messages.map(m => `${m.role}: ${m.content}`).join('\n');
+
+  const budget = allocateContextBudget(modelConfig.model || 'gpt-4o-mini', {
+    soul: soulContent,
+    memories: memories || '',
+    tasks: tasks || '',
+    history: historyContent,
+    userMessage: userMessage,
+  });
+
+  if (budget.sectionsInfo.some(s => s.truncated)) {
+    console.log(`[Budget] Stream context trimmed for ${agentId}: ${budget.sectionsInfo.filter(s => s.truncated).map(s => s.name).join(', ')} (${budget.budgetUsed}% used)`);
+  }
+
+  let systemPrompt = budget.soul;
+  if (budget.memories) systemPrompt += budget.memories;
+  if (budget.tasks) systemPrompt += budget.tasks;
 
   const conversationMessages: ChatMessage[] = [
     { role: 'system', content: systemPrompt },
     ...session.messages,
-    { role: 'user', content: userMessage },
+    { role: 'user', content: budget.userMessage },
   ];
 
   const llmResponse = await chatCompletionStream(

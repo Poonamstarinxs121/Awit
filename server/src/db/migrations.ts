@@ -233,6 +233,22 @@ export async function runMigrations(): Promise<void> {
     `);
 
     await client.query(`
+      CREATE TABLE IF NOT EXISTS task_deliverables (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
+        task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+        uploaded_by TEXT NOT NULL,
+        uploader_type TEXT NOT NULL CHECK (uploader_type IN ('agent', 'user')),
+        filename TEXT NOT NULL,
+        original_filename TEXT NOT NULL,
+        mime_type TEXT NOT NULL DEFAULT 'application/octet-stream',
+        file_size INTEGER NOT NULL DEFAULT 0,
+        storage_path TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
       CREATE TABLE IF NOT EXISTS thread_subscriptions (
         id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         tenant_id       UUID NOT NULL REFERENCES tenants(id),
@@ -265,17 +281,48 @@ export async function runMigrations(): Promise<void> {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON notifications(tenant_id, recipient_id, is_read)`);
     await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_standups_tenant_date ON standups(tenant_id, date)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_audit_log_tenant_time ON audit_log(tenant_id, created_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_task_deliverables_task ON task_deliverables(tenant_id, task_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_thread_subs_task ON thread_subscriptions(tenant_id, task_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_thread_subs_subscriber ON thread_subscriptions(tenant_id, subscriber_id)`);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS webhooks (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
+        url TEXT NOT NULL,
+        events TEXT[] NOT NULL DEFAULT '{}',
+        secret TEXT,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_webhooks_tenant ON webhooks(tenant_id)`);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS webhook_deliveries (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
+        webhook_id UUID NOT NULL REFERENCES webhooks(id) ON DELETE CASCADE,
+        event TEXT NOT NULL,
+        payload JSONB NOT NULL DEFAULT '{}',
+        response_status INTEGER,
+        response_body TEXT,
+        success BOOLEAN DEFAULT false,
+        attempts INTEGER DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_webhook ON webhook_deliveries(webhook_id)`);
 
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_saas_admin BOOLEAN NOT NULL DEFAULT false`);
 
     // Enable RLS on all tenant-scoped tables
     const rlsTables = [
       'tenants', 'users', 'api_keys', 'agents', 'tasks', 'comments',
-      'activities', 'sessions', 'memory_entries', 'deliverables',
+      'activities', 'sessions', 'memory_entries', 'deliverables', 'task_deliverables',
       'cron_jobs', 'usage_records', 'notifications', 'standups', 'audit_log',
-      'thread_subscriptions'
+      'thread_subscriptions', 'webhooks', 'webhook_deliveries'
     ];
 
     for (const table of rlsTables) {

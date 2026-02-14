@@ -1,12 +1,20 @@
 import { Router, Request, Response } from 'express';
+import multer from 'multer';
 import { pool } from '../db/index.js';
 import { logActivity } from '../services/activityService.js';
 import { requireMinRole } from '../middleware/rbac.js';
 import { emitTaskEvent, emitActivityEvent } from '../services/eventEmitter.js';
 import { parseMentionsAndNotify } from '../services/notificationService.js';
 import { subscribeToThread, notifyThreadSubscribers } from '../services/threadService.js';
+import { saveDeliverable, getTaskDeliverables, deleteDeliverable } from '../services/deliverableService.js';
+import { fireWebhookEvent } from '../services/webhookService.js';
 
 const router = Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }
+});
 
 const PRIORITY_ORDER: Record<string, number> = { critical: 1, high: 2, medium: 3, low: 4 };
 
@@ -115,6 +123,7 @@ router.post('/', requireMinRole('operator'), async (req: Request, res: Response)
     subscribeToThread(tenantId, task.id, req.user!.userId, 'user').catch(() => {});
 
     try { await emitTaskEvent(tenantId, 'created', task); } catch (err) { console.error('Emit task created event error:', err); }
+    fireWebhookEvent(tenantId, 'task.created', { task }).catch(() => {});
 
     res.status(201).json({ task });
   } catch (error) {
@@ -239,6 +248,9 @@ router.patch('/:id', requireMinRole('operator'), async (req: Request, res: Respo
     }
 
     try { await emitTaskEvent(tenantId, 'updated', task); } catch (err) { console.error('Emit task updated event error:', err); }
+    if (req.body.status === 'done' && req.body.status !== existing.status) {
+      fireWebhookEvent(tenantId, 'task.completed', { task }).catch(() => {});
+    }
 
     res.json({ task });
   } catch (error) {
@@ -295,6 +307,48 @@ router.post('/:id/comments', requireMinRole('operator'), async (req: Request, re
   } catch (error) {
     console.error('Add comment error:', error);
     res.status(500).json({ error: 'Failed to add comment' });
+  }
+});
+
+router.post('/:id/deliverables', upload.single('file'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ error: 'No file uploaded' });
+      return;
+    }
+    const tenantId = req.user!.tenantId;
+    const taskId = req.params.id;
+
+    const result = await saveDeliverable(
+      tenantId, taskId, req.user!.userId, 'user',
+      req.file.originalname, req.file.mimetype, req.file.buffer
+    );
+    res.status(201).json(result);
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: 'Failed to upload file' });
+  }
+});
+
+router.get('/:id/deliverables', async (req: Request, res: Response) => {
+  try {
+    const deliverables = await getTaskDeliverables(req.user!.tenantId, req.params.id);
+    res.json(deliverables);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load deliverables' });
+  }
+});
+
+router.delete('/:id/deliverables/:deliverableId', requireMinRole('operator'), async (req: Request, res: Response) => {
+  try {
+    const deleted = await deleteDeliverable(req.user!.tenantId, req.params.deliverableId);
+    if (!deleted) {
+      res.status(404).json({ error: 'Deliverable not found' });
+      return;
+    }
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete deliverable' });
   }
 });
 

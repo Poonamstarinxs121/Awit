@@ -1,6 +1,7 @@
 import { pool } from '../db/index.js';
 import { chatCompletion, type ChatMessage } from './llmProviderClient.js';
 import { logActivity } from './activityService.js';
+import { fireWebhookEvent } from './webhookService.js';
 
 interface AgentSummary {
   agentId: string;
@@ -83,13 +84,17 @@ export async function generateStandup(tenantId: string): Promise<StandupResult> 
     agentCount: agents.length,
   });
 
-  return {
+  const standup = {
     id: standupId,
     tenantId,
     date: today,
     summary,
     perAgentSummaries,
   };
+
+  fireWebhookEvent(tenantId, 'standup.generated', { standup }).catch(() => {});
+
+  return standup;
 }
 
 async function generateLLMSummary(tenantId: string, summaries: AgentSummary[]): Promise<string> {

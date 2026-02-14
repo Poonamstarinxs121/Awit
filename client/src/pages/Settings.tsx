@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Key, Trash2, Plus, LogOut, ChevronDown, ChevronUp } from 'lucide-react';
-import { apiGet, apiPost, apiDelete } from '../api/client';
+import { Key, Trash2, Plus, LogOut, ChevronDown, ChevronUp, Webhook, Eye, ToggleLeft, ToggleRight } from 'lucide-react';
+import { apiGet, apiPost, apiDelete, apiPatch } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -27,6 +27,33 @@ interface AgentUsage {
   api_calls: number;
   estimated_cost: number;
 }
+
+interface WebhookItem {
+  id: string;
+  url: string;
+  events: string[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface WebhookDelivery {
+  id: string;
+  event: string;
+  response_status: number | null;
+  success: boolean;
+  attempts: number;
+  created_at: string;
+}
+
+const WEBHOOK_EVENTS = [
+  'task.created',
+  'task.completed',
+  'task.updated',
+  'standup.generated',
+  'agent.error',
+  'agent.heartbeat',
+];
 
 const planVariant: Record<string, 'info' | 'warning' | 'active'> = {
   starter: 'info',
@@ -58,6 +85,12 @@ export function Settings() {
   const [newApiKey, setNewApiKey] = useState('');
   const [connectError, setConnectError] = useState('');
   const [showRawData, setShowRawData] = useState(false);
+  const [showWebhookModal, setShowWebhookModal] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [webhookSecret, setWebhookSecret] = useState('');
+  const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
+  const [webhookError, setWebhookError] = useState('');
+  const [viewDeliveriesId, setViewDeliveriesId] = useState<string | null>(null);
 
   const { data: providersData, isLoading: loadingProviders } = useQuery({
     queryKey: ['providers'],
@@ -73,6 +106,43 @@ export function Settings() {
     queryKey: ['usage-by-agent'],
     queryFn: () => apiGet<{ usage: AgentUsage[] }>('/v1/config/usage/by-agent'),
   });
+
+  const { data: webhooksData, isLoading: loadingWebhooks } = useQuery({
+    queryKey: ['webhooks'],
+    queryFn: () => apiGet<WebhookItem[]>('/v1/webhooks'),
+  });
+
+  const { data: deliveriesData, isLoading: loadingDeliveries } = useQuery({
+    queryKey: ['webhook-deliveries', viewDeliveriesId],
+    queryFn: () => apiGet<WebhookDelivery[]>(`/v1/webhooks/${viewDeliveriesId}/deliveries`),
+    enabled: !!viewDeliveriesId,
+  });
+
+  const createWebhookMutation = useMutation({
+    mutationFn: (data: { url: string; events: string[]; secret?: string }) => apiPost('/v1/webhooks', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks'] });
+      setShowWebhookModal(false);
+      setWebhookUrl('');
+      setWebhookSecret('');
+      setWebhookEvents([]);
+      setWebhookError('');
+    },
+    onError: (err: Error) => setWebhookError(err.message),
+  });
+
+  const deleteWebhookMutation = useMutation({
+    mutationFn: (id: string) => apiDelete(`/v1/webhooks/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['webhooks'] }),
+  });
+
+  const toggleWebhookMutation = useMutation({
+    mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) => apiPatch(`/v1/webhooks/${id}`, { is_active }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['webhooks'] }),
+  });
+
+  const webhooks = webhooksData ?? [];
+  const deliveries = deliveriesData ?? [];
 
   const connectMutation = useMutation({
     mutationFn: (data: { provider: string; api_key: string }) => apiPost('/v1/config/providers', data),
@@ -298,6 +368,94 @@ export function Settings() {
         )}
       </Card>
 
+      <Card title="Webhooks">
+        {loadingWebhooks ? (
+          <div className="flex justify-center py-4"><Spinner /></div>
+        ) : (
+          <div className="space-y-4">
+            {webhooks.length === 0 && (
+              <p className="text-gray-500 text-sm">No webhooks registered yet.</p>
+            )}
+            {webhooks.map((wh) => (
+              <div key={wh.id} className="bg-surface-light rounded-lg p-4 border border-gray-700 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Webhook size={18} className="text-gray-400 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-white font-medium text-sm truncate">{wh.url}</p>
+                      <p className="text-xs text-gray-500">
+                        Created {new Date(wh.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge variant={wh.is_active ? 'active' : 'idle'}>
+                      {wh.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                    <button
+                      onClick={() => toggleWebhookMutation.mutate({ id: wh.id, is_active: !wh.is_active })}
+                      className="text-gray-400 hover:text-white transition-colors"
+                      title={wh.is_active ? 'Disable' : 'Enable'}
+                    >
+                      {wh.is_active ? <ToggleRight size={20} className="text-teal-500" /> : <ToggleLeft size={20} />}
+                    </button>
+                    <button
+                      onClick={() => setViewDeliveriesId(viewDeliveriesId === wh.id ? null : wh.id)}
+                      className="text-gray-400 hover:text-white transition-colors"
+                      title="View deliveries"
+                    >
+                      <Eye size={16} />
+                    </button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => deleteWebhookMutation.mutate(wh.id)}
+                      disabled={deleteWebhookMutation.isPending}
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {wh.events.map((ev) => (
+                    <Badge key={ev} variant="info">{ev}</Badge>
+                  ))}
+                </div>
+                {viewDeliveriesId === wh.id && (
+                  <div className="mt-3 border-t border-gray-700 pt-3">
+                    <h5 className="text-white text-xs font-medium mb-2">Recent Deliveries</h5>
+                    {loadingDeliveries ? (
+                      <Spinner size="sm" />
+                    ) : deliveries.length === 0 ? (
+                      <p className="text-gray-500 text-xs">No deliveries yet.</p>
+                    ) : (
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                        {deliveries.map((d) => (
+                          <div key={d.id} className="flex items-center justify-between text-xs bg-gray-800/50 rounded px-3 py-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className={`w-2 h-2 rounded-full ${d.success ? 'bg-green-500' : 'bg-red-500'}`} />
+                              <span className="text-gray-300">{d.event}</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-gray-500">
+                              <span>{d.response_status ?? '—'}</span>
+                              <span>x{d.attempts}</span>
+                              <span>{new Date(d.created_at).toLocaleString()}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+            <Button onClick={() => setShowWebhookModal(true)} variant="secondary" size="sm">
+              <Plus size={16} className="mr-1.5" /> Add Webhook
+            </Button>
+          </div>
+        )}
+      </Card>
+
       <Card title="Account">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -315,6 +473,59 @@ export function Settings() {
           </div>
         </div>
       </Card>
+
+      <Modal open={showWebhookModal} onClose={() => { setShowWebhookModal(false); setWebhookError(''); }} title="Add Webhook">
+        <div className="space-y-4">
+          <Input
+            label="Webhook URL"
+            value={webhookUrl}
+            onChange={(e) => setWebhookUrl(e.target.value)}
+            placeholder="https://example.com/webhook"
+          />
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-gray-300">Events</label>
+            <div className="grid grid-cols-2 gap-2">
+              {WEBHOOK_EVENTS.map((ev) => (
+                <label key={ev} className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={webhookEvents.includes(ev)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setWebhookEvents([...webhookEvents, ev]);
+                      } else {
+                        setWebhookEvents(webhookEvents.filter((x) => x !== ev));
+                      }
+                    }}
+                    className="rounded border-gray-600 bg-gray-700 text-teal-500 focus:ring-teal-500"
+                  />
+                  {ev}
+                </label>
+              ))}
+            </div>
+          </div>
+          <Input
+            label="Secret (optional)"
+            type="password"
+            value={webhookSecret}
+            onChange={(e) => setWebhookSecret(e.target.value)}
+            placeholder="Used to sign payloads"
+          />
+          {webhookError && <p className="text-sm text-red-400">{webhookError}</p>}
+          <Button
+            onClick={() => createWebhookMutation.mutate({
+              url: webhookUrl,
+              events: webhookEvents,
+              secret: webhookSecret || undefined,
+            })}
+            disabled={!webhookUrl || webhookEvents.length === 0 || createWebhookMutation.isPending}
+            className="w-full"
+          >
+            {createWebhookMutation.isPending ? <Spinner size="sm" className="mr-2" /> : null}
+            Create Webhook
+          </Button>
+        </div>
+      </Modal>
 
       <Modal open={showConnectModal} onClose={() => { setShowConnectModal(false); setConnectError(''); }} title="Connect Provider">
         <div className="space-y-4">

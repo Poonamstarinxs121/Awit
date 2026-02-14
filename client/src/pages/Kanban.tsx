@@ -1,11 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiGet, apiPost, apiPatch } from '../api/client';
+import { apiGet, apiPost, apiPatch, apiDelete } from '../api/client';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Spinner } from '../components/ui/Spinner';
-import { Plus, Calendar, X, MessageSquare, Clock } from 'lucide-react';
+import { Plus, Calendar, X, MessageSquare, Clock, Paperclip, Download, Trash2, Upload } from 'lucide-react';
 import type { Task, TaskStatus, TaskPriority, Agent, Comment, Activity } from '../types';
 
 interface TaskWithAgents extends Task {
@@ -520,6 +520,76 @@ function TaskDetailModal({
     },
   });
 
+  interface Deliverable {
+    id: string;
+    task_id: string;
+    uploaded_by: string;
+    uploader_type: string;
+    original_filename: string;
+    mime_type: string;
+    file_size: number;
+    created_at: string;
+  }
+
+  const { data: deliverablesData, isLoading: deliverablesLoading } = useQuery({
+    queryKey: ['deliverables', taskId],
+    queryFn: () => apiGet<Deliverable[]>(`/v1/tasks/${taskId}/deliverables`),
+  });
+
+  const deliverables = deliverablesData ?? [];
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const token = localStorage.getItem('squidjob_token');
+      await fetch(`/api/v1/tasks/${taskId}/deliverables`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      queryClient.invalidateQueries({ queryKey: ['deliverables', taskId] });
+    } catch (err) {
+      console.error('Upload failed:', err);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const deleteDeliverableMutation = useMutation({
+    mutationFn: (deliverableId: string) =>
+      apiDelete(`/v1/tasks/${taskId}/deliverables/${deliverableId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deliverables', taskId] });
+    },
+  });
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const handleDownload = (deliverableId: string, filename: string) => {
+    const token = localStorage.getItem('squidjob_token');
+    const url = `/api/v1/deliverables/${deliverableId}/download`;
+    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => res.blob())
+      .then(blob => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+  };
+
   const handleSave = () => {
     const tags = editTags
       .split(',')
@@ -675,6 +745,67 @@ function TaskDetailModal({
                 {updateMutation.isPending ? <Spinner size="sm" className="mr-2" /> : null}
                 Save Changes
               </Button>
+            </div>
+
+            <div className="border-t border-gray-800 pt-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Paperclip size={16} className="text-gray-400" />
+                  <h3 className="text-sm font-semibold text-white">Deliverables</h3>
+                </div>
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    {uploading ? <Spinner size="sm" className="mr-1" /> : <Upload size={14} className="mr-1" />}
+                    Upload
+                  </Button>
+                </div>
+              </div>
+
+              {deliverablesLoading ? (
+                <div className="flex justify-center py-4"><Spinner size="sm" /></div>
+              ) : deliverables.length === 0 ? (
+                <p className="text-xs text-gray-500">No files attached</p>
+              ) : (
+                <div className="space-y-2">
+                  {deliverables.map((d) => (
+                    <div key={d.id} className="flex items-center justify-between p-2.5 rounded-lg bg-[#0A1628] border border-[#1E293B]">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-200 truncate">{d.original_filename}</p>
+                        <p className="text-[10px] text-gray-500">
+                          {formatFileSize(d.file_size)} · {relativeTime(d.created_at)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 ml-2 shrink-0">
+                        <button
+                          onClick={() => handleDownload(d.id, d.original_filename)}
+                          className="p-1.5 rounded hover:bg-[#1E293B] text-gray-400 hover:text-blue-400 transition-colors"
+                          title="Download"
+                        >
+                          <Download size={14} />
+                        </button>
+                        <button
+                          onClick={() => deleteDeliverableMutation.mutate(d.id)}
+                          className="p-1.5 rounded hover:bg-[#1E293B] text-gray-400 hover:text-red-400 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="border-t border-gray-800 pt-5 space-y-4">
