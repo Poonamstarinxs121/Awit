@@ -189,6 +189,7 @@ export interface AuthUser {
   role: UserRole;
   tenantId: string;
   tenantName?: string;
+  isSaasAdmin?: boolean;
 }
 
 export interface LoginResponse {

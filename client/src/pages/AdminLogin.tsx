@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 
-export function Login() {
+export function AdminLogin() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -27,8 +27,8 @@ export function Login() {
   }
 
   function fillDemoCredentials() {
-    setEmail('kaustubh@awitmedia.com');
-    setPassword('member123');
+    setEmail('admin@squidjob.com');
+    setPassword('admin123');
   }
 
   return (
@@ -38,11 +38,11 @@ export function Login() {
           <h1 className="text-3xl font-bold text-white">
             <span className="text-brand-accent">Squid</span>Job
           </h1>
-          <p className="text-gray-500 mt-1">Member Login</p>
+          <p className="text-gray-500 mt-1">Admin Portal</p>
         </div>
 
         <div className="bg-surface border border-gray-800 rounded-xl p-8">
-          <h2 className="text-xl font-semibold text-white mb-6">Sign in to SquidJob</h2>
+          <h2 className="text-xl font-semibold text-white mb-6">SaaS Admin Login</h2>
 
           {error && (
             <div className="mb-4 px-4 py-3 bg-danger/10 border border-danger/30 rounded-lg text-sm text-red-400">
@@ -54,7 +54,7 @@ export function Login() {
             <Input
               label="Email"
               type="email"
-              placeholder="you@company.com"
+              placeholder="admin@company.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -93,16 +93,16 @@ export function Login() {
               className="mt-4 bg-[#0F172A] border border-[#1E293B] rounded-lg p-3 cursor-pointer hover:border-blue-500 transition"
               onClick={fillDemoCredentials}
             >
-              <p className="text-sm font-medium text-white">Member Account</p>
-              <p className="text-xs text-gray-400 mt-1">Email: kaustubh@awitmedia.com</p>
-              <p className="text-xs text-gray-400">Password: member123</p>
+              <p className="text-sm font-medium text-white">Admin Account</p>
+              <p className="text-xs text-gray-400 mt-1">Email: admin@squidjob.com</p>
+              <p className="text-xs text-gray-400">Password: admin123</p>
             </div>
           </div>
         </div>
 
         <p className="mt-6 text-center text-sm text-gray-500">
-          Are you a SaaS admin?{' '}
-          <Link to="/admin/login" className="text-brand-accent hover:underline">
+          Are you a member?{' '}
+          <Link to="/login" className="text-brand-accent hover:underline">
             Login here
           </Link>
         </p>

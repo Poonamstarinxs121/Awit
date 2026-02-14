@@ -1,4 +1,6 @@
 import { pool } from './index.js';
+import bcrypt from 'bcryptjs';
+import { seedDefaultAgents } from '../services/agentService.js';
 
 export async function runMigrations(): Promise<void> {
   const client = await pool.connect();
@@ -249,6 +251,8 @@ export async function runMigrations(): Promise<void> {
     await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_standups_tenant_date ON standups(tenant_id, date)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_audit_log_tenant_time ON audit_log(tenant_id, created_at DESC)`);
 
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_saas_admin BOOLEAN NOT NULL DEFAULT false`);
+
     // Enable RLS on all tenant-scoped tables
     const rlsTables = [
       'tenants', 'users', 'api_keys', 'agents', 'tasks', 'comments',
@@ -276,10 +280,52 @@ export async function runMigrations(): Promise<void> {
 
     await client.query('COMMIT');
     console.log('Migrations completed successfully');
+
+    await seedDemoUsers();
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Migration failed:', error);
     throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function seedDemoUsers(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    const existing = await client.query('SELECT COUNT(*)::int as count FROM users');
+    if (existing.rows[0].count > 0) {
+      console.log('Users already exist, skipping demo seed');
+      return;
+    }
+
+    await client.query('BEGIN');
+
+    const tenantResult = await client.query(
+      `INSERT INTO tenants (name, plan) VALUES ('Awit Media', 'starter') RETURNING id`
+    );
+    const tenantId = tenantResult.rows[0].id;
+
+    const adminHash = await bcrypt.hash('admin123', 10);
+    await client.query(
+      `INSERT INTO users (tenant_id, email, name, password_hash, role, is_saas_admin) VALUES ($1, $2, $3, $4, 'owner', true)`,
+      [tenantId, 'admin@squidjob.com', 'SquidJob Admin', adminHash]
+    );
+
+    const memberHash = await bcrypt.hash('member123', 10);
+    await client.query(
+      `INSERT INTO users (tenant_id, email, name, password_hash, role, is_saas_admin) VALUES ($1, $2, $3, $4, 'owner', false)`,
+      [tenantId, 'kaustubh@awitmedia.com', 'Kaustubh', memberHash]
+    );
+
+    await seedDefaultAgents(tenantId, client);
+
+    await client.query('COMMIT');
+    console.log('Demo users seeded successfully');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Demo seed failed:', error);
   } finally {
     client.release();
   }

@@ -29,7 +29,7 @@ router.post('/register', async (req: Request, res: Response) => {
       const passwordHash = await bcrypt.hash(password, 10);
 
       const userResult = await client.query(
-        `INSERT INTO users (tenant_id, email, name, password_hash, role) VALUES ($1, $2, $3, $4, 'owner') RETURNING id, role`,
+        `INSERT INTO users (tenant_id, email, name, password_hash, role, is_saas_admin) VALUES ($1, $2, $3, $4, 'owner', false) RETURNING id, role, is_saas_admin`,
         [tenantId, email, name, passwordHash]
       );
       const user = userResult.rows[0];
@@ -39,7 +39,7 @@ router.post('/register', async (req: Request, res: Response) => {
       await client.query('COMMIT');
 
       const token = jwt.sign(
-        { userId: user.id, tenantId, email, name, role: user.role },
+        { userId: user.id, tenantId, email, name, role: user.role, isSaasAdmin: user.is_saas_admin },
         JWT_SECRET,
         { expiresIn: '24h' }
       );
@@ -72,7 +72,7 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     const result = await pool.query(
-      `SELECT id, tenant_id, email, name, password_hash, role FROM users WHERE email = $1`,
+      `SELECT id, tenant_id, email, name, password_hash, role, is_saas_admin FROM users WHERE email = $1`,
       [email]
     );
 
@@ -90,7 +90,7 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     const token = jwt.sign(
-      { userId: user.id, tenantId: user.tenant_id, email: user.email, name: user.name, role: user.role },
+      { userId: user.id, tenantId: user.tenant_id, email: user.email, name: user.name, role: user.role, isSaasAdmin: user.is_saas_admin },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -107,7 +107,7 @@ router.get('/me', authMiddleware, async (req: Request, res: Response) => {
     const { userId, tenantId } = req.user!;
 
     const userResult = await pool.query(
-      `SELECT u.id, u.email, u.name, u.role, u.created_at, t.name as tenant_name
+      `SELECT u.id, u.email, u.name, u.role, u.created_at, u.is_saas_admin, t.name as tenant_name
        FROM users u JOIN tenants t ON u.tenant_id = t.id
        WHERE u.id = $1 AND u.tenant_id = $2`,
       [userId, tenantId]
@@ -128,6 +128,7 @@ router.get('/me', authMiddleware, async (req: Request, res: Response) => {
         tenantId,
         tenantName: user.tenant_name,
         createdAt: user.created_at,
+        isSaasAdmin: user.is_saas_admin,
       },
     });
   } catch (error) {
