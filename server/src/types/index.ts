@@ -184,5 +184,7 @@ export interface AuditLogEntry {
 export interface JwtPayload {
   userId: string;
   tenantId: string;
+  email: string;
+  name: string;
   role: UserRole;
 }

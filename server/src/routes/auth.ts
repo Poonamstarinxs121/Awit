@@ -2,7 +2,8 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { pool } from '../db/index.js';
-import { JWT_SECRET } from '../middleware/auth.js';
+import { JWT_SECRET, authMiddleware } from '../middleware/auth.js';
+import { seedDefaultAgents } from '../services/agentService.js';
 
 const router = Router();
 
@@ -33,10 +34,12 @@ router.post('/register', async (req: Request, res: Response) => {
       );
       const user = userResult.rows[0];
 
+      await seedDefaultAgents(tenantId, client);
+
       await client.query('COMMIT');
 
       const token = jwt.sign(
-        { userId: user.id, tenantId, role: user.role },
+        { userId: user.id, tenantId, email, name, role: user.role },
         JWT_SECRET,
         { expiresIn: '24h' }
       );
@@ -69,7 +72,7 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     const result = await pool.query(
-      `SELECT id, tenant_id, password_hash, role FROM users WHERE email = $1`,
+      `SELECT id, tenant_id, email, name, password_hash, role FROM users WHERE email = $1`,
       [email]
     );
 
@@ -87,7 +90,7 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     const token = jwt.sign(
-      { userId: user.id, tenantId: user.tenant_id, role: user.role },
+      { userId: user.id, tenantId: user.tenant_id, email: user.email, name: user.name, role: user.role },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -96,6 +99,40 @@ router.post('/login', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+router.get('/me', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { userId, tenantId } = req.user!;
+
+    const userResult = await pool.query(
+      `SELECT u.id, u.email, u.name, u.role, u.created_at, t.name as tenant_name
+       FROM users u JOIN tenants t ON u.tenant_id = t.id
+       WHERE u.id = $1 AND u.tenant_id = $2`,
+      [userId, tenantId]
+    );
+
+    if (userResult.rows.length === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    const user = userResult.rows[0];
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        tenantId,
+        tenantName: user.tenant_name,
+        createdAt: user.created_at,
+      },
+    });
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(500).json({ error: 'Failed to get user info' });
   }
 });
 
