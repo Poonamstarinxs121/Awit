@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { listAgents, createAgent, getAgent, updateAgent, getAgentStats } from '../services/agentService.js';
 import { executeAgentTurn, executeAgentTurnStream } from '../services/orchestrationEngine.js';
 import { getSessionHistory, clearSession } from '../services/sessionManager.js';
+import { triggerHeartbeat } from '../services/heartbeatService.js';
 
 const router = Router();
 
@@ -151,6 +152,17 @@ router.delete('/:id/history', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Clear history error:', error);
     res.status(500).json({ error: 'Failed to clear conversation history' });
+  }
+});
+
+router.post('/:id/heartbeat', async (req: Request, res: Response) => {
+  try {
+    const result = await triggerHeartbeat(req.user!.tenantId, req.params.id);
+    res.json({ message: result });
+  } catch (error: unknown) {
+    console.error('Heartbeat trigger error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to trigger heartbeat';
+    res.status(500).json({ error: errorMessage });
   }
 });
 

@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save, CheckCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Save, CheckCircle, AlertCircle, MessageSquare } from 'lucide-react';
 import { apiGet, apiPatch } from '../api/client';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Badge } from '../components/ui/Badge';
 import { Spinner } from '../components/ui/Spinner';
+import { AgentChat } from '../components/AgentChat';
 import type { Agent, AgentLevel, AgentStatus } from '../types';
 
 const AVATAR_COLORS = [
@@ -23,6 +24,7 @@ const statusConfig: Record<string, { variant: 'active' | 'idle' | 'error' | 'def
 };
 
 const TABS = [
+  { id: 'chat', label: 'Chat', icon: MessageSquare },
   { id: 'identity', label: 'Identity' },
   { id: 'soul', label: 'SOUL' },
   { id: 'instructions', label: 'Instructions' },
@@ -43,7 +45,7 @@ export function AgentDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<TabId>('identity');
+  const [activeTab, setActiveTab] = useState<TabId>('chat');
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const [form, setForm] = useState({
@@ -183,6 +185,10 @@ export function AgentDetail() {
           </button>
         ))}
       </div>
+
+      {activeTab === 'chat' && id && (
+        <AgentChat agentId={id} agentName={agent.name} />
+      )}
 
       {activeTab === 'identity' && (
         <Card>
@@ -324,7 +330,7 @@ export function AgentDetail() {
         </Card>
       )}
 
-      {activeTab !== 'stats' && (
+      {activeTab !== 'stats' && activeTab !== 'chat' && (
         <div className="flex items-center gap-4">
           <Button onClick={handleSave} disabled={mutation.isPending} size="lg">
             {mutation.isPending ? <Spinner size="sm" className="mr-2" /> : <Save size={18} className="mr-2" />}
