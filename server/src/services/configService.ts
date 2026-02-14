@@ -52,3 +52,18 @@ export async function getUsageStats(tenantId: string) {
   );
   return result.rows;
 }
+
+export async function getUsageByAgent(tenantId: string) {
+  const result = await pool.query(
+    `SELECT ur.agent_id, a.name as agent_name,
+            SUM(ur.tokens_in)::int as tokens_in, SUM(ur.tokens_out)::int as tokens_out,
+            SUM(ur.api_calls)::int as api_calls, SUM(ur.estimated_cost)::numeric as estimated_cost
+     FROM usage_records ur
+     LEFT JOIN agents a ON ur.agent_id = a.id AND a.tenant_id = ur.tenant_id
+     WHERE ur.tenant_id = $1 AND ur.date >= CURRENT_DATE - INTERVAL '30 days'
+     GROUP BY ur.agent_id, a.name
+     ORDER BY estimated_cost DESC`,
+    [tenantId]
+  );
+  return result.rows;
+}

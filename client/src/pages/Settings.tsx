@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Key, Trash2, Plus, LogOut } from 'lucide-react';
+import { Key, Trash2, Plus, LogOut, ChevronDown, ChevronUp } from 'lucide-react';
 import { apiGet, apiPost, apiDelete } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { Card } from '../components/ui/Card';
@@ -19,11 +19,36 @@ interface Provider {
   created_at?: string;
 }
 
+interface AgentUsage {
+  agent_id: string;
+  agent_name: string | null;
+  tokens_in: number;
+  tokens_out: number;
+  api_calls: number;
+  estimated_cost: number;
+}
+
 const planVariant: Record<string, 'info' | 'warning' | 'active'> = {
   starter: 'info',
   professional: 'warning',
   enterprise: 'active',
 };
+
+const AGENT_COLORS = [
+  'bg-teal-500',
+  'bg-blue-500',
+  'bg-purple-500',
+  'bg-amber-500',
+  'bg-rose-500',
+  'bg-emerald-500',
+  'bg-indigo-500',
+  'bg-orange-500',
+];
+
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
 export function Settings() {
   const { user, logout } = useAuth();
@@ -32,6 +57,7 @@ export function Settings() {
   const [newProvider, setNewProvider] = useState('openai');
   const [newApiKey, setNewApiKey] = useState('');
   const [connectError, setConnectError] = useState('');
+  const [showRawData, setShowRawData] = useState(false);
 
   const { data: providersData, isLoading: loadingProviders } = useQuery({
     queryKey: ['providers'],
@@ -41,6 +67,11 @@ export function Settings() {
   const { data: usageData, isLoading: loadingUsage } = useQuery({
     queryKey: ['usage'],
     queryFn: () => apiGet<{ usage: UsageRecord[] }>('/v1/config/usage'),
+  });
+
+  const { data: agentUsageData, isLoading: loadingAgentUsage } = useQuery({
+    queryKey: ['usage-by-agent'],
+    queryFn: () => apiGet<{ usage: AgentUsage[] }>('/v1/config/usage/by-agent'),
   });
 
   const connectMutation = useMutation({
@@ -61,6 +92,31 @@ export function Settings() {
 
   const providers = providersData?.providers ?? [];
   const usage = usageData?.usage ?? [];
+  const agentUsage = agentUsageData?.usage ?? [];
+
+  const dailyData = useMemo(() => {
+    return [...usage]
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map((row) => ({
+        date: row.date,
+        cost: Number(row.estimated_cost),
+        tokens_in: row.tokens_in,
+        tokens_out: row.tokens_out,
+        api_calls: row.api_calls,
+      }));
+  }, [usage]);
+
+  const maxCost = useMemo(() => Math.max(...dailyData.map((d) => d.cost), 0.0001), [dailyData]);
+
+  const totals = useMemo(() => {
+    const totalTokens = usage.reduce((s, r) => s + r.tokens_in + r.tokens_out, 0);
+    const totalCalls = usage.reduce((s, r) => s + r.api_calls, 0);
+    const totalCost = usage.reduce((s, r) => s + Number(r.estimated_cost), 0);
+    const avgDailyCost = usage.length > 0 ? totalCost / usage.length : 0;
+    return { totalTokens, totalCalls, totalCost, avgDailyCost };
+  }, [usage]);
+
+  const maxAgentCost = useMemo(() => Math.max(...agentUsage.map((a) => Number(a.estimated_cost)), 0.0001), [agentUsage]);
 
   return (
     <div className="space-y-6">
@@ -125,29 +181,119 @@ export function Settings() {
         ) : usage.length === 0 ? (
           <p className="text-gray-500 text-sm">No usage data yet</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-gray-400 text-left border-b border-gray-700">
-                  <th className="pb-2 font-medium">Date</th>
-                  <th className="pb-2 font-medium">Tokens In</th>
-                  <th className="pb-2 font-medium">Tokens Out</th>
-                  <th className="pb-2 font-medium">API Calls</th>
-                  <th className="pb-2 font-medium">Est. Cost</th>
-                </tr>
-              </thead>
-              <tbody>
-                {usage.map((row) => (
-                  <tr key={row.id} className="border-b border-gray-800 text-gray-300">
-                    <td className="py-2">{new Date(row.date).toLocaleDateString()}</td>
-                    <td className="py-2">{row.tokens_in.toLocaleString()}</td>
-                    <td className="py-2">{row.tokens_out.toLocaleString()}</td>
-                    <td className="py-2">{row.api_calls.toLocaleString()}</td>
-                    <td className="py-2">${row.estimated_cost.toFixed(4)}</td>
-                  </tr>
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-surface-light rounded-lg p-4 border border-gray-700">
+                <p className="text-gray-400 text-xs uppercase tracking-wider">Total Tokens</p>
+                <p className="text-white text-xl font-bold mt-1">{totals.totalTokens.toLocaleString()}</p>
+              </div>
+              <div className="bg-surface-light rounded-lg p-4 border border-gray-700">
+                <p className="text-gray-400 text-xs uppercase tracking-wider">API Calls</p>
+                <p className="text-white text-xl font-bold mt-1">{totals.totalCalls.toLocaleString()}</p>
+              </div>
+              <div className="bg-surface-light rounded-lg p-4 border border-gray-700">
+                <p className="text-gray-400 text-xs uppercase tracking-wider">Total Cost</p>
+                <p className="text-white text-xl font-bold mt-1">${totals.totalCost.toFixed(2)}</p>
+              </div>
+              <div className="bg-surface-light rounded-lg p-4 border border-gray-700">
+                <p className="text-gray-400 text-xs uppercase tracking-wider">Avg Daily Cost</p>
+                <p className="text-white text-xl font-bold mt-1">${totals.avgDailyCost.toFixed(2)}</p>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-white text-sm font-medium mb-3">Daily Cost (Last 30 Days)</h4>
+              <div className="flex items-end gap-1 h-48">
+                {dailyData.map((day, i) => (
+                  <div
+                    key={day.date}
+                    className="flex-1 bg-teal-500 rounded-t hover:bg-teal-400 transition-colors relative group cursor-pointer"
+                    style={{ height: `${(day.cost / maxCost) * 100}%`, minHeight: '2px' }}
+                  >
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block bg-gray-800 text-white text-xs p-2 rounded whitespace-nowrap z-10 shadow-lg border border-gray-700">
+                      <p className="font-medium">{formatDate(day.date)}</p>
+                      <p>Cost: ${day.cost.toFixed(4)}</p>
+                      <p>Tokens: {(day.tokens_in + day.tokens_out).toLocaleString()}</p>
+                      <p>Calls: {day.api_calls.toLocaleString()}</p>
+                    </div>
+                    {i % 5 === 0 && (
+                      <span className="absolute top-full mt-1 left-1/2 -translate-x-1/2 text-gray-500 text-[10px] whitespace-nowrap">
+                        {formatDate(day.date)}
+                      </span>
+                    )}
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+              <div className="h-5" />
+            </div>
+
+            {loadingAgentUsage ? (
+              <div className="flex justify-center py-4"><Spinner /></div>
+            ) : agentUsage.length > 0 && (
+              <div>
+                <h4 className="text-white text-sm font-medium mb-3">Per-Agent Breakdown</h4>
+                <div className="space-y-3">
+                  {agentUsage.map((agent, i) => {
+                    const color = AGENT_COLORS[i % AGENT_COLORS.length];
+                    const barWidth = (Number(agent.estimated_cost) / maxAgentCost) * 100;
+                    return (
+                      <div key={agent.agent_id} className="bg-surface-light rounded-lg p-4 border border-gray-700">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-white font-medium text-sm">{agent.agent_name || 'Unknown Agent'}</span>
+                          <span className="text-teal-400 text-sm font-medium">${Number(agent.estimated_cost).toFixed(4)}</span>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-2.5 mb-2">
+                          <div
+                            className={`${color} h-2.5 rounded-full transition-all`}
+                            style={{ width: `${Math.max(barWidth, 1)}%` }}
+                          />
+                        </div>
+                        <div className="flex gap-4 text-xs text-gray-400">
+                          <span>Tokens: {(agent.tokens_in + agent.tokens_out).toLocaleString()}</span>
+                          <span>API Calls: {agent.api_calls.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <button
+                onClick={() => setShowRawData(!showRawData)}
+                className="flex items-center gap-2 text-gray-400 hover:text-white text-sm transition-colors"
+              >
+                {showRawData ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                Raw Data
+              </button>
+              {showRawData && (
+                <div className="overflow-x-auto mt-3">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-gray-400 text-left border-b border-gray-700">
+                        <th className="pb-2 font-medium">Date</th>
+                        <th className="pb-2 font-medium">Tokens In</th>
+                        <th className="pb-2 font-medium">Tokens Out</th>
+                        <th className="pb-2 font-medium">API Calls</th>
+                        <th className="pb-2 font-medium">Est. Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {usage.map((row) => (
+                        <tr key={row.id} className="border-b border-gray-800 text-gray-300">
+                          <td className="py-2">{new Date(row.date).toLocaleDateString()}</td>
+                          <td className="py-2">{row.tokens_in.toLocaleString()}</td>
+                          <td className="py-2">{row.tokens_out.toLocaleString()}</td>
+                          <td className="py-2">{row.api_calls.toLocaleString()}</td>
+                          <td className="py-2">${Number(row.estimated_cost).toFixed(4)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </Card>

@@ -89,12 +89,13 @@ export async function executeAgentTurn(
   tenantId: string,
   agentId: string,
   userMessage: string,
-  sessionKey?: string
+  sessionKey?: string,
+  modelOverride?: { provider: string; model: string; temperature: number }
 ): Promise<AgentTurnResult> {
   const agent = await loadAgent(tenantId, agentId);
   const session = await getOrCreateSession(tenantId, agentId, sessionKey);
 
-  const modelConfig = {
+  const modelConfig = modelOverride || {
     provider: (agent.model_config?.provider as string) || 'openai',
     model: (agent.model_config?.model as string) || 'gpt-4o',
     temperature: (agent.model_config?.temperature as number) ?? 0.7,
@@ -116,6 +117,26 @@ export async function executeAgentTurn(
   ];
 
   if (needsCompaction(estimateTokenCount(conversationMessages))) {
+    try {
+      const flushPrompt: ChatMessage[] = [
+        { role: 'system', content: 'You are a memory extraction assistant. Extract important facts, decisions, preferences, and learnings from this conversation that should be remembered long-term. Output them as a concise bullet list. If nothing is worth remembering, respond with "NOTHING_TO_REMEMBER".' },
+        ...session.messages,
+        { role: 'user', content: 'Extract durable facts and learnings from the conversation above.' },
+      ];
+      const flushConfig = { provider: modelConfig.provider, model: modelConfig.provider === 'anthropic' ? 'claude-3-haiku-20240307' : 'gpt-4o-mini', temperature: 0.2 };
+      const flushResult = await chatCompletion(tenantId, agentId, flushPrompt, flushConfig);
+
+      if (!flushResult.content.includes('NOTHING_TO_REMEMBER') && flushResult.content.trim().length > 10) {
+        await pool.query(
+          `INSERT INTO memory_entries (tenant_id, agent_id, memory_type, content)
+           VALUES ($1, $2, 'long_term', $3)`,
+          [tenantId, agentId, flushResult.content]
+        );
+      }
+    } catch (flushError) {
+      console.error('Memory flush failed (non-fatal):', flushError instanceof Error ? flushError.message : flushError);
+    }
+
     await compactSession(
       session.id,
       session.messages,
@@ -182,12 +203,13 @@ export async function executeAgentTurnStream(
   agentId: string,
   userMessage: string,
   onChunk: (chunk: string) => void,
-  sessionKey?: string
+  sessionKey?: string,
+  modelOverride?: { provider: string; model: string; temperature: number }
 ): Promise<AgentTurnResult> {
   const agent = await loadAgent(tenantId, agentId);
   const session = await getOrCreateSession(tenantId, agentId, sessionKey);
 
-  const modelConfig = {
+  const modelConfig = modelOverride || {
     provider: (agent.model_config?.provider as string) || 'openai',
     model: (agent.model_config?.model as string) || 'gpt-4o',
     temperature: (agent.model_config?.temperature as number) ?? 0.7,

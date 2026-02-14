@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { listProviders, connectProvider, disconnectProvider, getUsageStats } from '../services/configService.js';
+import { listProviders, connectProvider, disconnectProvider, getUsageStats, getUsageByAgent } from '../services/configService.js';
 import { requireMinRole } from '../middleware/rbac.js';
 
 const router = Router();
@@ -52,6 +52,16 @@ router.get('/usage', requireMinRole('viewer'), async (req: Request, res: Respons
   } catch (error) {
     console.error('Get usage error:', error);
     res.status(500).json({ error: 'Failed to get usage stats' });
+  }
+});
+
+router.get('/usage/by-agent', requireMinRole('viewer'), async (req: Request, res: Response) => {
+  try {
+    const data = await getUsageByAgent(req.user!.tenantId);
+    res.json({ usage: data });
+  } catch (error) {
+    console.error('Get usage by agent error:', error);
+    res.status(500).json({ error: 'Failed to get usage by agent' });
   }
 });
 

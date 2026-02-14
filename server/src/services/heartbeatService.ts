@@ -13,6 +13,14 @@ interface HeartbeatAgent {
   model_config: Record<string, unknown>;
 }
 
+function getCheapModel(agentModelConfig: Record<string, unknown>): { provider: string; model: string; temperature: number } {
+  const provider = (agentModelConfig?.provider as string) || 'openai';
+  if (provider === 'anthropic') {
+    return { provider: 'anthropic', model: 'claude-3-haiku-20240307', temperature: 0.3 };
+  }
+  return { provider: 'openai', model: 'gpt-4o-mini', temperature: 0.3 };
+}
+
 async function getHeartbeatAgents(): Promise<HeartbeatAgent[]> {
   const result = await pool.query(
     `SELECT a.id, a.tenant_id, a.name, a.heartbeat_md, a.model_config
@@ -41,7 +49,8 @@ Instructions:
       agent.tenant_id,
       agent.id,
       heartbeatPrompt,
-      `heartbeat-${agent.id}`
+      `heartbeat-${agent.id}`,
+      getCheapModel(agent.model_config)
     );
 
     await logActivity(
@@ -71,6 +80,7 @@ async function runHeartbeatCycle(): Promise<void> {
     console.log(`Running heartbeat cycle for ${agents.length} agent(s)`);
 
     for (const agent of agents) {
+      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 9000));
       await runAgentHeartbeat(agent);
     }
   } catch (error) {
