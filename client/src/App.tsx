@@ -10,6 +10,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Kanban } from './pages/Kanban';
 import { Agents } from './pages/Agents';
 import { AgentDetail } from './pages/AgentDetail';
+import { AgentNew } from './pages/AgentNew';
 import { Standups } from './pages/Standups';
 import { Settings } from './pages/Settings';
 
@@ -41,6 +42,7 @@ export default function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/kanban" element={<Kanban />} />
               <Route path="/agents" element={<Agents />} />
+              <Route path="/agents/new" element={<AgentNew />} />
               <Route path="/agents/:id" element={<AgentDetail />} />
               <Route path="/standups" element={<Standups />} />
               <Route path="/settings" element={<Settings />} />

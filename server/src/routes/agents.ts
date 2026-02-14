@@ -3,6 +3,7 @@ import { listAgents, createAgent, getAgent, updateAgent, getAgentStats } from '.
 import { executeAgentTurn, executeAgentTurnStream } from '../services/orchestrationEngine.js';
 import { getSessionHistory, clearSession } from '../services/sessionManager.js';
 import { triggerHeartbeat } from '../services/heartbeatService.js';
+import { requestAgentCollaboration } from '../services/interAgentService.js';
 import { requireMinRole } from '../middleware/rbac.js';
 
 const router = Router();
@@ -14,6 +15,40 @@ router.get('/', requireMinRole('viewer'), async (req: Request, res: Response) =>
   } catch (error) {
     console.error('List agents error:', error);
     res.status(500).json({ error: 'Failed to list agents' });
+  }
+});
+
+router.post('/generate-soul', requireMinRole('operator'), async (req: Request, res: Response) => {
+  try {
+    const { name, role, tone, strengths, values, avoid, description } = req.body;
+    if (!name || !role) {
+      res.status(400).json({ error: 'Name and role are required' });
+      return;
+    }
+
+    const prompt = `Generate a SOUL.md identity document for an AI agent with these characteristics:
+Name: ${name}
+Role: ${role}
+${tone ? `Tone: ${tone}` : ''}
+${strengths ? `Key Strengths: ${strengths}` : ''}
+${values ? `Values/Principles: ${values}` : ''}
+${avoid ? `Topics to Avoid: ${avoid}` : ''}
+${description ? `Description: ${description}` : ''}
+
+Write a compelling, personality-rich SOUL.md in the style of a character brief. It should be 2-3 paragraphs that define who this agent IS - their personality, approach, beliefs about their craft, and working style. Write in second person ("You are..."). Make it specific and vivid, not generic. Do not include headers or markdown formatting.`;
+
+    const { chatCompletion } = await import('../services/llmProviderClient.js');
+    const messages = [
+      { role: 'system' as const, content: 'You are a specialist in crafting AI agent identity documents. Generate vivid, specific character briefs.' },
+      { role: 'user' as const, content: prompt }
+    ];
+
+    const result = await chatCompletion(req.user!.tenantId, 'system', messages, { provider: 'openai', model: 'gpt-4o-mini', temperature: 0.8 });
+    res.json({ soul_md: result.content });
+  } catch (error) {
+    const { name, role } = req.body;
+    const template = `You are ${name}, the ${role} for the team. You approach your work with dedication and expertise. You believe in delivering high-quality results and collaborating effectively with your teammates. You communicate clearly and are always looking for ways to improve your craft.`;
+    res.json({ soul_md: template });
   }
 });
 
@@ -153,6 +188,27 @@ router.delete('/:id/history', requireMinRole('operator'), async (req: Request, r
   } catch (error) {
     console.error('Clear history error:', error);
     res.status(500).json({ error: 'Failed to clear conversation history' });
+  }
+});
+
+router.post('/:id/collaborate', requireMinRole('operator'), async (req: Request, res: Response) => {
+  try {
+    const { targetAgentId, message, taskId } = req.body;
+    if (!targetAgentId || !message) {
+      res.status(400).json({ error: 'Missing targetAgentId or message' });
+      return;
+    }
+    const result = await requestAgentCollaboration(
+      req.user!.tenantId,
+      req.params.id,
+      targetAgentId,
+      message,
+      taskId
+    );
+    res.json(result);
+  } catch (error) {
+    console.error('Inter-agent collaboration error:', error);
+    res.status(500).json({ error: 'Failed to process collaboration request' });
   }
 });
 

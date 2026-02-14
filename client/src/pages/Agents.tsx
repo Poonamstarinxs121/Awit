@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Users } from 'lucide-react';
+import { Users, Plus } from 'lucide-react';
 import { apiGet } from '../api/client';
 import { Spinner } from '../components/ui/Spinner';
 import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 import type { Agent } from '../types';
 
 const AVATAR_COLORS = [
@@ -35,9 +36,15 @@ export function Agents() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Agent Roster</h1>
-        <p className="text-gray-400 mt-1">Your AI squad members</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Agent Roster</h1>
+          <p className="text-gray-400 mt-1">Your AI squad members</p>
+        </div>
+        <Button onClick={() => navigate('/agents/new')}>
+          <Plus size={18} className="mr-2" />
+          Create Agent
+        </Button>
       </div>
 
       {isLoading && (

@@ -4,6 +4,7 @@ import { logActivity } from '../services/activityService.js';
 import { requireMinRole } from '../middleware/rbac.js';
 import { emitTaskEvent, emitActivityEvent } from '../services/eventEmitter.js';
 import { parseMentionsAndNotify } from '../services/notificationService.js';
+import { subscribeToThread, notifyThreadSubscribers } from '../services/threadService.js';
 
 const router = Router();
 
@@ -105,6 +106,13 @@ router.post('/', requireMinRole('operator'), async (req: Request, res: Response)
         );
       }
     }
+
+    if (assignees && assignees.length > 0) {
+      for (const assigneeId of assignees) {
+        subscribeToThread(tenantId, task.id, assigneeId, 'agent').catch(() => {});
+      }
+    }
+    subscribeToThread(tenantId, task.id, req.user!.userId, 'user').catch(() => {});
 
     try { await emitTaskEvent(tenantId, 'created', task); } catch (err) { console.error('Emit task created event error:', err); }
 
@@ -272,6 +280,11 @@ router.post('/:id/comments', requireMinRole('operator'), async (req: Request, re
     await logActivity(tenantId, req.user!.userId, 'comment_added', 'task', taskId, {
       comment_id: comment.id, title: taskCheck.rows[0].title,
     });
+
+    await subscribeToThread(tenantId, taskId, req.user!.userId, 'user');
+
+    notifyThreadSubscribers(tenantId, taskId, req.user!.userId, content, comment.id)
+      .catch(err => console.error('Thread notification error:', err));
 
     parseMentionsAndNotify(tenantId, content, taskId, comment.id, req.user!.userId)
       .catch(err => console.error('Mention processing error:', err));

@@ -232,6 +232,18 @@ export async function runMigrations(): Promise<void> {
       )
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS thread_subscriptions (
+        id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id       UUID NOT NULL REFERENCES tenants(id),
+        task_id         UUID NOT NULL REFERENCES tasks(id),
+        subscriber_id   TEXT NOT NULL,
+        subscriber_type TEXT NOT NULL CHECK (subscriber_type IN ('agent', 'user')),
+        created_at      TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(tenant_id, task_id, subscriber_id)
+      )
+    `);
+
     // Indexes
     await client.query(`CREATE INDEX IF NOT EXISTS idx_users_tenant ON users(tenant_id)`);
     await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_api_keys_tenant_provider ON api_keys(tenant_id, provider)`);
@@ -250,6 +262,8 @@ export async function runMigrations(): Promise<void> {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON notifications(tenant_id, recipient_id, is_read)`);
     await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_standups_tenant_date ON standups(tenant_id, date)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_audit_log_tenant_time ON audit_log(tenant_id, created_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_thread_subs_task ON thread_subscriptions(tenant_id, task_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_thread_subs_subscriber ON thread_subscriptions(tenant_id, subscriber_id)`);
 
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_saas_admin BOOLEAN NOT NULL DEFAULT false`);
 
@@ -257,7 +271,8 @@ export async function runMigrations(): Promise<void> {
     const rlsTables = [
       'tenants', 'users', 'api_keys', 'agents', 'tasks', 'comments',
       'activities', 'sessions', 'memory_entries', 'deliverables',
-      'cron_jobs', 'usage_records', 'notifications', 'standups', 'audit_log'
+      'cron_jobs', 'usage_records', 'notifications', 'standups', 'audit_log',
+      'thread_subscriptions'
     ];
 
     for (const table of rlsTables) {

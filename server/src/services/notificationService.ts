@@ -1,6 +1,7 @@
 import { pool } from '../db/index.js';
 import { executeAgentTurn } from './orchestrationEngine.js';
 import { logActivity } from './activityService.js';
+import { subscribeToThread } from './threadService.js';
 
 export async function createNotification(
   tenantId: string,
@@ -104,6 +105,8 @@ Please respond helpfully to this mention. If they asked a question, answer it. I
        VALUES ($1, $2, $3, $4, $5)`,
       [tenantId, taskId, agentId, result.response, []]
     );
+
+    await subscribeToThread(tenantId, taskId, agentId, 'agent');
 
     await logActivity(tenantId, agentId, 'mention_response', 'task', taskId, {
       response_preview: result.response.slice(0, 200),
