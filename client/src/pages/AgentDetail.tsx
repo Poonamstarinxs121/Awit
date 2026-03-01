@@ -143,7 +143,7 @@ export function AgentDetail() {
   if (error || !agent) {
     return (
       <div className="space-y-4">
-        <button onClick={() => navigate('/agents')} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+        <button onClick={() => navigate('/agents')} className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors">
           <ArrowLeft size={18} /> Back to Agents
         </button>
         <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-red-400">
@@ -157,7 +157,7 @@ export function AgentDetail() {
 
   return (
     <div className="space-y-6">
-      <button onClick={() => navigate('/agents')} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+      <button onClick={() => navigate('/agents')} className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors">
         <ArrowLeft size={18} /> Back to Agents
       </button>
 
@@ -166,23 +166,23 @@ export function AgentDetail() {
           {agent.name.charAt(0).toUpperCase()}
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-white">{agent.name}</h1>
+          <h1 className="text-2xl font-bold text-text-primary">{agent.name}</h1>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-gray-400">{agent.role}</span>
+            <span className="text-text-secondary">{agent.role}</span>
             <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
           </div>
         </div>
       </div>
 
-      <div className="flex gap-1 overflow-x-auto border-b border-gray-800 pb-px">
+      <div className="flex gap-1 overflow-x-auto border-b border-border-default pb-px">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap rounded-t-lg transition-colors ${
               activeTab === tab.id
-                ? 'text-white bg-surface border border-gray-800 border-b-transparent -mb-px'
-                : 'text-gray-400 hover:text-gray-200'
+                ? 'text-text-primary bg-white border border-border-default border-b-transparent -mb-px'
+                : 'text-text-secondary hover:text-text-primary'
             }`}
           >
             {tab.label}
@@ -200,11 +200,11 @@ export function AgentDetail() {
             <Input label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             <Input label="Role" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} />
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-300">Level</label>
+              <label className="block text-sm font-medium text-text-secondary">Level</label>
               <select
                 value={form.level}
                 onChange={(e) => setForm({ ...form, level: e.target.value as AgentLevel })}
-                className="w-full px-4 py-2.5 bg-surface-light border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+                className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
               >
                 <option value="intern">Intern</option>
                 <option value="specialist">Specialist</option>
@@ -212,11 +212,11 @@ export function AgentDetail() {
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-300">Status</label>
+              <label className="block text-sm font-medium text-text-secondary">Status</label>
               <select
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value as AgentStatus })}
-                className="w-full px-4 py-2.5 bg-surface-light border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+                className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
               >
                 <option value="active">Active</option>
                 <option value="idle">Idle</option>
@@ -231,13 +231,13 @@ export function AgentDetail() {
       {activeTab === 'soul' && (
         <Card>
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-300">Agent Personality (SOUL)</label>
-            <p className="text-xs text-gray-500">Defines who this agent is - their personality, boundaries, and behavioral philosophy</p>
+            <label className="block text-sm font-medium text-text-secondary">Agent Personality (SOUL)</label>
+            <p className="text-xs text-text-muted">Defines who this agent is - their personality, boundaries, and behavioral philosophy</p>
             <textarea
               value={form.soul_md}
               onChange={(e) => setForm({ ...form, soul_md: e.target.value })}
               rows={16}
-              className="w-full px-4 py-3 bg-surface-light border border-gray-700 rounded-lg text-white font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
+              className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
               placeholder="# Agent SOUL&#10;&#10;Define the agent's personality..."
             />
           </div>
@@ -247,12 +247,12 @@ export function AgentDetail() {
       {activeTab === 'instructions' && (
         <Card>
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-300">Operating Instructions</label>
+            <label className="block text-sm font-medium text-text-secondary">Operating Instructions</label>
             <textarea
               value={form.agents_md}
               onChange={(e) => setForm({ ...form, agents_md: e.target.value })}
               rows={16}
-              className="w-full px-4 py-3 bg-surface-light border border-gray-700 rounded-lg text-white font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
+              className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
               placeholder="# Operating Instructions&#10;&#10;Define how the agent operates..."
             />
           </div>
@@ -262,12 +262,12 @@ export function AgentDetail() {
       {activeTab === 'capabilities' && (
         <Card>
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-300">Capabilities & Tools</label>
+            <label className="block text-sm font-medium text-text-secondary">Capabilities & Tools</label>
             <textarea
               value={form.tools_md}
               onChange={(e) => setForm({ ...form, tools_md: e.target.value })}
               rows={16}
-              className="w-full px-4 py-3 bg-surface-light border border-gray-700 rounded-lg text-white font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
+              className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
               placeholder="# Capabilities&#10;&#10;Define what tools the agent can use..."
             />
           </div>
@@ -277,13 +277,13 @@ export function AgentDetail() {
       {activeTab === 'heartbeat' && (
         <Card>
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-300">Heartbeat Checklist</label>
-            <p className="text-xs text-gray-500">Checked on every heartbeat interval</p>
+            <label className="block text-sm font-medium text-text-secondary">Heartbeat Checklist</label>
+            <p className="text-xs text-text-muted">Checked on every heartbeat interval</p>
             <textarea
               value={form.heartbeat_md}
               onChange={(e) => setForm({ ...form, heartbeat_md: e.target.value })}
               rows={16}
-              className="w-full px-4 py-3 bg-surface-light border border-gray-700 rounded-lg text-white font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
+              className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
               placeholder="# Heartbeat Checklist&#10;&#10;- [ ] Check for new tasks..."
             />
           </div>
@@ -304,7 +304,7 @@ export function AgentDetail() {
             <Input label="Provider" value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })} placeholder="openai" />
             <Input label="Model" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} placeholder="gpt-4o" />
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-300">Temperature</label>
+              <label className="block text-sm font-medium text-text-secondary">Temperature</label>
               <input
                 type="number"
                 min={0}
@@ -312,7 +312,7 @@ export function AgentDetail() {
                 step={0.1}
                 value={form.temperature}
                 onChange={(e) => setForm({ ...form, temperature: parseFloat(e.target.value) || 0 })}
-                className="w-full px-4 py-2.5 bg-surface-light border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+                className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
               />
             </div>
           </div>
@@ -324,20 +324,20 @@ export function AgentDetail() {
           {stats ? (
             <div className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-surface-light rounded-lg p-4 border border-gray-700">
-                  <p className="text-xs text-gray-400 uppercase tracking-wider">Completed</p>
+                <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+                  <p className="text-xs text-text-secondary uppercase tracking-wider">Completed</p>
                   <p className="text-2xl font-bold text-teal-400 mt-1">{stats.total_completed ?? 0}</p>
                 </div>
                 {stats.tasks_by_status && Object.entries(stats.tasks_by_status).map(([status, count]) => (
-                  <div key={status} className="bg-surface-light rounded-lg p-4 border border-gray-700">
-                    <p className="text-xs text-gray-400 uppercase tracking-wider">{status.replace('_', ' ')}</p>
-                    <p className="text-2xl font-bold text-white mt-1">{count as number}</p>
+                  <div key={status} className="bg-surface-light rounded-lg p-4 border border-border-default">
+                    <p className="text-xs text-text-secondary uppercase tracking-wider">{status.replace('_', ' ')}</p>
+                    <p className="text-2xl font-bold text-text-primary mt-1">{count as number}</p>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <p className="text-gray-500">No task stats available for this agent.</p>
+            <p className="text-text-muted">No task stats available for this agent.</p>
           )}
         </Card>
       )}

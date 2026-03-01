@@ -1,0 +1,210 @@
+import { useState } from 'react';
+import { X, Mail } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+interface HelpTopic {
+  id: string;
+  title: string;
+  emoji: string;
+  section: 'SETUP GUIDE' | 'USING YOUR SQUAD' | 'COMMON';
+  content: string;
+}
+
+const HELP_TOPICS: HelpTopic[] = [
+  {
+    id: 'welcome', title: 'Welcome', emoji: '👋', section: 'SETUP GUIDE',
+    content: `<h2>Welcome to SquidJob</h2><p>SquidJob is your AI-powered Mission Control — a platform that turns independent AI agents into a coordinated squad working for you 24/7.</p><h3>Your Setup</h3><table class="help-table"><thead><tr><th>Component</th><th>What It Does</th></tr></thead><tbody><tr><td>Telegram Bot</td><td>Your primary interface to message agents</td></tr><tr><td>Lead Agent (Oracle)</td><td>Coordinates the squad, delegates tasks</td></tr><tr><td>Specialist Agents</td><td>Content, research, design, analytics, and more</td></tr><tr><td>Dashboard</td><td>Mission Control for monitoring and managing</td></tr></tbody></table><h3>How It Works</h3><ol><li><strong>You message your bot</strong> — Give tasks, ask questions, share context</li><li><strong>Oracle coordinates</strong> — Routes work to the right specialist agents</li><li><strong>Agents collaborate</strong> — They share information and build on each other's work</li><li><strong>You review output</strong> — Check deliverables, give feedback, approve results</li></ol>`
+  },
+  {
+    id: 'before-you-start', title: 'Before You Start', emoji: '📋', section: 'SETUP GUIDE',
+    content: `<h2>Before You Start</h2><p>Make sure you have the following ready before setting up SquidJob:</p><h3>Prerequisites</h3><ul><li><strong>Claude Subscription</strong> — Claude Pro ($20/mo) or Max ($100/mo) at <a href="https://claude.ai" target="_blank">claude.ai</a></li><li><strong>Telegram Account</strong> — Free, available on all platforms</li><li><strong>Terminal Access</strong> — For running the setup token command</li><li><strong>Node.js Installed</strong> — Version 18 or higher (for the npx command)</li></ul><p>The entire setup takes about 5 minutes. Once connected, your squad runs autonomously.</p>`
+  },
+  {
+    id: 'create-bot', title: 'Create Your Bot', emoji: '🤖', section: 'SETUP GUIDE',
+    content: `<h2>Create Your Telegram Bot</h2><p>Creating a Telegram bot is free and takes about 60 seconds.</p><h3>Steps</h3><ol><li>Open Telegram and search for <code>@BotFather</code></li><li>Send <code>/newbot</code> to start the creation process</li><li>Choose a display name (e.g., "My AI Squad")</li><li>Choose a username ending in <code>_bot</code> (e.g., "myaisquad_bot")</li><li>BotFather will give you a token — copy it</li></ol><h3>Important Notes</h3><ul><li>The token looks like: <code>123456789:ABCdefGHIjklMNOpqrSTUvwxYZ</code></li><li>Keep your token secret — it gives full control of your bot</li><li>You can create multiple bots if needed</li></ul>`
+  },
+  {
+    id: 'connect-claude', title: 'Connect Claude', emoji: '🧠', section: 'SETUP GUIDE',
+    content: `<h2>Connect Claude</h2><p>SquidJob uses your Claude subscription to power AI agents. This keeps your data private and costs predictable.</p><h3>Get a Setup Token</h3><ol><li>Make sure you have Claude Pro ($20/mo) or Max ($100/mo)</li><li>Open your terminal</li><li>Run: <code>npx @anthropic-ai/claude-code setup-token</code></li><li>Your browser will open — click "Approve" to authorize</li><li>Copy the token from your terminal</li></ol><h3>Why Setup Token?</h3><p>The setup token uses your existing Claude subscription quota instead of per-API billing. This is significantly cheaper for heavy AI usage — a flat $20-100/mo vs potentially hundreds in API costs.</p>`
+  },
+  {
+    id: 'provisioning', title: 'Provisioning', emoji: '🚀', section: 'SETUP GUIDE',
+    content: `<h2>Provisioning</h2><p>After you click "Launch My Mission Control," the system sets up your dedicated AI environment.</p><h3>What Happens</h3><p>The provisioning process runs 11 steps in about 2 minutes:</p><ol><li><strong>Provisioning HQ</strong> — Creating your workspace</li><li><strong>Preparing environment</strong> — Setting up configuration</li><li><strong>Installing AI systems</strong> — Deploying orchestration</li><li><strong>Connecting Claude</strong> — Authenticating your subscription</li><li><strong>Linking Telegram</strong> — Connecting your bot</li><li><strong>Starting AI gateway</strong> — Bringing agents online</li><li><strong>Installing plugins</strong> — Memory, tracking, and more</li><li><strong>Configuring Mission Control</strong> — Setting up your dashboard</li><li><strong>Finalizing setup</strong> — Security hardening</li><li><strong>Creating checkpoint</strong> — Saving state for recovery</li><li><strong>Final activation</strong> — Launching your squad!</li></ol><h3>Troubleshooting</h3><p>If provisioning fails, try refreshing the page and running setup again. Your token and bot configuration are saved.</p>`
+  },
+  {
+    id: 'talk-to-lead', title: 'Talk to Your Lead', emoji: '💬', section: 'SETUP GUIDE',
+    content: `<h2>Talk to Your Lead Agent</h2><p>After setup, your first conversation with Oracle (the Lead Agent) is important. It helps Oracle understand your business and goals.</p><h3>Sample Onboarding Conversation</h3><ul><li><strong>You:</strong> "Hi! I run a digital marketing agency."</li><li><strong>Oracle:</strong> "Welcome! I'll coordinate your AI squad. Tell me more about your clients and services."</li><li><strong>You:</strong> "We do content marketing, SEO, and social media for SaaS companies."</li><li><strong>Oracle:</strong> "Perfect. I'll set up the Content Writer and SEO Analyst as your primary agents."</li></ul><h3>Tips</h3><table class="help-table"><thead><tr><th>Do</th><th>Don't</th></tr></thead><tbody><tr><td>Share your business context</td><td>Give vague instructions</td></tr><tr><td>Describe your typical projects</td><td>Expect perfection immediately</td></tr><tr><td>Mention your preferences</td><td>Skip the onboarding conversation</td></tr></tbody></table>`
+  },
+  {
+    id: 'quick-start', title: 'Quick Start', emoji: '⚡', section: 'USING YOUR SQUAD',
+    content: `<h2>Quick Start Guide</h2><p>Get productive in 5 steps:</p><ol><li><strong>Message your bot</strong> — Open Telegram and send your first message to your bot</li><li><strong>Give a task</strong> — "Write a blog post about AI in marketing" or "Research competitor pricing"</li><li><strong>Check progress</strong> — Visit the Dashboard to see task status and agent activity</li><li><strong>Give feedback</strong> — Review deliverables and provide comments directly in the task</li><li><strong>Daily check-in</strong> — Read your daily standup to see what your squad accomplished</li></ol><p>That's it! Your squad handles the rest autonomously.</p>`
+  },
+  {
+    id: 'your-squad', title: 'Your Squad', emoji: '👥', section: 'USING YOUR SQUAD',
+    content: `<h2>Your Squad</h2><h3>Lead Agent: Oracle</h3><p>Oracle is your primary point of contact. It receives your messages, understands context, and delegates work to specialist agents.</p><h3>Specialist Agents</h3><table class="help-table"><thead><tr><th>Agent</th><th>Role</th><th>Speciality</th></tr></thead><tbody><tr><td>Strategist</td><td>Planning</td><td>Strategy, roadmaps, competitive analysis</td></tr><tr><td>Scribe</td><td>Content</td><td>Writing, editing, blog posts, copy</td></tr><tr><td>Forge</td><td>Engineering</td><td>Technical implementation, code review</td></tr><tr><td>Detective</td><td>Research</td><td>Data analysis, market research</td></tr><tr><td>Architect</td><td>Design</td><td>UI/UX, wireframes, design systems</td></tr><tr><td>Scout</td><td>Discovery</td><td>Trend spotting, opportunities</td></tr><tr><td>Courier</td><td>Delivery</td><td>Report generation, deliverable packaging</td></tr><tr><td>Herald</td><td>Communication</td><td>Notifications, summaries, updates</td></tr><tr><td>Librarian</td><td>Knowledge</td><td>Documentation, memory management</td></tr></tbody></table><h3>How They Collaborate</h3><p>Agents can message each other, share context through the memory graph, and hand off tasks. Oracle orchestrates this automatically based on your requests.</p>`
+  },
+  {
+    id: 'communication-tips', title: 'Communication Tips', emoji: '🗣️', section: 'USING YOUR SQUAD',
+    content: `<h2>Communication Tips</h2><h3>Be Specific</h3><p>Instead of "write something about marketing," try "write a 1500-word blog post about email marketing best practices for B2B SaaS companies, targeting marketing managers."</p><h3>Share Context</h3><p>Give your agents background information. The more context they have, the better their output.</p><h3>Set Priorities</h3><p>Tell agents what's urgent vs. what can wait. Use priority levels (High, Medium, Low) when creating tasks.</p><h3>Give Feedback</h3><p>When an agent delivers something, provide specific feedback: "The intro is great, but the conclusion needs more actionable takeaways."</p><h3>Approve or Revise</h3><p>Use the task workflow to approve deliverables or request revisions. This helps agents learn your preferences.</p>`
+  },
+  {
+    id: 'tasks-workflow', title: 'Tasks & Workflow', emoji: '📋', section: 'USING YOUR SQUAD',
+    content: `<h2>Tasks & Workflow</h2><h3>Task Statuses</h3><table class="help-table"><thead><tr><th>Status</th><th>Meaning</th></tr></thead><tbody><tr><td>Inbox</td><td>New task, not yet assigned</td></tr><tr><td>Assigned</td><td>Given to an agent, not started</td></tr><tr><td>In Progress</td><td>Agent is actively working</td></tr><tr><td>Review</td><td>Work complete, needs your review</td></tr><tr><td>Done</td><td>Approved and completed</td></tr></tbody></table><h3>Creating Tasks</h3><p>You can create tasks by messaging your bot, through the Dashboard, or from the Mission Queue (Kanban board).</p><h3>Reviewing Deliverables</h3><p>When a task moves to Review, check the deliverables tab. You can download files, add comments, and either approve (move to Done) or request changes (move back to In Progress).</p>`
+  },
+  {
+    id: 'documents', title: 'Documents', emoji: '📄', section: 'USING YOUR SQUAD',
+    content: `<h2>Documents</h2><p>Documents are your squad's shared knowledge base.</p><h3>Document Types</h3><table class="help-table"><thead><tr><th>Type</th><th>Purpose</th><th>Example</th></tr></thead><tbody><tr><td>Deliverable</td><td>Output from tasks</td><td>Blog post, report, design spec</td></tr><tr><td>Brief</td><td>Task requirements</td><td>Project brief, creative brief</td></tr><tr><td>Research</td><td>Analysis & findings</td><td>Competitor analysis, market research</td></tr><tr><td>Protocol</td><td>Processes & workflows</td><td>Content approval process, brand guidelines</td></tr><tr><td>Checklist</td><td>Step-by-step guides</td><td>Launch checklist, QA checklist</td></tr><tr><td>Note</td><td>General documentation</td><td>Meeting notes, ideas, references</td></tr></tbody></table><h3>Standalone vs. Linked</h3><p>Documents can be standalone (not tied to a task) or linked to specific tasks. Linked documents appear in the task's deliverables section.</p><h3>How Agents Use Documents</h3><p>Agents reference documents when working on tasks. The more documentation you create, the better your agents understand your business.</p>`
+  },
+  {
+    id: 'settings', title: 'Settings', emoji: '⚙️', section: 'USING YOUR SQUAD',
+    content: `<h2>Settings</h2><h3>Workspace Configuration</h3><p>Manage your API providers, Telegram integration, webhooks, and standup delivery channels from the Settings page.</p><h3>Usage & Costs</h3><p>View your AI usage dashboard showing token consumption, costs per agent, and trends over time.</p><h3>Billing</h3><p>SquidJob uses a Bring Your Own Key (BYOK) model. Your AI costs come from your Claude subscription, not from SquidJob directly.</p><h3>Reset Workspace</h3><p>In the danger zone, you can reset your entire workspace. This deletes all agents, tasks, documents, and memories. Use with caution — this cannot be undone.</p>`
+  },
+  {
+    id: 'memory-graph', title: 'Memory Graph', emoji: '🧠', section: 'USING YOUR SQUAD',
+    content: `<h2>Memory Graph</h2><p>The Memory Graph is a visual map of everything your squad knows.</p><h3>What You'll See</h3><ul><li><strong>Nodes</strong> — Documents, memory entries, and key concepts</li><li><strong>Connections</strong> — Relationships between related information</li><li><strong>Clusters</strong> — Groups of related topics, shown by color</li></ul><h3>Building Better Memory</h3><p>Your agents build memory automatically as they work. You can improve it by:</p><ul><li>Providing detailed context in your messages</li><li>Creating documents with business knowledge</li><li>Giving feedback on deliverables</li><li>Sharing brand guidelines and preferences</li></ul><h3>Memory Over Time</h3><p>The memory graph grows and refines itself as you use SquidJob. After a few weeks, your agents will have deep understanding of your business.</p>`
+  },
+  {
+    id: 'squad-chat', title: 'Squad Chat', emoji: '💬', section: 'USING YOUR SQUAD',
+    content: `<h2>Squad Chat</h2><p>Squad Chat is your window into how agents communicate and coordinate.</p><h3>Task Comments vs. Squad Chat</h3><table class="help-table"><thead><tr><th>Feature</th><th>Task Comments</th><th>Squad Chat</th></tr></thead><tbody><tr><td>Scope</td><td>Specific to one task</td><td>General team-wide</td></tr><tr><td>Visibility</td><td>Task participants</td><td>Everyone</td></tr><tr><td>Purpose</td><td>Feedback & discussion</td><td>Coordination & updates</td></tr></tbody></table><h3>Why Watch It</h3><p>Squad Chat shows you how agents are thinking, what they're prioritizing, and how they're collaborating. It's useful for understanding your squad's workflow.</p><h3>Participating</h3><p>You can send messages in Squad Chat to broadcast information to all agents at once, like announcing a new priority or sharing company news.</p>`
+  },
+  {
+    id: 'usage-costs', title: 'Usage & Costs', emoji: '💰', section: 'USING YOUR SQUAD',
+    content: `<h2>Usage & Costs</h2><h3>How Billing Works</h3><p>SquidJob uses a Bring Your Own Key (BYOK) model:</p><ul><li><strong>SquidJob Platform</strong> — $99/month for the orchestration platform</li><li><strong>AI Costs</strong> — Covered by your Claude subscription ($20-100/mo)</li></ul><h3>Rate Limits</h3><p>Your Claude subscription has usage limits. Claude Pro allows moderate usage; Claude Max allows heavy usage. If you hit limits, agents will queue work and resume when quota refreshes.</p><h3>Usage Dashboard</h3><p>View token consumption, cost breakdowns, and per-agent usage in Settings → Usage & Costs.</p><h3>Optimization Strategies</h3><table class="help-table"><thead><tr><th>Strategy</th><th>Impact</th></tr></thead><tbody><tr><td>Use heartbeat scheduling</td><td>Reduces unnecessary API calls</td></tr><tr><td>Set clear task descriptions</td><td>Fewer revision cycles</td></tr><tr><td>Pause idle agents</td><td>Stops background token usage</td></tr><tr><td>Use session compaction</td><td>Keeps context windows efficient</td></tr></tbody></table>`
+  },
+  {
+    id: 'pause-control', title: 'Pause & Control', emoji: '⏸️', section: 'USING YOUR SQUAD',
+    content: `<h2>Pause & Control</h2><h3>Why Pause?</h3><p>Pausing stops agents from making autonomous API calls (heartbeats, cron jobs). This saves your Claude quota when you don't need active AI work.</p><h3>Global vs. Per-Agent</h3><ul><li><strong>Global Pause</strong> — Stops ALL agents at once. Use the pause button in the header.</li><li><strong>Per-Agent Pause</strong> — Stops a specific agent. Use the pause button on the agent's detail page.</li></ul><h3>What Stays Active</h3><p>Even when paused, agents will still respond to direct messages. Oracle (Lead Agent) always responds regardless of pause state.</p><h3>Vacation Mode</h3><p>Going on vacation? Use Global Pause to stop all autonomous work. Your squad will pick up right where they left off when you resume.</p>`
+  },
+  {
+    id: 'heartbeats', title: 'Heartbeats Explained', emoji: '💓', section: 'USING YOUR SQUAD',
+    content: `<h2>Heartbeats Explained</h2><h3>What Are Heartbeats?</h3><p>Heartbeats are periodic check-ins where agents review their tasks, process new information, and take autonomous actions without being prompted.</p><h3>Why Heartbeats?</h3><p>They allow agents to work asynchronously — checking on tasks, processing new data, and proactively completing work without you needing to ask.</p><h3>Staggered Scheduling</h3><p>Heartbeats are staggered so agents don't all fire at once:</p><ul><li>Oracle: Every 30 minutes</li><li>Strategist: Every 45 minutes</li><li>Other agents: Every 60 minutes</li></ul><h3>Async Work Pattern</h3><p>You give a task → Agent receives it → Next heartbeat processes it → You get a notification when complete. No need to wait or check manually.</p><h3>Immediate Responses</h3><p>Direct messages always get immediate responses. Heartbeats handle background/autonomous work.</p>`
+  },
+  {
+    id: 'common-scenarios', title: 'Common Scenarios', emoji: '🎯', section: 'COMMON',
+    content: `<h2>Common Scenarios</h2><h3>Urgent Request</h3><p>Message Oracle directly: "URGENT: I need a competitor analysis by end of day." Oracle will prioritize and delegate immediately.</p><h3>Output Not Right</h3><p>Add a comment on the task with specific feedback. Move the task back to "In Progress" and the agent will revise.</p><h3>Going on Vacation</h3><p>Use Global Pause from the header. Your squad stops all autonomous work. Resume when you're back.</p><h3>Need a New Agent</h3><p>Go to Agents → New Agent. Use the SoulCraft wizard to create a custom agent with specific skills and personality.</p><h3>Something Broken</h3><p>Try Restart Gateway first (Settings menu). If issues persist, check the Help Center or contact support.</p><h3>Want to Start Over</h3><p>Use Reset Workspace in Settings → Danger Zone. This resets everything and takes you back to the setup wizard.</p>`
+  },
+  {
+    id: 'best-practices', title: 'Best Practices', emoji: '⭐', section: 'COMMON',
+    content: `<h2>Best Practices</h2><h3>Start with One Project</h3><p>Don't try to do everything at once. Start with one project, learn the workflow, then expand.</p><h3>Document Everything</h3><p>Create documents for brand guidelines, processes, and preferences. Better documentation = better AI output.</p><h3>Daily Check-in</h3><p>Spend 5 minutes each morning reading your daily standup. It keeps you informed without micromanaging.</p><h3>Scale Gradually</h3><table class="help-table"><thead><tr><th>Week</th><th>Focus</th></tr></thead><tbody><tr><td>Week 1</td><td>One project, learn the basics</td></tr><tr><td>Week 2</td><td>Add a second project, customize agents</td></tr><tr><td>Week 3</td><td>Set up cron jobs and automation</td></tr><tr><td>Week 4</td><td>Full autonomy, optimize costs</td></tr></tbody></table><h3>Let Them Learn</h3><p>Agents get better over time as they build memory of your preferences. Be patient in the first few days.</p><h3>Trust the Process</h3><table class="help-table"><thead><tr><th>Phase</th><th>What to Expect</th></tr></thead><tbody><tr><td>Days 1-3</td><td>Agents learning your style, some revisions needed</td></tr><tr><td>Days 4-7</td><td>Output quality improves, fewer revisions</td></tr><tr><td>Week 2+</td><td>Agents work autonomously with high accuracy</td></tr></tbody></table>`
+  },
+  {
+    id: 'browser-setup', title: 'Browser Setup', emoji: '🌐', section: 'COMMON',
+    content: `<h2>Browser Setup</h2><h3>Web Search vs. Web Browsing</h3><table class="help-table"><thead><tr><th>Capability</th><th>Web Search</th><th>Web Browsing</th></tr></thead><tbody><tr><td>What it does</td><td>Searches the web for information</td><td>Opens and reads specific web pages</td></tr><tr><td>Use case</td><td>Research, fact-checking, trends</td><td>Reading articles, scraping data</td></tr><tr><td>Setup needed</td><td>API key (optional)</td><td>Browser plugin install</td></tr></tbody></table><h3>Installing Browser Tools</h3><p>Browser tools are optional add-ons that give agents the ability to read web pages. Contact support for installation help.</p>`
+  },
+  {
+    id: 'web-search', title: 'Web Search', emoji: '🔍', section: 'COMMON',
+    content: `<h2>Web Search</h2><h3>What Agents Can Search</h3><p>With web search enabled, agents can find current information, research competitors, check facts, and stay up-to-date.</p><h3>Adding a Search API Key</h3><p>Go to Settings → API Providers → Add a Brave Search API key for web search capabilities.</p><h3>Pricing</h3><table class="help-table"><thead><tr><th>Plan</th><th>Searches/month</th><th>Cost</th></tr></thead><tbody><tr><td>Free</td><td>2,000</td><td>$0</td></tr><tr><td>Basic</td><td>20,000</td><td>$5/mo</td></tr><tr><td>Pro</td><td>100,000</td><td>$15/mo</td></tr></tbody></table><h3>How Agents Use Search</h3><p>Agents automatically search when they need current information. You can also explicitly ask: "Search for the latest trends in AI marketing."</p>`
+  },
+  {
+    id: 'updates-versions', title: 'Updates & Versions', emoji: '🔄', section: 'COMMON',
+    content: `<h2>Updates & Versions</h2><h3>System Management</h3><p>SquidJob is continuously updated with new features, bug fixes, and improvements. Updates are applied automatically — no action needed from you.</p><h3>Model Selection</h3><p>SquidJob supports multiple AI providers:</p><ul><li><strong>Anthropic Claude</strong> — Primary provider (recommended)</li><li><strong>OpenAI GPT</strong> — Alternative provider</li><li><strong>Google Gemini</strong> — Budget-friendly option</li><li><strong>Mistral</strong> — European alternative</li><li><strong>Groq</strong> — Fast inference option</li></ul><p>Configure providers in Settings → API Providers. Each agent can be assigned a different model based on their needs.</p>`
+  },
+  {
+    id: 'getting-help', title: 'Getting Help', emoji: '🆘', section: 'COMMON',
+    content: `<h2>Getting Help</h2><h3>Support</h3><p>Email us at <a href="mailto:support@squidjob.com">support@squidjob.com</a> for any issues not covered here.</p><h3>Common Issues</h3><table class="help-table"><thead><tr><th>Problem</th><th>Solution</th></tr></thead><tbody><tr><td>Bot not responding</td><td>Check Telegram connection in Settings, verify bot token</td></tr><tr><td>Agent stuck</td><td>Restart the agent from its detail page, or Restart Gateway</td></tr><tr><td>Dashboard won't load</td><td>Clear browser cache, try incognito mode</td></tr><tr><td>Something broke</td><td>Try Restart Gateway first, then contact support</td></tr></tbody></table><h3>Self-Service Troubleshooting</h3><ol><li>Check the agent's status (Active, Idle, Error)</li><li>Review recent activity for error messages</li><li>Try Restart Gateway from Settings</li><li>If needed, Reset Workspace as last resort</li></ol><h3>Feature Requests</h3><p>We'd love to hear your ideas! Send feature requests to <a href="mailto:feedback@squidjob.com">feedback@squidjob.com</a>.</p>`
+  },
+];
+
+const SECTIONS = [
+  { key: 'SETUP GUIDE' as const, label: 'SETUP GUIDE' },
+  { key: 'USING YOUR SQUAD' as const, label: 'USING YOUR SQUAD' },
+  { key: 'COMMON' as const, label: 'COMMON' },
+];
+
+export function HelpCenter() {
+  const navigate = useNavigate();
+  const [activeTopicId, setActiveTopicId] = useState(HELP_TOPICS[0].id);
+
+  const activeTopic = HELP_TOPICS.find((t) => t.id === activeTopicId) || HELP_TOPICS[0];
+  const activeIndex = HELP_TOPICS.findIndex((t) => t.id === activeTopicId);
+
+  return (
+    <div className="flex h-[calc(100vh-8rem)] gap-6">
+      <aside className="w-[260px] shrink-0 bg-white border border-border-default rounded-xl overflow-y-auto">
+        <div className="px-4 py-4 border-b border-border-default">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">📖</span>
+            <div>
+              <h2 className="text-sm font-bold text-text-primary">Help Center</h2>
+              <p className="text-[10px] text-text-muted">Everything you need to know</p>
+            </div>
+          </div>
+        </div>
+
+        <nav className="p-3 space-y-4">
+          {SECTIONS.map((section) => (
+            <div key={section.key}>
+              <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                {section.label}
+              </p>
+              <div className="space-y-0.5 mt-1">
+                {HELP_TOPICS.filter((t) => t.section === section.key).map((topic) => (
+                  <button
+                    key={topic.id}
+                    onClick={() => setActiveTopicId(topic.id)}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-sm transition-colors ${
+                      activeTopicId === topic.id
+                        ? 'bg-brand-accent/10 text-brand-accent font-medium'
+                        : 'text-text-secondary hover:text-text-primary hover:bg-surface-light'
+                    }`}
+                  >
+                    <span className="text-sm">{topic.emoji}</span>
+                    <span className="truncate">{topic.title}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        <div className="px-4 py-3 border-t border-border-default">
+          <a
+            href="mailto:support@squidjob.com"
+            className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
+          >
+            <Mail size={14} />
+            Email Support
+          </a>
+        </div>
+      </aside>
+
+      <div className="flex-1 bg-white border border-border-default rounded-xl overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-border-default px-6 py-3 flex items-center justify-between z-10">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">{activeTopic.emoji}</span>
+            <h1 className="text-lg font-bold text-text-primary">{activeTopic.title}</h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-text-muted">{activeIndex + 1} of {HELP_TOPICS.length}</span>
+          </div>
+        </div>
+
+        <div
+          className="px-8 py-6 prose prose-sm max-w-none help-content"
+          dangerouslySetInnerHTML={{ __html: activeTopic.content }}
+        />
+
+        <div className="px-8 py-4 border-t border-border-default flex items-center justify-between">
+          <button
+            onClick={() => {
+              if (activeIndex > 0) setActiveTopicId(HELP_TOPICS[activeIndex - 1].id);
+            }}
+            disabled={activeIndex === 0}
+            className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            ← Previous
+          </button>
+          <button
+            onClick={() => {
+              if (activeIndex < HELP_TOPICS.length - 1) setActiveTopicId(HELP_TOPICS[activeIndex + 1].id);
+            }}
+            disabled={activeIndex === HELP_TOPICS.length - 1}
+            className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            Next →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -38,8 +38,8 @@ export function Agents() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Agent Roster</h1>
-          <p className="text-gray-400 mt-1">Your AI squad members</p>
+          <h1 className="text-2xl font-bold text-text-primary">Agent Roster</h1>
+          <p className="text-text-secondary mt-1">Your AI squad members</p>
         </div>
         <Button onClick={() => navigate('/agents/new')}>
           <Plus size={18} className="mr-2" />
@@ -60,10 +60,10 @@ export function Agents() {
       )}
 
       {!isLoading && !error && agents.length === 0 && (
-        <div className="bg-surface rounded-xl border border-gray-800 p-12 text-center">
-          <Users className="mx-auto mb-4 text-gray-500" size={48} />
-          <p className="text-gray-400 text-lg">No agents in the squad yet.</p>
-          <p className="text-gray-500 mt-1">Create your first agent to get started.</p>
+        <div className="bg-white rounded-xl border border-border-default p-12 text-center">
+          <Users className="mx-auto mb-4 text-text-muted" size={48} />
+          <p className="text-text-secondary text-lg">No agents in the squad yet.</p>
+          <p className="text-text-muted mt-1">Create your first agent to get started.</p>
         </div>
       )}
 
@@ -78,7 +78,7 @@ export function Agents() {
               <div
                 key={agent.id}
                 onClick={() => navigate(`/agents/${agent.id}`)}
-                className="bg-surface rounded-xl border border-gray-800 p-5 cursor-pointer hover:border-gray-600 transition-colors group"
+                className="bg-white rounded-xl border border-border-default p-5 cursor-pointer hover:border-brand-accent/40 transition-colors group"
               >
                 <div className="flex items-start gap-4">
                   <div className={`${avatarColor} w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0`}>
@@ -86,14 +86,14 @@ export function Agents() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className={`text-white font-semibold text-lg group-hover:text-blue-400 transition-colors ${agent.status === 'disabled' ? 'line-through opacity-60' : ''}`}>
+                      <h3 className={`text-text-primary font-semibold text-lg group-hover:text-brand-accent transition-colors ${agent.status === 'disabled' ? 'line-through opacity-60' : ''}`}>
                         {agent.name}
                       </h3>
                       {agent.is_default && (
-                        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded">Default</span>
+                        <span className="text-xs text-text-muted bg-surface-light px-2 py-0.5 rounded">Default</span>
                       )}
                     </div>
-                    <p className="text-gray-400 text-sm mt-0.5 truncate">{agent.role}</p>
+                    <p className="text-text-secondary text-sm mt-0.5 truncate">{agent.role}</p>
                     <div className="flex items-center gap-2 mt-3 flex-wrap">
                       <Badge variant={status.variant}>
                         <span className={`w-1.5 h-1.5 rounded-full ${status.dot} mr-1.5`} />

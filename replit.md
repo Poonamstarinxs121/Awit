@@ -5,7 +5,7 @@ SquidJob is a multi-tenant SaaS platform that orchestrates independent AI agents
 
 **Company**: Awit Media Private Limited
 **Product**: SquidJob.com
-**Current State**: Phase 2 complete - full-featured agent orchestration platform
+**Current State**: Phase 3 - UI/UX overhaul complete (warm light theme + new pages)
 
 ## Architecture
 
@@ -169,15 +169,31 @@ SquidJob is a multi-tenant SaaS platform that orchestrates independent AI agents
 - **Tenant Member**: kaustubh@awitmedia.com / member123 (login at /login)
 
 ## User Preferences
-- Dark theme SaaS aesthetic
-- Deep ocean blue primary (#0A1628), teal for success (#14B8A6), blue accent (#2563EB)
+- Warm light theme (MissionControlHQ-inspired)
+- Cream background (#FAF7F2), gold accent (#C4943D), purple for Telegram (#7C3AED)
+- White cards with warm borders (#E5E1D8), subtle shadows
 - Monorepo structure with separate server/ and client/ directories
 
+## New Pages (Phase 3)
+- **Setup Wizard** (`/setup`) - Guided onboarding: connect Telegram bot + Claude token
+- **Provisioning** (`/setup/provisioning`) - Animated 11-step progress page
+- **Documents** (`/documents`) - Shared knowledge base with 6 document types
+- **Squad Chat** (`/squad-chat`) - Internal team communication
+- **Memory Graph** (`/memory-graph`) - Visual memory map with nodes/connections/clusters
+- **Help Center** (`/help`) - 23-topic documentation with sidebar navigation
+- **Subscription** (`/subscription`) - Plan details and billing management
+
 ## Recent Changes
-- 2026-02-14: Phase 2 complete - All 20 features built:
-  - RBAC enforcement, cron scheduler, auto-standups, usage dashboard, WebSocket real-time
-  - Staggered heartbeats, 5 additional agents, @mention notifications, inter-agent messaging
-  - Thread subscriptions, SoulCraft wizard, QMD hybrid memory search, cron job UI
-  - Google Gemini/Mistral/Groq providers, deliverable storage, webhook system
-  - Telegram integration, standup delivery channels, token budget allocator, agent analytics
+- 2026-03-01: Phase 3 - Complete UI/UX overhaul:
+  - Switched from dark navy to warm cream/beige light theme
+  - All pages migrated to light theme (Dashboard, Kanban, Agents, AgentDetail, Settings, Standups, AgentBuilder)
+  - New PublicNav component for auth pages
+  - Setup Wizard with guided bot connection + Claude token flow
+  - Provisioning progress page with animated 11-step sequence
+  - Help Center with 23 topics organized in 3 sections
+  - Documents, Squad Chat, Memory Graph pages (shells)
+  - Subscription page with plan details
+  - Backend: setup routes, settings routes (pause/resume, restart gateway, reset workspace)
+  - Sidebar redesigned with 4 nav groups (Main, Knowledge, Communication, System)
+- 2026-02-14: Phase 2 complete - All 20 features built
 - 2026-02-14: Phase 1 MVP - full project structure, database, auth, API, frontend, agent chat

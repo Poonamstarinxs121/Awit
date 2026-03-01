@@ -71,7 +71,7 @@ export function NotificationBell() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={handleToggle}
-        className="text-gray-400 hover:text-white transition-colors relative"
+        className="text-text-secondary hover:text-text-primary transition-colors relative"
         title="Notifications"
       >
         <Bell size={18} />
@@ -83,14 +83,14 @@ export function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-surface-sidebar border border-gray-700 rounded-lg shadow-xl z-50 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
-            <h3 className="text-sm font-semibold text-white">Notifications</h3>
+        <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-border-default rounded-lg shadow-xl z-50 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border-default">
+            <h3 className="text-sm font-semibold text-text-primary">Notifications</h3>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
                 <button
                   onClick={() => markReadMutation.mutate(undefined)}
-                  className="text-xs text-brand-accent hover:text-brand-accent/80 transition-colors flex items-center gap-1"
+                  className="text-xs text-brand-accent hover:text-brand-accent-hover transition-colors flex items-center gap-1"
                   disabled={markReadMutation.isPending}
                 >
                   <Check size={12} />
@@ -99,7 +99,7 @@ export function NotificationBell() {
               )}
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-text-muted hover:text-text-primary transition-colors"
               >
                 <X size={14} />
               </button>
@@ -108,14 +108,14 @@ export function NotificationBell() {
 
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-gray-500 text-sm">
+              <div className="px-4 py-8 text-center text-text-muted text-sm">
                 No notifications yet
               </div>
             ) : (
               notifications.map((notif) => (
                 <div
                   key={notif.id}
-                  className={`px-4 py-3 border-b border-gray-800 last:border-b-0 hover:bg-surface-light transition-colors ${
+                  className={`px-4 py-3 border-b border-border-default last:border-b-0 hover:bg-surface-light transition-colors ${
                     !notif.is_read ? 'bg-brand-accent/5' : ''
                   }`}
                 >
@@ -124,8 +124,8 @@ export function NotificationBell() {
                       <span className="w-2 h-2 bg-brand-accent rounded-full mt-1.5 shrink-0" />
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-gray-200 leading-snug">{notif.message}</p>
-                      <p className="text-xs text-gray-500 mt-1">{timeAgo(notif.created_at)}</p>
+                      <p className="text-sm text-text-primary leading-snug">{notif.message}</p>
+                      <p className="text-xs text-text-muted mt-1">{timeAgo(notif.created_at)}</p>
                     </div>
                   </div>
                 </div>

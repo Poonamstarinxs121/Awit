@@ -3,10 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
-import { Spinner } from '../components/ui/Spinner';
 import { Users, ListTodo, CheckCircle, Activity } from 'lucide-react';
 import { apiGet } from '../api/client';
-import type { Agent, Activity as ActivityType, TaskStatus, AgentStatus } from '../types';
+import type { Agent, Activity as ActivityType, TaskStatus } from '../types';
 
 function relativeTime(dateStr: string): string {
   const now = Date.now();
@@ -76,10 +75,10 @@ export function Dashboard() {
   const totalActivity = activities.length;
 
   const stats = [
-    { label: 'Total Agents', value: totalAgents, icon: Users, color: 'text-blue-400' },
-    { label: 'Active Tasks', value: activeTasks, icon: ListTodo, color: 'text-amber-400' },
-    { label: 'Completed', value: completedToday, icon: CheckCircle, color: 'text-teal-400' },
-    { label: 'Activity', value: totalActivity, icon: Activity, color: 'text-purple-400' },
+    { label: 'Total Agents', value: totalAgents, icon: Users, color: 'text-blue-600' },
+    { label: 'Active Tasks', value: activeTasks, icon: ListTodo, color: 'text-amber-600' },
+    { label: 'Completed', value: completedToday, icon: CheckCircle, color: 'text-green-600' },
+    { label: 'Activity', value: totalActivity, icon: Activity, color: 'text-purple-600' },
   ];
 
   const today = new Date().toLocaleDateString('en-US', {
@@ -92,11 +91,11 @@ export function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">
+        <h1 className="text-2xl font-bold text-text-primary">
           Welcome back, {user?.name || 'Commander'}
         </h1>
-        <p className="text-gray-400 mt-1">
-          {user?.tenantName && <span className="text-gray-300">{user.tenantName}</span>}
+        <p className="text-text-secondary mt-1">
+          {user?.tenantName && <span className="text-text-primary font-medium">{user.tenantName}</span>}
           {user?.tenantName && <span className="mx-2">·</span>}
           {today}
         </p>
@@ -107,8 +106,8 @@ export function Dashboard() {
           <Card key={stat.label}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-400">{stat.label}</p>
-                <p className="text-3xl font-bold text-white mt-1">{stat.value}</p>
+                <p className="text-sm text-text-secondary">{stat.label}</p>
+                <p className="text-3xl font-bold text-text-primary mt-1">{stat.value}</p>
               </div>
               <stat.icon size={32} className={`${stat.color} opacity-60`} />
             </div>
@@ -119,14 +118,14 @@ export function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card title="Agent Status">
           {agents.length === 0 ? (
-            <p className="text-gray-500 text-sm">No agents configured</p>
+            <p className="text-text-muted text-sm">No agents configured</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {agents.map((agent) => (
                 <button
                   key={agent.id}
                   onClick={() => navigate(`/agents/${agent.id}`)}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-surface-light/50 hover:bg-surface-light border border-gray-800 transition-colors text-left w-full"
+                  className="flex items-center gap-3 p-3 rounded-lg bg-surface-light/50 hover:bg-surface-light border border-border-default transition-colors text-left w-full"
                 >
                   <div className="w-9 h-9 rounded-full bg-brand-accent/20 flex items-center justify-center shrink-0">
                     <span className="text-brand-accent font-semibold text-sm">
@@ -134,14 +133,14 @@ export function Dashboard() {
                     </span>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-white truncate">{agent.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{agent.role}</p>
+                    <p className="text-sm font-medium text-text-primary truncate">{agent.name}</p>
+                    <p className="text-xs text-text-secondary truncate">{agent.role}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
                     <Badge variant={statusBadgeVariant[agent.status as string] || 'default'}>
                       {agent.status}
                     </Badge>
-                    <span className="text-[10px] text-gray-500 uppercase">{agent.level}</span>
+                    <span className="text-[10px] text-text-muted uppercase">{agent.level}</span>
                   </div>
                 </button>
               ))}
@@ -155,10 +154,10 @@ export function Dashboard() {
               {TASK_STATUSES.map((ts) => (
                 <div
                   key={ts.key}
-                  className="text-center p-3 rounded-lg bg-surface-light/50 border border-gray-800"
+                  className="text-center p-3 rounded-lg bg-surface-light border border-border-default"
                 >
-                  <p className="text-2xl font-bold text-white">{taskCountByStatus[ts.key] ?? 0}</p>
-                  <p className="text-[10px] text-gray-400 uppercase mt-1 leading-tight">{ts.label}</p>
+                  <p className="text-2xl font-bold text-text-primary">{taskCountByStatus[ts.key] ?? 0}</p>
+                  <p className="text-[10px] text-text-secondary uppercase mt-1 leading-tight">{ts.label}</p>
                 </div>
               ))}
             </div>
@@ -169,11 +168,11 @@ export function Dashboard() {
                   const total = taskStats.reduce((s, st) => s + st.count, 0);
                   if (total === 0 || count === 0) return null;
                   const colors: Record<string, string> = {
-                    inbox: 'bg-gray-500',
+                    inbox: 'bg-gray-400',
                     assigned: 'bg-blue-500',
                     in_progress: 'bg-amber-500',
                     review: 'bg-purple-500',
-                    done: 'bg-teal-500',
+                    done: 'bg-green-500',
                   };
                   return (
                     <div
@@ -191,30 +190,30 @@ export function Dashboard() {
 
       <Card title="Recent Activity">
         {activities.length === 0 ? (
-          <p className="text-gray-500 text-sm">No activity yet</p>
+          <p className="text-text-muted text-sm">No activity yet</p>
         ) : (
           <div className="space-y-0">
             {activities.map((activity, idx) => (
               <div
                 key={activity.id}
                 className={`flex items-start gap-3 py-3 ${
-                  idx < activities.length - 1 ? 'border-b border-gray-800/50' : ''
+                  idx < activities.length - 1 ? 'border-b border-border-default' : ''
                 }`}
               >
                 <div className="w-2 h-2 rounded-full bg-brand-accent mt-2 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-gray-200">
-                    <span className="font-medium text-white">{activity.actor_name || 'System'}</span>
+                  <p className="text-sm text-text-secondary">
+                    <span className="font-medium text-text-primary">{activity.actor_name || 'System'}</span>
                     {' '}
-                    <span className="text-gray-400">{formatAction(activity.action)}</span>
+                    <span>{formatAction(activity.action)}</span>
                     {activity.metadata && (activity.metadata as Record<string, string>).title && (
                       <>
                         {' '}
-                        <span className="text-gray-300">"{String((activity.metadata as Record<string, string>).title)}"</span>
+                        <span className="text-text-primary">"{String((activity.metadata as Record<string, string>).title)}"</span>
                       </>
                     )}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">{relativeTime(activity.created_at)}</p>
+                  <p className="text-xs text-text-muted mt-0.5">{relativeTime(activity.created_at)}</p>
                 </div>
               </div>
             ))}

@@ -267,16 +267,16 @@ export function Settings() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white">Settings</h1>
+      <h1 className="text-2xl font-bold text-text-primary">Settings</h1>
 
       <Card title="Tenant Info">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-gray-400 text-sm">Company</span>
-            <span className="text-white">{user?.tenantName || 'Your Company'}</span>
+            <span className="text-text-secondary text-sm">Company</span>
+            <span className="text-text-primary">{user?.tenantName || 'Your Company'}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-gray-400 text-sm">Plan</span>
+            <span className="text-text-secondary text-sm">Plan</span>
             <Badge variant={planVariant['starter'] || 'info'}>Starter</Badge>
           </div>
         </div>
@@ -288,15 +288,15 @@ export function Settings() {
         ) : (
           <div className="space-y-4">
             {providers.length === 0 && (
-              <p className="text-gray-500 text-sm">No providers connected yet.</p>
+              <p className="text-text-muted text-sm">No providers connected yet.</p>
             )}
             {providers.map((p) => (
-              <div key={p.id} className="flex items-center justify-between bg-surface-light rounded-lg p-4 border border-gray-700">
+              <div key={p.id} className="flex items-center justify-between bg-white rounded-lg p-4 border border-border-default shadow-sm">
                 <div className="flex items-center gap-3">
-                  <Key size={18} className="text-gray-400" />
+                  <Key size={18} className="text-text-secondary" />
                   <div>
-                    <p className="text-white font-medium capitalize">{p.provider}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-text-primary font-medium capitalize">{p.provider}</p>
+                    <p className="text-xs text-text-muted">
                       {p.status === 'active' ? 'Connected' : 'Inactive'}
                       {(p.connected_at || p.created_at) && ` · ${new Date(p.connected_at || p.created_at!).toLocaleDateString()}`}
                     </p>
@@ -326,30 +326,30 @@ export function Settings() {
         {loadingUsage ? (
           <div className="flex justify-center py-4"><Spinner /></div>
         ) : usage.length === 0 ? (
-          <p className="text-gray-500 text-sm">No usage data yet</p>
+          <p className="text-text-muted text-sm">No usage data yet</p>
         ) : (
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-surface-light rounded-lg p-4 border border-gray-700">
-                <p className="text-gray-400 text-xs uppercase tracking-wider">Total Tokens</p>
-                <p className="text-white text-xl font-bold mt-1">{totals.totalTokens.toLocaleString()}</p>
+              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+                <p className="text-text-secondary text-xs uppercase tracking-wider">Total Tokens</p>
+                <p className="text-text-primary text-xl font-bold mt-1">{totals.totalTokens.toLocaleString()}</p>
               </div>
-              <div className="bg-surface-light rounded-lg p-4 border border-gray-700">
-                <p className="text-gray-400 text-xs uppercase tracking-wider">API Calls</p>
-                <p className="text-white text-xl font-bold mt-1">{totals.totalCalls.toLocaleString()}</p>
+              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+                <p className="text-text-secondary text-xs uppercase tracking-wider">API Calls</p>
+                <p className="text-text-primary text-xl font-bold mt-1">{totals.totalCalls.toLocaleString()}</p>
               </div>
-              <div className="bg-surface-light rounded-lg p-4 border border-gray-700">
-                <p className="text-gray-400 text-xs uppercase tracking-wider">Total Cost</p>
-                <p className="text-white text-xl font-bold mt-1">${totals.totalCost.toFixed(2)}</p>
+              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+                <p className="text-text-secondary text-xs uppercase tracking-wider">Total Cost</p>
+                <p className="text-text-primary text-xl font-bold mt-1">${totals.totalCost.toFixed(2)}</p>
               </div>
-              <div className="bg-surface-light rounded-lg p-4 border border-gray-700">
-                <p className="text-gray-400 text-xs uppercase tracking-wider">Avg Daily Cost</p>
-                <p className="text-white text-xl font-bold mt-1">${totals.avgDailyCost.toFixed(2)}</p>
+              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+                <p className="text-text-secondary text-xs uppercase tracking-wider">Avg Daily Cost</p>
+                <p className="text-text-primary text-xl font-bold mt-1">${totals.avgDailyCost.toFixed(2)}</p>
               </div>
             </div>
 
             <div>
-              <h4 className="text-white text-sm font-medium mb-3">Daily Cost (Last 30 Days)</h4>
+              <h4 className="text-text-primary text-sm font-medium mb-3">Daily Cost (Last 30 Days)</h4>
               <div className="flex items-end gap-1 h-48">
                 {dailyData.map((day, i) => (
                   <div
@@ -357,14 +357,14 @@ export function Settings() {
                     className="flex-1 bg-teal-500 rounded-t hover:bg-teal-400 transition-colors relative group cursor-pointer"
                     style={{ height: `${(day.cost / maxCost) * 100}%`, minHeight: '2px' }}
                   >
-                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block bg-gray-800 text-white text-xs p-2 rounded whitespace-nowrap z-10 shadow-lg border border-gray-700">
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block bg-white text-text-primary text-xs p-2 rounded whitespace-nowrap z-10 shadow-lg border border-border-default">
                       <p className="font-medium">{formatDate(day.date)}</p>
                       <p>Cost: ${day.cost.toFixed(4)}</p>
                       <p>Tokens: {(day.tokens_in + day.tokens_out).toLocaleString()}</p>
                       <p>Calls: {day.api_calls.toLocaleString()}</p>
                     </div>
                     {i % 5 === 0 && (
-                      <span className="absolute top-full mt-1 left-1/2 -translate-x-1/2 text-gray-500 text-[10px] whitespace-nowrap">
+                      <span className="absolute top-full mt-1 left-1/2 -translate-x-1/2 text-text-muted text-[10px] whitespace-nowrap">
                         {formatDate(day.date)}
                       </span>
                     )}
@@ -378,24 +378,24 @@ export function Settings() {
               <div className="flex justify-center py-4"><Spinner /></div>
             ) : agentUsage.length > 0 && (
               <div>
-                <h4 className="text-white text-sm font-medium mb-3">Per-Agent Breakdown</h4>
+                <h4 className="text-text-primary text-sm font-medium mb-3">Per-Agent Breakdown</h4>
                 <div className="space-y-3">
                   {agentUsage.map((agent, i) => {
                     const color = AGENT_COLORS[i % AGENT_COLORS.length];
                     const barWidth = (Number(agent.estimated_cost) / maxAgentCost) * 100;
                     return (
-                      <div key={agent.agent_id} className="bg-surface-light rounded-lg p-4 border border-gray-700">
+                      <div key={agent.agent_id} className="bg-surface-light rounded-lg p-4 border border-border-default">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-white font-medium text-sm">{agent.agent_name || 'Unknown Agent'}</span>
+                          <span className="text-text-primary font-medium text-sm">{agent.agent_name || 'Unknown Agent'}</span>
                           <span className="text-teal-400 text-sm font-medium">${Number(agent.estimated_cost).toFixed(4)}</span>
                         </div>
-                        <div className="w-full bg-gray-700 rounded-full h-2.5 mb-2">
+                        <div className="w-full bg-border-default rounded-full h-2.5 mb-2">
                           <div
                             className={`${color} h-2.5 rounded-full transition-all`}
                             style={{ width: `${Math.max(barWidth, 1)}%` }}
                           />
                         </div>
-                        <div className="flex gap-4 text-xs text-gray-400">
+                        <div className="flex gap-4 text-xs text-text-secondary">
                           <span>Tokens: {(agent.tokens_in + agent.tokens_out).toLocaleString()}</span>
                           <span>API Calls: {agent.api_calls.toLocaleString()}</span>
                         </div>
@@ -409,7 +409,7 @@ export function Settings() {
             <div>
               <button
                 onClick={() => setShowRawData(!showRawData)}
-                className="flex items-center gap-2 text-gray-400 hover:text-white text-sm transition-colors"
+                className="flex items-center gap-2 text-text-secondary hover:text-text-primary text-sm transition-colors"
               >
                 {showRawData ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                 Raw Data
@@ -418,7 +418,7 @@ export function Settings() {
                 <div className="overflow-x-auto mt-3">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-gray-400 text-left border-b border-gray-700">
+                      <tr className="text-text-secondary text-left border-b border-border-default">
                         <th className="pb-2 font-medium">Date</th>
                         <th className="pb-2 font-medium">Tokens In</th>
                         <th className="pb-2 font-medium">Tokens Out</th>
@@ -428,7 +428,7 @@ export function Settings() {
                     </thead>
                     <tbody>
                       {usage.map((row) => (
-                        <tr key={row.id} className="border-b border-gray-800 text-gray-300">
+                        <tr key={row.id} className="border-b border-border-default text-text-secondary">
                           <td className="py-2">{new Date(row.date).toLocaleDateString()}</td>
                           <td className="py-2">{row.tokens_in.toLocaleString()}</td>
                           <td className="py-2">{row.tokens_out.toLocaleString()}</td>
@@ -450,12 +450,12 @@ export function Settings() {
           <div className="flex justify-center py-4"><Spinner /></div>
         ) : telegramConfig ? (
           <div className="space-y-4">
-            <div className="flex items-center justify-between bg-surface-light rounded-lg p-4 border border-gray-700">
+            <div className="flex items-center justify-between bg-surface-light rounded-lg p-4 border border-border-default">
               <div className="flex items-center gap-3">
                 <MessageCircle size={18} className="text-blue-400" />
                 <div>
-                  <p className="text-white font-medium">@{telegramConfig.bot_username}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-text-primary font-medium">@{telegramConfig.bot_username}</p>
+                  <p className="text-xs text-text-muted">
                     {telegramConfig.is_active ? 'Connected' : 'Inactive'}
                     {telegramConfig.created_at && ` · ${new Date(telegramConfig.created_at).toLocaleDateString()}`}
                   </p>
@@ -476,19 +476,19 @@ export function Settings() {
               </div>
             </div>
 
-            <div className="border-t border-gray-700 pt-4">
-              <h4 className="text-white text-sm font-medium mb-3">Linked Chats</h4>
+            <div className="border-t border-border-default pt-4">
+              <h4 className="text-text-primary text-sm font-medium mb-3">Linked Chats</h4>
               {loadingTelegramChats ? (
                 <Spinner size="sm" />
               ) : telegramChats.length === 0 ? (
-                <p className="text-gray-500 text-sm">No chats linked yet.</p>
+                <p className="text-text-muted text-sm">No chats linked yet.</p>
               ) : (
                 <div className="space-y-2 mb-4">
                   {telegramChats.map((chat: any) => (
-                    <div key={chat.id} className="flex items-center justify-between bg-gray-800/50 rounded-lg px-4 py-2.5">
+                    <div key={chat.id} className="flex items-center justify-between bg-surface-light rounded-lg px-4 py-2.5">
                       <div className="flex items-center gap-2">
-                        <MessageCircle size={14} className="text-gray-400" />
-                        <span className="text-white text-sm font-mono">{chat.chat_id}</span>
+                        <MessageCircle size={14} className="text-text-secondary" />
+                        <span className="text-text-primary text-sm font-mono">{chat.chat_id}</span>
                         <Badge variant="info">{chat.chat_type}</Badge>
                       </div>
                       <Button
@@ -513,11 +513,11 @@ export function Settings() {
                   />
                 </div>
                 <div className="w-32">
-                  <label className="block text-sm font-medium text-gray-300 mb-1.5">Type</label>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">Type</label>
                   <select
                     value={newChatType}
                     onChange={(e) => setNewChatType(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-surface-light border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+                    className="w-full px-3 py-2.5 bg-white border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
                   >
                     <option value="private">Private</option>
                     <option value="group">Group</option>
@@ -537,7 +537,7 @@ export function Settings() {
           </div>
         ) : (
           <div className="space-y-3">
-            <p className="text-gray-500 text-sm">Connect a Telegram bot to receive notifications and send commands.</p>
+            <p className="text-text-muted text-sm">Connect a Telegram bot to receive notifications and send commands.</p>
             <Button onClick={() => setShowTelegramModal(true)} variant="secondary" size="sm">
               <MessageCircle size={16} className="mr-1.5" /> Connect Telegram Bot
             </Button>
@@ -551,16 +551,16 @@ export function Settings() {
         ) : (
           <div className="space-y-4">
             {webhooks.length === 0 && (
-              <p className="text-gray-500 text-sm">No webhooks registered yet.</p>
+              <p className="text-text-muted text-sm">No webhooks registered yet.</p>
             )}
             {webhooks.map((wh) => (
-              <div key={wh.id} className="bg-surface-light rounded-lg p-4 border border-gray-700 space-y-2">
+              <div key={wh.id} className="bg-surface-light rounded-lg p-4 border border-border-default space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0">
-                    <Webhook size={18} className="text-gray-400 shrink-0" />
+                    <Webhook size={18} className="text-text-secondary shrink-0" />
                     <div className="min-w-0">
-                      <p className="text-white font-medium text-sm truncate">{wh.url}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-text-primary font-medium text-sm truncate">{wh.url}</p>
+                      <p className="text-xs text-text-muted">
                         Created {new Date(wh.created_at).toLocaleDateString()}
                       </p>
                     </div>
@@ -571,14 +571,14 @@ export function Settings() {
                     </Badge>
                     <button
                       onClick={() => toggleWebhookMutation.mutate({ id: wh.id, is_active: !wh.is_active })}
-                      className="text-gray-400 hover:text-white transition-colors"
+                      className="text-text-secondary hover:text-text-primary transition-colors"
                       title={wh.is_active ? 'Disable' : 'Enable'}
                     >
                       {wh.is_active ? <ToggleRight size={20} className="text-teal-500" /> : <ToggleLeft size={20} />}
                     </button>
                     <button
                       onClick={() => setViewDeliveriesId(viewDeliveriesId === wh.id ? null : wh.id)}
-                      className="text-gray-400 hover:text-white transition-colors"
+                      className="text-text-secondary hover:text-text-primary transition-colors"
                       title="View deliveries"
                     >
                       <Eye size={16} />
@@ -599,21 +599,21 @@ export function Settings() {
                   ))}
                 </div>
                 {viewDeliveriesId === wh.id && (
-                  <div className="mt-3 border-t border-gray-700 pt-3">
-                    <h5 className="text-white text-xs font-medium mb-2">Recent Deliveries</h5>
+                  <div className="mt-3 border-t border-border-default pt-3">
+                    <h5 className="text-text-primary text-xs font-medium mb-2">Recent Deliveries</h5>
                     {loadingDeliveries ? (
                       <Spinner size="sm" />
                     ) : deliveries.length === 0 ? (
-                      <p className="text-gray-500 text-xs">No deliveries yet.</p>
+                      <p className="text-text-muted text-xs">No deliveries yet.</p>
                     ) : (
                       <div className="space-y-1.5 max-h-48 overflow-y-auto">
                         {deliveries.map((d) => (
-                          <div key={d.id} className="flex items-center justify-between text-xs bg-gray-800/50 rounded px-3 py-1.5">
+                          <div key={d.id} className="flex items-center justify-between text-xs bg-surface-light rounded px-3 py-1.5">
                             <div className="flex items-center gap-2">
                               <span className={`w-2 h-2 rounded-full ${d.success ? 'bg-green-500' : 'bg-red-500'}`} />
-                              <span className="text-gray-300">{d.event}</span>
+                              <span className="text-text-secondary">{d.event}</span>
                             </div>
-                            <div className="flex items-center gap-3 text-gray-500">
+                            <div className="flex items-center gap-3 text-text-muted">
                               <span>{d.response_status ?? '—'}</span>
                               <span>x{d.attempts}</span>
                               <span>{new Date(d.created_at).toLocaleString()}</span>
@@ -638,17 +638,17 @@ export function Settings() {
           <div className="flex justify-center py-4"><Spinner /></div>
         ) : (
           <div className="space-y-5">
-            <p className="text-gray-400 text-sm">Configure where daily standups are delivered when generated.</p>
+            <p className="text-text-secondary text-sm">Configure where daily standups are delivered when generated.</p>
 
-            <div className="bg-surface-light rounded-lg p-4 border border-gray-700 space-y-3">
+            <div className="bg-surface-light rounded-lg p-4 border border-border-default space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Mail size={18} className="text-gray-400" />
-                  <span className="text-white font-medium text-sm">Email (via Resend)</span>
+                  <Mail size={18} className="text-text-secondary" />
+                  <span className="text-text-primary font-medium text-sm">Email (via Resend)</span>
                 </div>
                 <button
                   onClick={() => saveDeliveryMutation.mutate({ email_enabled: !deliveryConfig?.email_enabled })}
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-text-secondary hover:text-text-primary transition-colors"
                 >
                   {deliveryConfig?.email_enabled ? <ToggleRight size={24} className="text-teal-500" /> : <ToggleLeft size={24} />}
                 </button>
@@ -672,20 +672,20 @@ export function Settings() {
                   >
                     <Save size={12} className="mr-1" /> Save Recipients
                   </Button>
-                  <p className="text-gray-500 text-xs">Requires a Resend API key stored in tenant settings.</p>
+                  <p className="text-text-muted text-xs">Requires a Resend API key stored in tenant settings.</p>
                 </div>
               )}
             </div>
 
-            <div className="bg-surface-light rounded-lg p-4 border border-gray-700 space-y-3">
+            <div className="bg-surface-light rounded-lg p-4 border border-border-default space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Hash size={18} className="text-gray-400" />
-                  <span className="text-white font-medium text-sm">Slack Webhook</span>
+                  <Hash size={18} className="text-text-secondary" />
+                  <span className="text-text-primary font-medium text-sm">Slack Webhook</span>
                 </div>
                 <button
                   onClick={() => saveDeliveryMutation.mutate({ slack_enabled: !deliveryConfig?.slack_enabled })}
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-text-secondary hover:text-text-primary transition-colors"
                 >
                   {deliveryConfig?.slack_enabled ? <ToggleRight size={24} className="text-teal-500" /> : <ToggleLeft size={24} />}
                 </button>
@@ -710,23 +710,23 @@ export function Settings() {
               )}
             </div>
 
-            <div className="bg-surface-light rounded-lg p-4 border border-gray-700">
+            <div className="bg-surface-light rounded-lg p-4 border border-border-default">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <MessageCircle size={18} className="text-gray-400" />
-                  <span className="text-white font-medium text-sm">Telegram</span>
-                  {!telegramConfig && <span className="text-gray-500 text-xs">(Connect bot first)</span>}
+                  <MessageCircle size={18} className="text-text-secondary" />
+                  <span className="text-text-primary font-medium text-sm">Telegram</span>
+                  {!telegramConfig && <span className="text-text-muted text-xs">(Connect bot first)</span>}
                 </div>
                 <button
                   onClick={() => saveDeliveryMutation.mutate({ telegram_enabled: !deliveryConfig?.telegram_enabled })}
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-text-secondary hover:text-text-primary transition-colors"
                   disabled={!telegramConfig}
                 >
                   {deliveryConfig?.telegram_enabled ? <ToggleRight size={24} className="text-teal-500" /> : <ToggleLeft size={24} />}
                 </button>
               </div>
               {deliveryConfig?.telegram_enabled && (
-                <p className="text-gray-500 text-xs mt-2 pl-7">Standups will be sent to all linked Telegram chats.</p>
+                <p className="text-text-muted text-xs mt-2 pl-7">Standups will be sent to all linked Telegram chats.</p>
               )}
             </div>
 
@@ -740,11 +740,11 @@ export function Settings() {
       <Card title="Account">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-gray-400 text-sm">Email</span>
-            <span className="text-white">{user?.email || '—'}</span>
+            <span className="text-text-secondary text-sm">Email</span>
+            <span className="text-text-primary">{user?.email || '—'}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-gray-400 text-sm">Role</span>
+            <span className="text-text-secondary text-sm">Role</span>
             <Badge variant="info">{user?.role || '—'}</Badge>
           </div>
           <div className="pt-2">
@@ -764,10 +764,10 @@ export function Settings() {
             placeholder="https://example.com/webhook"
           />
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-gray-300">Events</label>
+            <label className="block text-sm font-medium text-text-secondary">Events</label>
             <div className="grid grid-cols-2 gap-2">
               {WEBHOOK_EVENTS.map((ev) => (
-                <label key={ev} className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+                <label key={ev} className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
                   <input
                     type="checkbox"
                     checked={webhookEvents.includes(ev)}
@@ -778,7 +778,7 @@ export function Settings() {
                         setWebhookEvents(webhookEvents.filter((x) => x !== ev));
                       }
                     }}
-                    className="rounded border-gray-600 bg-gray-700 text-teal-500 focus:ring-teal-500"
+                    className="rounded border-border-default bg-surface-light text-teal-500 focus:ring-teal-500"
                   />
                   {ev}
                 </label>
@@ -810,7 +810,7 @@ export function Settings() {
 
       <Modal open={showTelegramModal} onClose={() => { setShowTelegramModal(false); setTelegramError(''); }} title="Connect Telegram Bot">
         <div className="space-y-4">
-          <p className="text-gray-400 text-sm">
+          <p className="text-text-secondary text-sm">
             Create a bot via <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">@BotFather</a> on Telegram, then paste the bot token below.
           </p>
           <Input
@@ -835,11 +835,11 @@ export function Settings() {
       <Modal open={showConnectModal} onClose={() => { setShowConnectModal(false); setConnectError(''); }} title="Connect Provider">
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-gray-300">Provider</label>
+            <label className="block text-sm font-medium text-text-secondary">Provider</label>
             <select
               value={newProvider}
               onChange={(e) => setNewProvider(e.target.value)}
-              className="w-full px-4 py-2.5 bg-surface-light border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-white border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
             >
               <option value="openai">OpenAI</option>
               <option value="anthropic">Anthropic</option>

@@ -25,14 +25,14 @@ export function AgentAnalytics({ agentId }: { agentId: string }) {
   });
 
   if (isLoading) return <div className="flex justify-center py-8"><Spinner /></div>;
-  if (!metrics) return <div className="text-gray-400 text-center py-8">No analytics data available</div>;
+  if (!metrics) return <div className="text-text-secondary text-center py-8">No analytics data available</div>;
 
   const statCards = [
     { label: 'Tasks Completed', value: `${metrics.completedTasks}/${metrics.totalTasks}`, icon: CheckCircle, color: 'text-green-400' },
     { label: 'Completion Rate', value: `${metrics.completionRate}%`, icon: TrendingUp, color: 'text-blue-400' },
     { label: 'Total Tokens', value: metrics.totalTokensUsed.toLocaleString(), icon: Zap, color: 'text-yellow-400' },
     { label: 'Total Cost', value: `$${metrics.totalCost.toFixed(4)}`, icon: DollarSign, color: 'text-emerald-400' },
-    { label: 'Error Rate', value: `${metrics.errorRate}%`, icon: AlertTriangle, color: metrics.errorRate > 10 ? 'text-red-400' : 'text-gray-400' },
+    { label: 'Error Rate', value: `${metrics.errorRate}%`, icon: AlertTriangle, color: metrics.errorRate > 10 ? 'text-red-400' : 'text-text-secondary' },
     { label: 'Tokens/Task', value: metrics.avgTokensPerTask.toLocaleString(), icon: BarChart3, color: 'text-purple-400' },
   ];
 
@@ -47,8 +47,8 @@ export function AgentAnalytics({ agentId }: { agentId: string }) {
             <div className="flex items-center gap-3 p-4">
               <stat.icon className={`w-5 h-5 ${stat.color}`} />
               <div>
-                <p className="text-xs text-gray-400">{stat.label}</p>
-                <p className="text-lg font-semibold text-white">{stat.value}</p>
+                <p className="text-xs text-text-secondary">{stat.label}</p>
+                <p className="text-lg font-semibold text-text-primary">{stat.value}</p>
               </div>
             </div>
           </Card>
@@ -58,24 +58,24 @@ export function AgentAnalytics({ agentId }: { agentId: string }) {
       {metrics.recentActivity.length > 0 && (
         <Card padding={false}>
           <div className="p-6">
-            <h3 className="text-sm font-medium text-gray-400 mb-4 flex items-center gap-2">
+            <h3 className="text-sm font-medium text-text-secondary mb-4 flex items-center gap-2">
               <BarChart3 className="w-4 h-4" /> Daily Token Usage (Last 30 Days)
             </h3>
             <div className="flex items-end gap-1 h-32">
               {metrics.recentActivity.slice(-30).map((day, i) => (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative">
                   <div
-                    className="w-full bg-brand-500 rounded-t opacity-80 hover:opacity-100 transition-opacity min-h-[2px]"
+                    className="w-full bg-brand-accent rounded-t opacity-80 hover:opacity-100 transition-opacity min-h-[2px]"
                     style={{ height: `${Math.max(2, (day.tokens / maxTokens) * 100)}%` }}
                   />
-                  <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-xs text-white px-2 py-1 rounded shadow-lg whitespace-nowrap z-10">
+                  <div className="absolute bottom-full mb-2 hidden group-hover:block bg-white text-xs text-text-primary px-2 py-1 rounded shadow-lg whitespace-nowrap z-10 border border-border-default">
                     {day.date}: {day.tokens.toLocaleString()} tokens, ${day.cost.toFixed(4)}
                     {day.errors > 0 && `, ${day.errors} errors`}
                   </div>
                 </div>
               ))}
             </div>
-            <div className="flex justify-between text-xs text-gray-500 mt-2">
+            <div className="flex justify-between text-xs text-text-muted mt-2">
               <span>{metrics.recentActivity[0]?.date || ''}</span>
               <span>{metrics.recentActivity[metrics.recentActivity.length - 1]?.date || ''}</span>
             </div>
@@ -86,7 +86,7 @@ export function AgentAnalytics({ agentId }: { agentId: string }) {
       {metrics.recentActivity.length > 0 && (
         <Card padding={false}>
           <div className="p-6">
-            <h3 className="text-sm font-medium text-gray-400 mb-4 flex items-center gap-2">
+            <h3 className="text-sm font-medium text-text-secondary mb-4 flex items-center gap-2">
               <DollarSign className="w-4 h-4" /> Daily Cost Trend
             </h3>
             <div className="flex items-end gap-1 h-24">
@@ -96,7 +96,7 @@ export function AgentAnalytics({ agentId }: { agentId: string }) {
                     className="w-full bg-emerald-500 rounded-t opacity-80 hover:opacity-100 transition-opacity min-h-[2px]"
                     style={{ height: `${Math.max(2, (day.cost / maxCost) * 100)}%` }}
                   />
-                  <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-xs text-white px-2 py-1 rounded shadow-lg whitespace-nowrap z-10">
+                  <div className="absolute bottom-full mb-2 hidden group-hover:block bg-white text-xs text-text-primary px-2 py-1 rounded shadow-lg whitespace-nowrap z-10 border border-border-default">
                     {day.date}: ${day.cost.toFixed(4)}
                   </div>
                 </div>

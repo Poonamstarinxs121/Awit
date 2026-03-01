@@ -12,6 +12,8 @@ import notificationsRoutes from './notifications.js';
 import deliverablesRoutes from './deliverables.js';
 import webhookRoutes from './webhooks.js';
 import telegramRoutes from './telegram.js';
+import setupRoutes from './setup.js';
+import settingsRoutes from './settings.js';
 
 const router = Router();
 
@@ -27,5 +29,7 @@ router.use('/v1/notifications', authMiddleware, tenantMiddleware, notificationsR
 router.use('/v1/deliverables', authMiddleware, tenantMiddleware, deliverablesRoutes);
 router.use('/v1/webhooks', authMiddleware, tenantMiddleware, webhookRoutes);
 router.use('/v1/telegram', authMiddleware, tenantMiddleware, telegramRoutes);
+router.use('/v1/setup', authMiddleware, tenantMiddleware, setupRoutes);
+router.use('/v1/settings', authMiddleware, tenantMiddleware, settingsRoutes);
 
 export default router;

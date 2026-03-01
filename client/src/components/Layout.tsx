@@ -1,21 +1,37 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { useAuth } from '../hooks/useAuth';
 import { Badge } from './ui/Badge';
 import { NotificationBell } from './NotificationBell';
 
+const pageTitles: Record<string, string> = {
+  '/': 'Dashboard',
+  '/kanban': 'Mission Queue',
+  '/agents': 'Agents',
+  '/standups': 'Standups',
+  '/settings': 'Settings',
+  '/documents': 'Documents',
+  '/memory-graph': 'Memory Graph',
+  '/squad-chat': 'Squad Chat',
+  '/help': 'Help Center',
+  '/subscription': 'Subscription',
+};
+
 export function Layout() {
   const { user } = useAuth();
+  const location = useLocation();
+  const pageTitle = pageTitles[location.pathname] || '';
 
   return (
     <div className="flex h-screen bg-brand-bg overflow-hidden">
       <Sidebar />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 border-b border-gray-800 bg-surface-sidebar flex items-center justify-between px-6 shrink-0">
-          <div className="text-sm text-gray-400">
+        <header className="h-14 border-b border-border-default bg-white flex items-center justify-between px-6 shrink-0">
+          <div className="flex items-center gap-3">
+            <h2 className="text-sm font-semibold text-text-primary">{pageTitle}</h2>
             {user?.tenantName && (
-              <span className="text-gray-300 font-medium">{user.tenantName}</span>
+              <span className="text-xs text-text-muted">{user.tenantName}</span>
             )}
           </div>
           <div className="flex items-center gap-4">

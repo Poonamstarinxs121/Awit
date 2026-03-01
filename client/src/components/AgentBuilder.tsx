@@ -49,14 +49,14 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
                   ? 'bg-brand-accent border-brand-accent text-white'
                   : index === currentStep
                   ? 'border-brand-accent text-brand-accent bg-transparent'
-                  : 'border-gray-700 text-gray-500 bg-transparent'
+                  : 'border-border-default text-text-muted bg-transparent'
               }`}
             >
               {index < currentStep ? <Check size={18} /> : index + 1}
             </div>
             <span
               className={`text-xs mt-2 whitespace-nowrap ${
-                index <= currentStep ? 'text-white' : 'text-gray-500'
+                index <= currentStep ? 'text-text-primary' : 'text-text-muted'
               }`}
             >
               {step}
@@ -65,7 +65,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
           {index < STEPS.length - 1 && (
             <div
               className={`w-16 h-0.5 mx-2 mb-5 ${
-                index < currentStep ? 'bg-brand-accent' : 'bg-gray-700'
+                index < currentStep ? 'bg-brand-accent' : 'bg-border-default'
               }`}
             />
           )}
@@ -165,14 +165,14 @@ export function AgentBuilder() {
     <div className="max-w-3xl mx-auto space-y-6">
       <button
         onClick={() => navigate('/agents')}
-        className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+        className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors"
       >
         <ArrowLeft size={18} /> Back to Agents
       </button>
 
       <div>
-        <h1 className="text-2xl font-bold text-white">Create New Agent</h1>
-        <p className="text-gray-400 mt-1">Build your AI squad member step by step</p>
+        <h1 className="text-2xl font-bold text-text-primary">Create New Agent</h1>
+        <p className="text-text-secondary mt-1">Build your AI squad member step by step</p>
       </div>
 
       <StepIndicator currentStep={step} />
@@ -193,7 +193,7 @@ export function AgentBuilder() {
               placeholder="e.g. Frontend Engineer, QA Specialist, Content Writer"
             />
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-300">Level</label>
+              <label className="block text-sm font-medium text-text-secondary">Level</label>
               <div className="flex gap-3">
                 {(['intern', 'specialist', 'lead'] as AgentLevel[]).map((lvl) => (
                   <button
@@ -202,8 +202,8 @@ export function AgentBuilder() {
                     onClick={() => setForm({ ...form, level: lvl })}
                     className={`flex-1 px-4 py-2.5 rounded-lg border text-sm font-medium capitalize transition-all ${
                       form.level === lvl
-                        ? 'border-brand-accent bg-brand-accent/10 text-white'
-                        : 'border-gray-700 bg-surface-light text-gray-400 hover:border-gray-500'
+                        ? 'border-brand-accent bg-brand-accent/10 text-text-primary'
+                        : 'border-border-default bg-surface-light text-text-secondary hover:border-brand-accent/40'
                     }`}
                   >
                     {lvl}
@@ -212,14 +212,14 @@ export function AgentBuilder() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-300">
-                Description <span className="text-gray-500">(optional)</span>
+              <label className="block text-sm font-medium text-text-secondary">
+                Description <span className="text-text-muted">(optional)</span>
               </label>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 rows={3}
-                className="w-full px-4 py-3 bg-surface-light border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y text-sm"
+                className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y text-sm"
                 placeholder="Brief description of what this agent will do..."
               />
             </div>
@@ -231,14 +231,14 @@ export function AgentBuilder() {
         <Card title="SoulCraft — Agent Personality">
           <div className="space-y-5">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-text-secondary">
                 {useSoulCraft
                   ? 'Answer a few questions and we\'ll generate a personality profile for your agent.'
                   : 'Write the SOUL.md identity document directly.'}
               </p>
               <button
                 onClick={() => setUseSoulCraft(!useSoulCraft)}
-                className="text-xs text-brand-accent hover:text-blue-300 transition-colors whitespace-nowrap ml-4"
+                className="text-xs text-brand-accent hover:text-brand-accent-hover transition-colors whitespace-nowrap ml-4"
               >
                 {useSoulCraft ? 'Write manually instead' : 'Use SoulCraft wizard'}
               </button>
@@ -246,9 +246,9 @@ export function AgentBuilder() {
 
             {useSoulCraft && (
               <div className="space-y-4">
-                <div className="space-y-4 bg-surface-light/50 rounded-xl p-5 border border-gray-800">
+                <div className="space-y-4 bg-surface-light/50 rounded-xl p-5 border border-border-default">
                   <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-gray-300">
+                    <label className="block text-sm font-medium text-text-secondary">
                       What tone should {form.name || 'this agent'} use?
                     </label>
                     <Input
@@ -259,40 +259,40 @@ export function AgentBuilder() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-gray-300">
+                    <label className="block text-sm font-medium text-text-secondary">
                       What are {form.name || 'this agent'}'s key strengths?
                     </label>
                     <textarea
                       value={form.strengths}
                       onChange={(e) => setForm({ ...form, strengths: e.target.value })}
                       rows={2}
-                      className="w-full px-4 py-3 bg-surface-light border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y text-sm"
+                      className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y text-sm"
                       placeholder="e.g. deep technical knowledge, creative problem solving, attention to detail"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-gray-300">
+                    <label className="block text-sm font-medium text-text-secondary">
                       What values or principles guide {form.name || 'this agent'}'s work?
                     </label>
                     <textarea
                       value={form.values}
                       onChange={(e) => setForm({ ...form, values: e.target.value })}
                       rows={2}
-                      className="w-full px-4 py-3 bg-surface-light border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y text-sm"
+                      className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y text-sm"
                       placeholder="e.g. code quality over speed, user-first thinking, transparency"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-gray-300">
+                    <label className="block text-sm font-medium text-text-secondary">
                       Are there topics {form.name || 'this agent'} should avoid or defer?
                     </label>
                     <textarea
                       value={form.avoid}
                       onChange={(e) => setForm({ ...form, avoid: e.target.value })}
                       rows={2}
-                      className="w-full px-4 py-3 bg-surface-light border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y text-sm"
+                      className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y text-sm"
                       placeholder="e.g. security decisions, budget discussions, HR matters"
                     />
                   </div>
@@ -327,14 +327,14 @@ export function AgentBuilder() {
 
             {form.soul_md && (
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">
+                <label className="block text-sm font-medium text-text-secondary">
                   {useSoulCraft ? 'Generated SOUL.md — feel free to edit' : 'SOUL.md'}
                 </label>
                 <textarea
                   value={form.soul_md}
                   onChange={(e) => setForm({ ...form, soul_md: e.target.value })}
                   rows={10}
-                  className="w-full px-4 py-3 bg-surface-light border border-gray-700 rounded-lg text-white font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
+                  className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
                   placeholder="Define who this agent is..."
                 />
               </div>
@@ -342,12 +342,12 @@ export function AgentBuilder() {
 
             {!useSoulCraft && !form.soul_md && (
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">SOUL.md</label>
+                <label className="block text-sm font-medium text-text-secondary">SOUL.md</label>
                 <textarea
                   value={form.soul_md}
                   onChange={(e) => setForm({ ...form, soul_md: e.target.value })}
                   rows={12}
-                  className="w-full px-4 py-3 bg-surface-light border border-gray-700 rounded-lg text-white font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
+                  className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
                   placeholder={'You are ' + (form.name || '[Agent Name]') + ', the ' + (form.role || '[Role]') + ' for the team.\n\nDefine personality, approach, beliefs, and working style...'}
                 />
               </div>
@@ -360,28 +360,28 @@ export function AgentBuilder() {
         <Card title="Capabilities">
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">
+              <label className="block text-sm font-medium text-text-secondary">
                 Operating Instructions
               </label>
-              <p className="text-xs text-gray-500">What should this agent do? How should it operate?</p>
+              <p className="text-xs text-text-muted">What should this agent do? How should it operate?</p>
               <textarea
                 value={form.agents_md}
                 onChange={(e) => setForm({ ...form, agents_md: e.target.value })}
                 rows={8}
-                className="w-full px-4 py-3 bg-surface-light border border-gray-700 rounded-lg text-white font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
+                className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
                 placeholder="Define operating instructions..."
               />
             </div>
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">
+              <label className="block text-sm font-medium text-text-secondary">
                 Tools & Capabilities
               </label>
-              <p className="text-xs text-gray-500">What tools and capabilities does this agent have access to?</p>
+              <p className="text-xs text-text-muted">What tools and capabilities does this agent have access to?</p>
               <textarea
                 value={form.tools_md}
                 onChange={(e) => setForm({ ...form, tools_md: e.target.value })}
                 rows={8}
-                className="w-full px-4 py-3 bg-surface-light border border-gray-700 rounded-lg text-white font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
+                className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
                 placeholder="Define available tools..."
               />
             </div>
@@ -393,7 +393,7 @@ export function AgentBuilder() {
         <Card title="Model Configuration">
           <div className="space-y-5 max-w-xl">
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-300">Provider</label>
+              <label className="block text-sm font-medium text-text-secondary">Provider</label>
               <select
                 value={form.provider}
                 onChange={(e) => {
@@ -401,7 +401,7 @@ export function AgentBuilder() {
                   const models = MODEL_OPTIONS[provider];
                   setForm({ ...form, provider, model: models[0] });
                 }}
-                className="w-full px-4 py-2.5 bg-surface-light border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+                className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
               >
                 <option value="openai">OpenAI</option>
                 <option value="anthropic">Anthropic</option>
@@ -412,11 +412,11 @@ export function AgentBuilder() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-300">Model</label>
+              <label className="block text-sm font-medium text-text-secondary">Model</label>
               <select
                 value={form.model}
                 onChange={(e) => setForm({ ...form, model: e.target.value })}
-                className="w-full px-4 py-2.5 bg-surface-light border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+                className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
               >
                 {(MODEL_OPTIONS[form.provider] || []).map((m) => (
                   <option key={m} value={m}>{m}</option>
@@ -425,7 +425,7 @@ export function AgentBuilder() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-300">
+              <label className="block text-sm font-medium text-text-secondary">
                 Temperature: {form.temperature.toFixed(1)}
               </label>
               <input
@@ -437,22 +437,22 @@ export function AgentBuilder() {
                 onChange={(e) => setForm({ ...form, temperature: parseFloat(e.target.value) })}
                 className="w-full accent-brand-accent"
               />
-              <div className="flex justify-between text-xs text-gray-500">
+              <div className="flex justify-between text-xs text-text-muted">
                 <span>Precise (0.0)</span>
                 <span>Creative (1.0)</span>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">
+              <label className="block text-sm font-medium text-text-secondary">
                 Heartbeat Checklist
               </label>
-              <p className="text-xs text-gray-500">Tasks checked on every heartbeat interval</p>
+              <p className="text-xs text-text-muted">Tasks checked on every heartbeat interval</p>
               <textarea
                 value={form.heartbeat_md}
                 onChange={(e) => setForm({ ...form, heartbeat_md: e.target.value })}
                 rows={6}
-                className="w-full px-4 py-3 bg-surface-light border border-gray-700 rounded-lg text-white font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
+                className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
                 placeholder="- [ ] Check for new tasks..."
               />
             </div>
@@ -464,53 +464,53 @@ export function AgentBuilder() {
         <Card title="Review & Create">
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-surface-light rounded-lg p-4 border border-gray-700">
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Name</p>
-                <p className="text-white font-medium">{form.name}</p>
+              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+                <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">Name</p>
+                <p className="text-text-primary font-medium">{form.name}</p>
               </div>
-              <div className="bg-surface-light rounded-lg p-4 border border-gray-700">
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Role</p>
-                <p className="text-white font-medium">{form.role}</p>
+              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+                <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">Role</p>
+                <p className="text-text-primary font-medium">{form.role}</p>
               </div>
-              <div className="bg-surface-light rounded-lg p-4 border border-gray-700">
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Level</p>
-                <p className="text-white font-medium capitalize">{form.level}</p>
+              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+                <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">Level</p>
+                <p className="text-text-primary font-medium capitalize">{form.level}</p>
               </div>
-              <div className="bg-surface-light rounded-lg p-4 border border-gray-700">
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Model</p>
-                <p className="text-white font-medium">{form.provider} / {form.model}</p>
+              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+                <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">Model</p>
+                <p className="text-text-primary font-medium">{form.provider} / {form.model}</p>
               </div>
-              <div className="bg-surface-light rounded-lg p-4 border border-gray-700">
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Temperature</p>
-                <p className="text-white font-medium">{form.temperature.toFixed(1)}</p>
+              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+                <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">Temperature</p>
+                <p className="text-text-primary font-medium">{form.temperature.toFixed(1)}</p>
               </div>
             </div>
 
             {form.soul_md && (
-              <div className="bg-surface-light rounded-lg p-4 border border-gray-700">
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">SOUL.md</p>
-                <p className="text-gray-300 text-sm whitespace-pre-wrap">{form.soul_md}</p>
+              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+                <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">SOUL.md</p>
+                <p className="text-text-secondary text-sm whitespace-pre-wrap">{form.soul_md}</p>
               </div>
             )}
 
             {form.agents_md && (
-              <div className="bg-surface-light rounded-lg p-4 border border-gray-700">
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Operating Instructions</p>
-                <p className="text-gray-300 text-sm whitespace-pre-wrap">{form.agents_md}</p>
+              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+                <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">Operating Instructions</p>
+                <p className="text-text-secondary text-sm whitespace-pre-wrap">{form.agents_md}</p>
               </div>
             )}
 
             {form.tools_md && (
-              <div className="bg-surface-light rounded-lg p-4 border border-gray-700">
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Tools & Capabilities</p>
-                <p className="text-gray-300 text-sm whitespace-pre-wrap">{form.tools_md}</p>
+              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+                <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">Tools & Capabilities</p>
+                <p className="text-text-secondary text-sm whitespace-pre-wrap">{form.tools_md}</p>
               </div>
             )}
 
             {form.heartbeat_md && (
-              <div className="bg-surface-light rounded-lg p-4 border border-gray-700">
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Heartbeat Checklist</p>
-                <p className="text-gray-300 text-sm whitespace-pre-wrap">{form.heartbeat_md}</p>
+              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+                <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">Heartbeat Checklist</p>
+                <p className="text-text-secondary text-sm whitespace-pre-wrap">{form.heartbeat_md}</p>
               </div>
             )}
 

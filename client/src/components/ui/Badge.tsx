@@ -7,12 +7,12 @@ interface BadgeProps {
 }
 
 const variantClasses: Record<string, string> = {
-  active: 'bg-teal-500/20 text-teal-400 border-teal-500/30',
-  idle: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
-  error: 'bg-red-500/20 text-red-400 border-red-500/30',
-  warning: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  info: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  default: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+  active: 'bg-green-50 text-green-700 border-green-200',
+  idle: 'bg-gray-50 text-gray-600 border-gray-200',
+  error: 'bg-red-50 text-red-700 border-red-200',
+  warning: 'bg-amber-50 text-amber-700 border-amber-200',
+  info: 'bg-blue-50 text-blue-700 border-blue-200',
+  default: 'bg-gray-50 text-gray-600 border-gray-200',
 };
 
 export function Badge({ variant = 'default', children, className = '' }: BadgeProps) {

@@ -370,6 +370,9 @@ export async function runMigrations(): Promise<void> {
     `);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_tenant_settings ON tenant_settings(tenant_id, key)`);
 
+    await client.query(`ALTER TABLE tenant_settings ADD COLUMN IF NOT EXISTS setup_completed BOOLEAN DEFAULT false`);
+    await client.query(`ALTER TABLE agents ADD COLUMN IF NOT EXISTS is_paused BOOLEAN DEFAULT false`);
+
     // Enable RLS on all tenant-scoped tables
     const rlsTables = [
       'tenants', 'users', 'api_keys', 'agents', 'tasks', 'comments',

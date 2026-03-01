@@ -13,6 +13,13 @@ import { AgentDetail } from './pages/AgentDetail';
 import { AgentNew } from './pages/AgentNew';
 import { Standups } from './pages/Standups';
 import { Settings } from './pages/Settings';
+import { Setup } from './pages/Setup';
+import { Provisioning } from './pages/Provisioning';
+import { Documents } from './pages/Documents';
+import { SquadChat } from './pages/SquadChat';
+import { MemoryGraph } from './pages/MemoryGraph';
+import { HelpCenter } from './pages/HelpCenter';
+import { Subscription } from './pages/Subscription';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,6 +39,9 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/setup" element={<ProtectedRoute><Setup /></ProtectedRoute>} />
+            <Route path="/setup/provisioning" element={<ProtectedRoute><Provisioning /></ProtectedRoute>} />
+            <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
             <Route
               element={
                 <ProtectedRoute>
@@ -46,6 +56,10 @@ export default function App() {
               <Route path="/agents/:id" element={<AgentDetail />} />
               <Route path="/standups" element={<Standups />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/documents" element={<Documents />} />
+              <Route path="/squad-chat" element={<SquadChat />} />
+              <Route path="/memory-graph" element={<MemoryGraph />} />
+              <Route path="/help" element={<HelpCenter />} />
             </Route>
           </Routes>
         </BrowserRouter>

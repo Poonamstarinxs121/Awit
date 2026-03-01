@@ -1,8 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
+import { PublicNav } from '../components/PublicNav';
 
 export function AdminLogin() {
   const { login } = useAuth();
@@ -32,80 +31,73 @@ export function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen bg-brand-bg flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white">
-            <span className="text-brand-accent">Squid</span>Job
-          </h1>
-          <p className="text-gray-500 mt-1">Admin Portal</p>
-        </div>
+    <div className="min-h-screen bg-brand-bg flex flex-col">
+      <PublicNav actionLabel="Member login" actionTo="/login" />
 
-        <div className="bg-surface border border-gray-800 rounded-xl p-8">
-          <h2 className="text-xl font-semibold text-white mb-6">SaaS Admin Login</h2>
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-text-primary">Admin Portal</h1>
+            <p className="text-text-secondary mt-2">SaaS administration access</p>
+          </div>
 
-          {error && (
-            <div className="mb-4 px-4 py-3 bg-danger/10 border border-danger/30 rounded-lg text-sm text-red-400">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Email"
-              type="email"
-              placeholder="admin@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <Input
-              label="Password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign in'}
-            </Button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-gray-500">
-            Don't have an account?{' '}
-            <Link to="/register" className="text-brand-accent hover:underline">
-              Create one
-            </Link>
-          </p>
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-700"></div>
+          <div className="bg-white border border-border-default rounded-xl p-8 shadow-sm">
+            {error && (
+              <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                {error}
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-surface text-gray-500">Demo Credentials</span>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-text-primary">Email</label>
+                <input
+                  type="email"
+                  placeholder="admin@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-colors"
+                />
               </div>
-            </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-text-primary">Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-colors"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-brand-accent hover:bg-brand-accent-hover text-white font-medium rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Signing in...' : 'Sign In'}
+              </button>
+            </form>
 
             <div
-              className="mt-4 bg-[#0F172A] border border-[#1E293B] rounded-lg p-3 cursor-pointer hover:border-blue-500 transition"
+              className="mt-6 bg-surface-light border border-border-default rounded-lg p-3 cursor-pointer hover:border-brand-accent transition text-left"
               onClick={fillDemoCredentials}
             >
-              <p className="text-sm font-medium text-white">Admin Account</p>
-              <p className="text-xs text-gray-400 mt-1">Email: admin@squidjob.com</p>
-              <p className="text-xs text-gray-400">Password: admin123</p>
+              <p className="text-sm font-medium text-text-primary">Admin Demo</p>
+              <p className="text-xs text-text-secondary mt-1">admin@squidjob.com / admin123</p>
             </div>
           </div>
-        </div>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
-          Are you a member?{' '}
-          <Link to="/login" className="text-brand-accent hover:underline">
-            Login here
-          </Link>
-        </p>
+          <p className="mt-6 text-center text-sm text-text-secondary">
+            Are you a member?{' '}
+            <Link to="/login" className="text-purple-accent hover:underline font-medium">
+              Login here
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
