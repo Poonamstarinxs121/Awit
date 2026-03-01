@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireMinRole } from '../middleware/rbac.js';
-import { configureTelegramBot, getTelegramConfig, removeTelegramConfig, linkChat, getLinkedChats, sendTelegramMessage } from '../services/telegramService.js';
+import { configureTelegramBot, getTelegramConfig, removeTelegramConfig, linkChat, getLinkedChats, sendTelegramMessage, startPolling, stopPolling } from '../services/telegramService.js';
 
 const router = Router();
 
@@ -15,9 +15,18 @@ router.get('/config', async (req, res) => {
 
 router.post('/connect', requireMinRole('admin'), async (req, res) => {
   try {
-    const { bot_token } = req.body;
+    const { bot_token, telegram_user_id } = req.body;
     if (!bot_token) return res.status(400).json({ error: 'bot_token is required' });
     const result = await configureTelegramBot(req.user!.tenantId, bot_token);
+
+    if (telegram_user_id) {
+      await linkChat(req.user!.tenantId, String(telegram_user_id), 'private', req.user!.userId);
+    }
+
+    startPolling(req.user!.tenantId).catch(err => {
+      console.error('Failed to start polling after connect:', err);
+    });
+
     res.json(result);
   } catch (error) {
     res.status(400).json({ error: error instanceof Error ? error.message : 'Failed to connect bot' });
@@ -26,6 +35,7 @@ router.post('/connect', requireMinRole('admin'), async (req, res) => {
 
 router.delete('/disconnect', requireMinRole('admin'), async (req, res) => {
   try {
+    stopPolling(req.user!.tenantId);
     await removeTelegramConfig(req.user!.tenantId);
     res.json({ success: true });
   } catch (error) {

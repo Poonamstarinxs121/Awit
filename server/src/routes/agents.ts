@@ -6,6 +6,7 @@ import { triggerHeartbeat } from '../services/heartbeatService.js';
 import { requestAgentCollaboration } from '../services/interAgentService.js';
 import { requireMinRole } from '../middleware/rbac.js';
 import { getAgentMetrics, getAllAgentMetrics } from '../services/analyticsService.js';
+import { pool } from '../db/index.js';
 
 const router = Router();
 
@@ -231,6 +232,36 @@ router.post('/:id/collaborate', requireMinRole('operator'), async (req: Request,
   } catch (error) {
     console.error('Inter-agent collaboration error:', error);
     res.status(500).json({ error: 'Failed to process collaboration request' });
+  }
+});
+
+router.post('/:id/pause', requireMinRole('operator'), async (req: Request, res: Response) => {
+  try {
+    const { tenantId } = req.user!;
+    const { id } = req.params;
+    await pool.query(
+      `UPDATE agents SET is_paused = true WHERE id = $1 AND tenant_id = $2`,
+      [id, tenantId]
+    );
+    res.json({ success: true, isPaused: true });
+  } catch (error) {
+    console.error('Pause agent error:', error);
+    res.status(500).json({ error: 'Failed to pause agent' });
+  }
+});
+
+router.post('/:id/resume', requireMinRole('operator'), async (req: Request, res: Response) => {
+  try {
+    const { tenantId } = req.user!;
+    const { id } = req.params;
+    await pool.query(
+      `UPDATE agents SET is_paused = false WHERE id = $1 AND tenant_id = $2`,
+      [id, tenantId]
+    );
+    res.json({ success: true, isPaused: false });
+  } catch (error) {
+    console.error('Resume agent error:', error);
+    res.status(500).json({ error: 'Failed to resume agent' });
   }
 });
 

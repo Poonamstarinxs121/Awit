@@ -37,8 +37,11 @@ const TASK_STATUSES: { key: TaskStatus; label: string }[] = [
   { key: 'inbox', label: 'Inbox' },
   { key: 'assigned', label: 'Assigned' },
   { key: 'in_progress', label: 'In Progress' },
+  { key: 'waiting_on_human', label: 'Waiting' },
+  { key: 'blocked', label: 'Blocked' },
   { key: 'review', label: 'Review' },
   { key: 'done', label: 'Done' },
+  { key: 'archived', label: 'Archived' },
 ];
 
 export function Dashboard() {
@@ -150,7 +153,7 @@ export function Dashboard() {
 
         <Card title="Task Pipeline">
           <div className="space-y-4">
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
               {TASK_STATUSES.map((ts) => (
                 <div
                   key={ts.key}
@@ -171,8 +174,11 @@ export function Dashboard() {
                     inbox: 'bg-gray-400',
                     assigned: 'bg-blue-500',
                     in_progress: 'bg-amber-500',
+                    waiting_on_human: 'bg-pink-500',
+                    blocked: 'bg-red-500',
                     review: 'bg-purple-500',
                     done: 'bg-green-500',
+                    archived: 'bg-gray-300',
                   };
                   return (
                     <div

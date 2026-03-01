@@ -2,7 +2,7 @@ export type TenantPlan = 'starter' | 'professional' | 'enterprise';
 export type UserRole = 'owner' | 'admin' | 'operator' | 'viewer';
 export type AgentLevel = 'intern' | 'specialist' | 'lead';
 export type AgentStatus = 'active' | 'idle' | 'error' | 'disabled';
-export type TaskStatus = 'inbox' | 'assigned' | 'in_progress' | 'review' | 'done';
+export type TaskStatus = 'inbox' | 'assigned' | 'in_progress' | 'review' | 'done' | 'waiting_on_human' | 'blocked' | 'archived';
 export type TaskPriority = 'critical' | 'high' | 'medium' | 'low';
 
 export interface Tenant {

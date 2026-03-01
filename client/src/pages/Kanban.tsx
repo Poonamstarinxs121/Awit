@@ -22,8 +22,11 @@ const COLUMNS: { status: TaskStatus; label: string; color: string }[] = [
   { status: 'inbox', label: 'Inbox', color: '#6B7280' },
   { status: 'assigned', label: 'Assigned', color: '#3B82F6' },
   { status: 'in_progress', label: 'In Progress', color: '#F59E0B' },
+  { status: 'waiting_on_human', label: 'Waiting on Human', color: '#EC4899' },
+  { status: 'blocked', label: 'Blocked', color: '#EF4444' },
   { status: 'review', label: 'Review', color: '#8B5CF6' },
   { status: 'done', label: 'Done', color: '#14B8A6' },
+  { status: 'archived', label: 'Archived', color: '#9CA3AF' },
 ];
 
 const PRIORITY_CONFIG: Record<TaskPriority, { color: string; dot: string }> = {

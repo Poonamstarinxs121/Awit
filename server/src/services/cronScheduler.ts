@@ -212,15 +212,35 @@ async function executeJob(job: CronJob): Promise<void> {
 async function runSchedulerTick(): Promise<void> {
   try {
     const result = await pool.query(
-      `SELECT * FROM cron_jobs WHERE is_active = true AND next_run_at <= NOW()`
+      `SELECT cj.* FROM cron_jobs cj
+       INNER JOIN agents a ON cj.agent_id = a.id
+       WHERE cj.is_active = true AND cj.next_run_at <= NOW()
+         AND a.status = 'active' AND a.is_paused = false`
     );
 
     if (result.rows.length === 0) return;
 
-    console.log(`Cron scheduler: ${result.rows.length} job(s) due`);
+    const tenantPauseCache = new Map<string, boolean>();
+    const runnableJobs: CronJob[] = [];
 
     for (const job of result.rows) {
-      await executeJob(job as CronJob);
+      if (!tenantPauseCache.has(job.tenant_id)) {
+        const pauseResult = await pool.query(
+          `SELECT value FROM tenant_settings WHERE tenant_id = $1 AND key = 'global_paused'`,
+          [job.tenant_id]
+        );
+        tenantPauseCache.set(job.tenant_id, pauseResult.rows.length > 0 && pauseResult.rows[0].value === 'true');
+      }
+      if (!tenantPauseCache.get(job.tenant_id)) {
+        runnableJobs.push(job as CronJob);
+      }
+    }
+
+    if (runnableJobs.length === 0) return;
+    console.log(`Cron scheduler: ${runnableJobs.length} job(s) due`);
+
+    for (const job of runnableJobs) {
+      await executeJob(job);
     }
   } catch (error) {
     console.error('Cron scheduler tick error:', error);

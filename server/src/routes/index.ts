@@ -14,6 +14,9 @@ import webhookRoutes from './webhooks.js';
 import telegramRoutes from './telegram.js';
 import setupRoutes from './setup.js';
 import settingsRoutes from './settings.js';
+import memoryGraphRoutes from './memoryGraph.js';
+import documentsRoutes from './documents.js';
+import squadChatRoutes from './squadChat.js';
 
 const router = Router();
 
@@ -31,5 +34,8 @@ router.use('/v1/webhooks', authMiddleware, tenantMiddleware, webhookRoutes);
 router.use('/v1/telegram', authMiddleware, tenantMiddleware, telegramRoutes);
 router.use('/v1/setup', authMiddleware, tenantMiddleware, setupRoutes);
 router.use('/v1/settings', authMiddleware, tenantMiddleware, settingsRoutes);
+router.use('/v1/documents', authMiddleware, tenantMiddleware, documentsRoutes);
+router.use('/v1/memory-graph', authMiddleware, tenantMiddleware, memoryGraphRoutes);
+router.use('/v1/squad-chat', authMiddleware, tenantMiddleware, squadChatRoutes);
 
 export default router;

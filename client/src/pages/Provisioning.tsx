@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { CheckCircle, Loader2 } from 'lucide-react';
+import { apiPost } from '../api/client';
 
 interface ProvisionStep {
   id: string;
@@ -26,9 +27,11 @@ const INITIAL_STEPS: ProvisionStep[] = [
 
 export function Provisioning() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [steps, setSteps] = useState<ProvisionStep[]>(INITIAL_STEPS);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
+  const botUsername = (location.state as any)?.botUsername || '';
 
   useEffect(() => {
     const durations = [800, 600, 2500, 1000, 800, 700, 2000, 600, 500, 800, 600];
@@ -38,6 +41,9 @@ export function Provisioning() {
 
     function advanceStep() {
       if (stepIdx >= INITIAL_STEPS.length) {
+        apiPost('/v1/setup/complete', {}).catch(err => {
+          console.error('Failed to mark setup complete:', err);
+        });
         setIsComplete(true);
         return;
       }
@@ -75,15 +81,20 @@ export function Provisioning() {
           <h1 className="text-3xl font-bold text-text-primary">Your Mission Control is Ready!</h1>
           <p className="text-text-secondary">Your AI squad has been deployed and is ready for action.</p>
 
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-left">
+            <p className="text-sm text-green-800 font-medium">Go to Telegram First!</p>
+            <p className="text-sm text-green-700 mt-1">Message your bot to start talking to your Lead Agent (Oracle).</p>
+          </div>
+
           <div className="space-y-3">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => { window.location.href = '/'; }}
               className="w-full py-3 bg-brand-accent hover:bg-brand-accent-hover text-white font-medium rounded-full transition-colors"
             >
               Open Dashboard
             </button>
             <button
-              onClick={() => navigate('/agents')}
+              onClick={() => { window.location.href = '/agents'; }}
               className="w-full py-3 bg-white border border-border-default hover:bg-surface-light text-text-primary font-medium rounded-full transition-colors"
             >
               Meet Your Squad

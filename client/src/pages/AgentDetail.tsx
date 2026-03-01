@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Save, CheckCircle, AlertCircle, MessageSquare, Clock, BarChart3 } from 'lucide-react';
-import { apiGet, apiPatch } from '../api/client';
+import { apiGet, apiPatch, apiPost } from '../api/client';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -161,17 +161,44 @@ export function AgentDetail() {
         <ArrowLeft size={18} /> Back to Agents
       </button>
 
-      <div className="flex items-center gap-4">
-        <div className={`${AVATAR_COLORS[0]} w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-xl`}>
-          {agent.name.charAt(0).toUpperCase()}
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">{agent.name}</h1>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-text-secondary">{agent.role}</span>
-            <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className={`${AVATAR_COLORS[0]} w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-xl`}>
+            {agent.name.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-text-primary">{agent.name}</h1>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-text-secondary">{agent.role}</span>
+              <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+              {(agent as any).is_paused && <Badge variant="default">Paused</Badge>}
+            </div>
           </div>
         </div>
+        <button
+          onClick={async () => {
+            const endpoint = (agent as any).is_paused ? `/v1/agents/${id}/resume` : `/v1/agents/${id}/pause`;
+            await apiPost(endpoint, {});
+            queryClient.invalidateQueries({ queryKey: ['agent', id] });
+          }}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+            (agent as any).is_paused
+              ? 'bg-green-100 text-green-700 hover:bg-green-200'
+              : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+          }`}
+        >
+          {(agent as any).is_paused ? (
+            <>
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.84A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.27l9.344-5.891a1.5 1.5 0 000-2.538L6.3 2.841z" /></svg>
+              Resume Agent
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M5.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75A.75.75 0 007.25 3h-1.5zM12.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75h-1.5z" /></svg>
+              Pause Agent
+            </>
+          )}
+        </button>
       </div>
 
       <div className="flex gap-1 overflow-x-auto border-b border-border-default pb-px">

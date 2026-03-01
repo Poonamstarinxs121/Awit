@@ -7,7 +7,7 @@ import type { JwtPayload } from '../types/index.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'squidjob-dev-secret-change-in-production';
 
-const SUPPORTED_CHANNELS = new Set(['tasks', 'activity', 'agents', 'notifications', 'standups']);
+const SUPPORTED_CHANNELS = new Set(['tasks', 'activity', 'agents', 'notifications', 'standups', 'squad_chat']);
 
 interface AuthenticatedSocket extends WebSocket {
   tenantId: string;

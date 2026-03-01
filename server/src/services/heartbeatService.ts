@@ -21,12 +21,20 @@ function getCheapModel(agentModelConfig: Record<string, unknown>): { provider: s
   return { provider: 'openai', model: 'gpt-4o-mini', temperature: 0.3 };
 }
 
+async function isGloballyPaused(tenantId: string): Promise<boolean> {
+  const result = await pool.query(
+    `SELECT value FROM tenant_settings WHERE tenant_id = $1 AND key = 'global_paused'`,
+    [tenantId]
+  );
+  return result.rows.length > 0 && result.rows[0].value === 'true';
+}
+
 async function getHeartbeatAgents(): Promise<HeartbeatAgent[]> {
   const result = await pool.query(
     `SELECT a.id, a.tenant_id, a.name, a.heartbeat_md, a.model_config
      FROM agents a
      INNER JOIN api_keys ak ON a.tenant_id = ak.tenant_id AND ak.is_active = true
-     WHERE a.status = 'active' AND a.heartbeat_md != '' AND a.heartbeat_md IS NOT NULL
+     WHERE a.status = 'active' AND a.is_paused = false AND a.heartbeat_md != '' AND a.heartbeat_md IS NOT NULL
      GROUP BY a.id, a.tenant_id, a.name, a.heartbeat_md, a.model_config`
   );
   return result.rows;
@@ -77,9 +85,25 @@ async function runHeartbeatCycle(): Promise<void> {
     const agents = await getHeartbeatAgents();
     if (agents.length === 0) return;
 
-    console.log(`Running heartbeat cycle for ${agents.length} agent(s)`);
-
+    const tenantGroups = new Map<string, HeartbeatAgent[]>();
     for (const agent of agents) {
+      const group = tenantGroups.get(agent.tenant_id) || [];
+      group.push(agent);
+      tenantGroups.set(agent.tenant_id, group);
+    }
+
+    let runnable: HeartbeatAgent[] = [];
+    for (const [tenantId, tenantAgents] of tenantGroups) {
+      const paused = await isGloballyPaused(tenantId);
+      if (!paused) {
+        runnable.push(...tenantAgents);
+      }
+    }
+
+    if (runnable.length === 0) return;
+    console.log(`Running heartbeat cycle for ${runnable.length} agent(s)`);
+
+    for (const agent of runnable) {
       await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 9000));
       await runAgentHeartbeat(agent);
     }

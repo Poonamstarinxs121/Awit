@@ -73,7 +73,7 @@ export async function runMigrations(): Promise<void> {
         tenant_id      UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
         title          TEXT NOT NULL,
         description    TEXT NOT NULL DEFAULT '',
-        status         TEXT NOT NULL CHECK (status IN ('inbox', 'assigned', 'in_progress', 'review', 'done')),
+        status         TEXT NOT NULL CHECK (status IN ('inbox', 'assigned', 'in_progress', 'review', 'done', 'waiting_on_human', 'blocked', 'archived')),
         is_blocked     BOOLEAN NOT NULL DEFAULT false,
         blocker_reason TEXT,
         blocked_by     TEXT,
@@ -373,6 +373,45 @@ export async function runMigrations(): Promise<void> {
     await client.query(`ALTER TABLE tenant_settings ADD COLUMN IF NOT EXISTS setup_completed BOOLEAN DEFAULT false`);
     await client.query(`ALTER TABLE agents ADD COLUMN IF NOT EXISTS is_paused BOOLEAN DEFAULT false`);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS documents (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL DEFAULT '',
+        type TEXT NOT NULL CHECK (type IN ('deliverable', 'brief', 'research', 'protocol', 'checklist', 'note')),
+        task_id UUID REFERENCES tasks(id) ON DELETE SET NULL,
+        agent_id UUID REFERENCES agents(id) ON DELETE SET NULL,
+        created_by TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_documents_tenant ON documents(tenant_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_documents_type ON documents(tenant_id, type)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_documents_task ON documents(task_id) WHERE task_id IS NOT NULL`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_documents_fts ON documents USING gin(to_tsvector('english', title || ' ' || content))`);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS squad_messages (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        sender_type TEXT NOT NULL CHECK (sender_type IN ('user', 'agent')),
+        sender_id TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_squad_messages_tenant ON squad_messages(tenant_id, created_at DESC)`);
+
+    await client.query(`
+      DO $$ BEGIN
+        ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_status_check;
+        ALTER TABLE tasks ADD CONSTRAINT tasks_status_check
+          CHECK (status IN ('inbox', 'assigned', 'in_progress', 'review', 'done', 'waiting_on_human', 'blocked', 'archived'));
+      END $$
+    `);
+
     // Enable RLS on all tenant-scoped tables
     const rlsTables = [
       'tenants', 'users', 'api_keys', 'agents', 'tasks', 'comments',
@@ -380,7 +419,7 @@ export async function runMigrations(): Promise<void> {
       'cron_jobs', 'usage_records', 'notifications', 'standups', 'audit_log',
       'thread_subscriptions', 'webhooks', 'webhook_deliveries',
       'telegram_configs', 'telegram_chat_links', 'telegram_notification_queue',
-      'tenant_settings'
+      'tenant_settings', 'documents', 'squad_messages'
     ];
 
     for (const table of rlsTables) {
@@ -443,6 +482,11 @@ async function seedDemoUsers(): Promise<void> {
     );
 
     await seedDefaultAgents(tenantId, client);
+
+    await client.query(
+      `INSERT INTO tenant_settings (tenant_id, key, value) VALUES ($1, 'setup_completed', 'true') ON CONFLICT (tenant_id, key) DO NOTHING`,
+      [tenantId]
+    );
 
     await client.query('COMMIT');
     console.log('Demo users seeded successfully');

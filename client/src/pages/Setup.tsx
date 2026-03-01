@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { PublicNav } from '../components/PublicNav';
 import { CheckCircle } from 'lucide-react';
+import { apiPost } from '../api/client';
 
 export function Setup() {
   const { user } = useAuth();
@@ -27,11 +28,30 @@ export function Setup() {
     }
   }
 
+  const [launchError, setLaunchError] = useState('');
+
   async function handleLaunch() {
     setLaunching(true);
-    navigate('/setup/provisioning', {
-      state: { botToken, telegramUserId, claudeToken }
-    });
+    setLaunchError('');
+
+    try {
+      await apiPost('/v1/telegram/connect', {
+        bot_token: botToken,
+        telegram_user_id: telegramUserId,
+      });
+
+      await apiPost('/v1/config/providers', {
+        provider: 'anthropic',
+        api_key: claudeToken,
+      });
+
+      navigate('/setup/provisioning', {
+        state: { botToken, telegramUserId, claudeToken }
+      });
+    } catch (error) {
+      setLaunchError(error instanceof Error ? error.message : 'Setup failed. Please check your tokens and try again.');
+      setLaunching(false);
+    }
   }
 
   const canLaunch = botToken && telegramUserId && claudeToken;
@@ -234,12 +254,18 @@ export function Setup() {
             </div>
           </div>
 
+          {launchError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+              {launchError}
+            </div>
+          )}
+
           <button
             onClick={handleLaunch}
             disabled={!canLaunch || launching}
             className="w-full py-4 bg-brand-accent hover:bg-brand-accent-hover text-white text-lg font-semibold rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-lg"
           >
-            🚀 Launch My Mission Control
+            {launching ? 'Connecting...' : '🚀 Launch My Mission Control'}
           </button>
 
           <div className="h-8" />

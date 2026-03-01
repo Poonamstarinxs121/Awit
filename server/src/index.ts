@@ -12,6 +12,7 @@ import { runMigrations } from './db/migrations.js';
 import { startHeartbeatService } from './services/heartbeatService.js';
 import { startCronScheduler } from './services/cronScheduler.js';
 import { initWebSocket } from './services/realtimeService.js';
+import { startAllPollers } from './services/telegramService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -54,6 +55,7 @@ async function start() {
       console.log(`SquidJob server running on port ${PORT} (${isProduction ? 'production' : 'development'})`);
       startHeartbeatService();
       startCronScheduler();
+      startAllPollers();
     });
   } catch (error) {
     console.error('Failed to start server:', error);

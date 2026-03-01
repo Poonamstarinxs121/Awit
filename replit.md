@@ -5,14 +5,14 @@ SquidJob is a multi-tenant SaaS platform that orchestrates independent AI agents
 
 **Company**: Awit Media Private Limited
 **Product**: SquidJob.com
-**Current State**: Phase 3 - UI/UX overhaul complete (warm light theme + new pages)
+**Current State**: Phase 4 - Functional parity with MissionHQ (all backend + frontend wired)
 
 ## Architecture
 
 ### Stack
 - **Frontend**: React + Vite + Tailwind CSS (port 5000)
 - **Backend**: Node.js + Express + TypeScript (port 3001)
-- **Database**: PostgreSQL with 20+ tables (tenants, users, agents, tasks, comments, activities, sessions, memory_entries, cron_jobs, usage_records/usage_logs, notifications, standups, audit_log, api_keys, thread_subscriptions, task_deliverables, webhooks, webhook_deliveries, telegram_configs, telegram_chat_links, telegram_notification_queue, tenant_settings)
+- **Database**: PostgreSQL with 25+ tables (tenants, users, agents, tasks, comments, activities, sessions, memory_entries, cron_jobs, usage_records/usage_logs, notifications, standups, audit_log, api_keys, thread_subscriptions, task_deliverables, webhooks, webhook_deliveries, telegram_configs, telegram_chat_links, telegram_notification_queue, tenant_settings, documents, squad_messages)
 - **Auth**: JWT with tenant_id in claims, bcryptjs password hashing, RBAC (Owner/Admin/Operator/Viewer)
 - **LLM**: OpenAI SDK (supports OpenAI, Anthropic, Google Gemini, Mistral, Groq via BYOK)
 - **Real-time**: WebSocket layer using PostgreSQL LISTEN/NOTIFY
@@ -184,6 +184,21 @@ SquidJob is a multi-tenant SaaS platform that orchestrates independent AI agents
 - **Subscription** (`/subscription`) - Plan details and billing management
 
 ## Recent Changes
+- 2026-03-01: Phase 4 - Functional parity with MissionHQ:
+  - Telegram inbound polling: messages from linked user routed to Lead Agent (Oracle) via orchestration engine
+  - Setup wizard: bot token + Claude token persisted to backend on launch (POST /v1/telegram/connect + /v1/config/providers)
+  - Provisioning page calls /v1/setup/complete after animation; shows "Go to Telegram First!" CTA
+  - ProtectedRoute checks setupCompleted from /auth/me; redirects new users to /setup
+  - Documents: full CRUD backend (6 types, search, filtering) + wired frontend with create/edit/delete/detail views
+  - Squad Chat: backend (messages table + API) + wired frontend with real-time polling, send, date grouping
+  - Memory Graph: backend (nodes from agents + memory_entries + documents, edges from relationships) + wired frontend with type filtering, search, stats
+  - Extended task statuses: 8 total (inbox, assigned, in_progress, review, done, waiting_on_human, blocked, archived) in Kanban + Dashboard
+  - Global pause: pill button in Layout header, toggles via /v1/settings/pause-all and resume-all
+  - Per-agent pause: pause/resume button on AgentDetail page, routes POST /v1/agents/:id/pause and /resume
+  - Heartbeat service checks global_paused + per-agent is_paused before running
+  - Cron scheduler checks global_paused + per-agent is_paused before executing jobs
+  - New DB tables: documents, squad_messages; new columns: agents.is_paused
+  - New routes: documents.ts, squadChat.ts, memoryGraph.ts (registered in routes/index.ts)
 - 2026-03-01: Phase 3 - Complete UI/UX overhaul:
   - Switched from dark navy to warm cream/beige light theme
   - All pages migrated to light theme (Dashboard, Kanban, Agents, AgentDetail, Settings, Standups, AgentBuilder)

@@ -119,6 +119,13 @@ router.get('/me', authMiddleware, async (req: Request, res: Response) => {
     }
 
     const user = userResult.rows[0];
+
+    const settingsResult = await pool.query(
+      `SELECT value FROM tenant_settings WHERE tenant_id = $1 AND key = 'setup_completed'`,
+      [tenantId]
+    );
+    const setupCompleted = settingsResult.rows.length > 0 && settingsResult.rows[0].value === 'true';
+
     res.json({
       user: {
         id: user.id,
@@ -129,6 +136,7 @@ router.get('/me', authMiddleware, async (req: Request, res: Response) => {
         tenantName: user.tenant_name,
         createdAt: user.created_at,
         isSaasAdmin: user.is_saas_admin,
+        setupCompleted,
       },
     });
   } catch (error) {
