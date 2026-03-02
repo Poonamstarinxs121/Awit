@@ -11,6 +11,7 @@ import {
 import { logActivity } from './activityService.js';
 import { hybridMemorySearch, loadRecentMemories, saveMemoryWithEmbedding } from './memorySearchService.js';
 import { allocateContextBudget } from './tokenBudgetAllocator.js';
+import { getMachines, getMachinesInGroup, executeRemoteCommand } from './sshService.js';
 
 export interface AgentTurnResult {
   response: string;
@@ -65,6 +66,106 @@ async function loadAgentMemories(tenantId: string, agentId: string, queryContext
   return `\n## Relevant Memories\n${memoryText}`;
 }
 
+async function loadMachineContext(tenantId: string, agentLevel: string): Promise<string> {
+  if (agentLevel !== 'lead') return '';
+  try {
+    const machines = await getMachines(tenantId);
+    if (machines.length === 0) return '';
+
+    const groups = new Map<string, string[]>();
+    const machineLines: string[] = [];
+
+    for (const m of machines) {
+      const statusDot = m.status === 'online' ? '✅' : m.status === 'offline' ? '❌' : '⬜';
+      machineLines.push(`  - ${m.name} (id: ${m.name.toLowerCase().replace(/\s+/g, '-')}, host: ${m.host}, ${statusDot} ${m.status})`);
+      if (m.group_name) {
+        const key = m.group_name;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key)!.push(m.name);
+      }
+    }
+
+    const groupLines = [...groups.entries()].map(([g, ms]) => `  - ${g}: ${ms.join(', ')}`);
+
+    return `\n\n## Your Managed Machines
+You can execute shell commands on registered machines via SSH. Use this EXACT syntax:
+  Single machine: [EXEC mac-mini-1: df -h]
+  Group:          [EXEC group:dev-macs: brew upgrade]
+Rules: Use the machine name (lowercase, hyphens) or group name. You will receive output and then give a final answer.
+
+Machines:
+${machineLines.join('\n')}
+${groupLines.length > 0 ? `\nGroups:\n${groupLines.join('\n')}` : ''}`;
+  } catch {
+    return '';
+  }
+}
+
+const EXEC_PATTERN = /\[EXEC ([^\]]+?):\s*([^\]]+?)\]/g;
+
+async function processExecBlocks(tenantId: string, response: string): Promise<string | null> {
+  const matches = [...response.matchAll(EXEC_PATTERN)];
+  if (matches.length === 0) return null;
+
+  const results: string[] = [];
+
+  for (const match of matches) {
+    const target = match[1].trim();
+    const command = match[2].trim();
+
+    try {
+      if (target.startsWith('group:')) {
+        const groupName = target.slice(6).trim();
+        const groupResult = await pool.query(
+          `SELECT mg.id FROM machine_groups mg
+           JOIN machines m ON m.group_id = mg.id
+           WHERE mg.name ILIKE $1
+           LIMIT 1`,
+          [groupName]
+        );
+        if (groupResult.rows[0]) {
+          const groupId = groupResult.rows[0].id;
+          const tenantResult = await pool.query(
+            `SELECT tenant_id FROM machine_groups WHERE id = $1`, [groupId]
+          );
+          const gTenantId = tenantResult.rows[0]?.tenant_id || tenantId;
+          const machines = await getMachinesInGroup(gTenantId, groupId);
+          const machineResults = await Promise.all(
+            machines.map(async (m) => {
+              const r = await executeRemoteCommand(m, command);
+              return `[${m.name}] exit:${r.exitCode}\n${r.stdout || r.stderr || '(no output)'}`;
+            })
+          );
+          results.push(`Command output for group "${groupName}" (${command}):\n${machineResults.join('\n---\n')}`);
+        } else {
+          results.push(`Group "${groupName}" not found or has no machines.`);
+        }
+      } else {
+        const machineResult = await pool.query(
+          `SELECT * FROM machines WHERE tenant_id = $1 AND (
+            LOWER(REPLACE(name, ' ', '-')) = LOWER($2) OR
+            name ILIKE $2
+          ) LIMIT 1`,
+          [tenantId, target]
+        );
+        if (machineResult.rows[0]) {
+          const machine = machineResult.rows[0];
+          const { executeRemoteCommand: execCmd } = await import('./sshService.js');
+          const r = await execCmd(machine, command);
+          const output = r.stdout || r.stderr || '(no output)';
+          results.push(`Command output from "${machine.name}" (${command}):\n${output}\nExit code: ${r.exitCode}`);
+        } else {
+          results.push(`Machine "${target}" not found.`);
+        }
+      }
+    } catch (error) {
+      results.push(`Error executing command on "${target}": ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  return results.join('\n\n');
+}
+
 async function loadAgentTasks(tenantId: string, agentId: string): Promise<string> {
   const result = await pool.query(
     `SELECT title, status, priority, description FROM tasks
@@ -101,12 +202,14 @@ export async function executeAgentTurn(
     temperature: (agent.model_config?.temperature as number) ?? 0.7,
   };
 
-  const [memories, tasks] = await Promise.all([
+  const [memories, tasks, machineContext] = await Promise.all([
     loadAgentMemories(tenantId, agentId, userMessage),
     loadAgentTasks(tenantId, agentId),
+    loadMachineContext(tenantId, agent.level),
   ]);
 
   let soulContent = buildSystemPrompt(agent, session.compactionSummary);
+  if (machineContext) soulContent += machineContext;
   const historyContent = session.messages.map(m => `${m.role}: ${m.content}`).join('\n');
 
   let budget = allocateContextBudget(modelConfig.model || 'gpt-4o-mini', {
@@ -186,7 +289,23 @@ export async function executeAgentTurn(
     );
   }
 
-  const llmResponse = await chatCompletion(tenantId, agentId, conversationMessages, modelConfig);
+  let llmResponse = await chatCompletion(tenantId, agentId, conversationMessages, modelConfig);
+
+  const execOutput = await processExecBlocks(tenantId, llmResponse.content);
+  if (execOutput) {
+    const followUpMessages: ChatMessage[] = [
+      ...conversationMessages,
+      { role: 'assistant', content: llmResponse.content },
+      { role: 'user', content: `Command execution results:\n\n${execOutput}\n\nPlease provide a clear, concise summary of the results for the user.` },
+    ];
+    try {
+      const followUp = await chatCompletion(tenantId, agentId, followUpMessages, modelConfig);
+      llmResponse = { ...followUp, tokensIn: llmResponse.tokensIn + followUp.tokensIn, tokensOut: llmResponse.tokensOut + followUp.tokensOut };
+    } catch (execError) {
+      console.error('[Orchestration] EXEC follow-up failed:', execError instanceof Error ? execError.message : execError);
+      llmResponse = { ...llmResponse, content: `${llmResponse.content}\n\n**Execution results:**\n${execOutput}` };
+    }
+  }
 
   const newMessages: ChatMessage[] = [
     { role: 'user', content: userMessage },

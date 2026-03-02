@@ -66,6 +66,14 @@ async function getApiKey(tenantId: string, provider: string): Promise<string> {
 }
 
 function createOpenAIClient(apiKey: string, provider: string): OpenAI {
+  if (provider === 'ollama') {
+    const hostUrl = apiKey.replace(/\/$/, '');
+    return new OpenAI({
+      apiKey: 'ollama',
+      baseURL: `${hostUrl}/v1`,
+    });
+  }
+
   const configs: Record<string, { baseURL: string; defaultHeaders?: Record<string, string> }> = {
     openai: { baseURL: 'https://api.openai.com/v1' },
     anthropic: {
@@ -110,7 +118,9 @@ export async function chatCompletion(
   const tokensIn = completion.usage?.prompt_tokens || 0;
   const tokensOut = completion.usage?.completion_tokens || 0;
 
-  await trackUsage(tenantId, agentId, model, tokensIn, tokensOut);
+  if (provider !== 'ollama') {
+    await trackUsage(tenantId, agentId, model, tokensIn, tokensOut);
+  }
 
   return {
     content,
@@ -166,7 +176,9 @@ export async function chatCompletionStream(
     tokensOut = estimateTokens(fullContent);
   }
 
-  await trackUsage(tenantId, agentId, model, tokensIn, tokensOut);
+  if (provider !== 'ollama') {
+    await trackUsage(tenantId, agentId, model, tokensIn, tokensOut);
+  }
 
   return {
     content: fullContent,
@@ -209,6 +221,15 @@ async function trackUsage(
 }
 
 export async function validateApiKey(provider: string, apiKey: string): Promise<boolean> {
+  if (provider === 'ollama') {
+    try {
+      const hostUrl = apiKey.replace(/\/$/, '');
+      const response = await fetch(`${hostUrl}/api/tags`);
+      return response.ok;
+    } catch {
+      return true;
+    }
+  }
   try {
     const client = createOpenAIClient(apiKey, provider);
     await client.models.list();

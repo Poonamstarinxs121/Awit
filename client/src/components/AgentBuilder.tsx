@@ -17,6 +17,7 @@ const MODEL_OPTIONS: Record<string, string[]> = {
   google: ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'],
   mistral: ['mistral-large-latest', 'mistral-small-latest', 'open-mistral-nemo'],
   groq: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'],
+  ollama: ['llama3.3', 'llama3.1', 'mistral', 'qwen2.5', 'deepseek-r1', 'phi4'],
 };
 
 const ROLE_DEFAULTS: Record<string, { agents_md: string; tools_md: string; heartbeat_md: string }> = {
@@ -408,20 +409,50 @@ export function AgentBuilder() {
                 <option value="google">Google (Gemini)</option>
                 <option value="mistral">Mistral</option>
                 <option value="groq">Groq</option>
+                <option value="ollama">Ollama (Local)</option>
               </select>
+              {form.provider === 'ollama' && (
+                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                  Ollama must be running on your Mac Studio. Add it in Settings → API Providers with your host URL (e.g. http://localhost:11434).
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-text-secondary">Model</label>
-              <select
-                value={form.model}
-                onChange={(e) => setForm({ ...form, model: e.target.value })}
-                className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
-              >
-                {(MODEL_OPTIONS[form.provider] || []).map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
+              {form.provider === 'ollama' ? (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={form.model}
+                    onChange={(e) => setForm({ ...form, model: e.target.value })}
+                    placeholder="e.g. llama3.3, mistral, qwen2.5"
+                    className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+                  />
+                  <div className="flex flex-wrap gap-1.5">
+                    {MODEL_OPTIONS.ollama.map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setForm({ ...form, model: m })}
+                        className={`text-xs px-2 py-1 rounded border transition-colors ${form.model === m ? 'bg-brand-accent text-white border-brand-accent' : 'border-border-default text-text-secondary hover:border-brand-accent hover:text-brand-accent'}`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <select
+                  value={form.model}
+                  onChange={(e) => setForm({ ...form, model: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+                >
+                  {(MODEL_OPTIONS[form.provider] || []).map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div className="space-y-1.5">

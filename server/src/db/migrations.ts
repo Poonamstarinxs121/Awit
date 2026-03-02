@@ -412,6 +412,51 @@ export async function runMigrations(): Promise<void> {
       END $$
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS machine_groups (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        description TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS machines (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        host TEXT NOT NULL,
+        ssh_port INT NOT NULL DEFAULT 22,
+        ssh_user TEXT NOT NULL,
+        ssh_auth_type TEXT NOT NULL CHECK (ssh_auth_type IN ('key', 'password')),
+        ssh_credential_encrypted TEXT NOT NULL,
+        group_id UUID REFERENCES machine_groups(id) ON DELETE SET NULL,
+        status TEXT NOT NULL DEFAULT 'unknown',
+        last_ping TIMESTAMPTZ,
+        description TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS whatsapp_configs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        account_sid TEXT NOT NULL,
+        auth_token_encrypted TEXT NOT NULL,
+        whatsapp_number TEXT NOT NULL,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (tenant_id)
+      )
+    `);
+
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_machines_tenant ON machines(tenant_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_machine_groups_tenant ON machine_groups(tenant_id)`);
+
     // Enable RLS on all tenant-scoped tables
     const rlsTables = [
       'tenants', 'users', 'api_keys', 'agents', 'tasks', 'comments',
@@ -419,7 +464,8 @@ export async function runMigrations(): Promise<void> {
       'cron_jobs', 'usage_records', 'notifications', 'standups', 'audit_log',
       'thread_subscriptions', 'webhooks', 'webhook_deliveries',
       'telegram_configs', 'telegram_chat_links', 'telegram_notification_queue',
-      'tenant_settings', 'documents', 'squad_messages'
+      'tenant_settings', 'documents', 'squad_messages',
+      'machine_groups', 'machines', 'whatsapp_configs'
     ];
 
     for (const table of rlsTables) {

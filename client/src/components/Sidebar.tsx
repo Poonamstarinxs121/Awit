@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Columns3, Users, Clock, Settings, LogOut, HelpCircle, FileText, MessageSquare, Brain } from 'lucide-react';
+import { LayoutDashboard, Columns3, Users, Clock, Settings, LogOut, HelpCircle, FileText, MessageSquare, Brain, Server } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 const mainNav = [
@@ -16,6 +16,10 @@ const knowledgeNav = [
 
 const commsNav = [
   { to: '/squad-chat', label: 'Squad Chat', icon: MessageSquare },
+];
+
+const infraNav = [
+  { to: '/machines', label: 'Machines', icon: Server },
 ];
 
 const systemNav = [
@@ -69,6 +73,7 @@ export function Sidebar() {
         <NavSection label="Main" items={mainNav} />
         <NavSection label="Knowledge" items={knowledgeNav} />
         <NavSection label="Communication" items={commsNav} />
+        <NavSection label="Infrastructure" items={infraNav} />
         <NavSection label="System" items={systemNav} />
       </nav>
 

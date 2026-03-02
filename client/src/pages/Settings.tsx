@@ -99,6 +99,12 @@ export function Settings() {
   const [deliveryEmailRecipients, setDeliveryEmailRecipients] = useState('');
   const [deliverySlackWebhook, setDeliverySlackWebhook] = useState('');
   const [deliverySaveSuccess, setDeliverySaveSuccess] = useState(false);
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+  const [waAccountSid, setWaAccountSid] = useState('');
+  const [waAuthToken, setWaAuthToken] = useState('');
+  const [waNumber, setWaNumber] = useState('');
+  const [waError, setWaError] = useState('');
+  const [waTestTo, setWaTestTo] = useState('');
 
   const { data: providersData, isLoading: loadingProviders } = useQuery({
     queryKey: ['providers'],
@@ -214,6 +220,33 @@ export function Settings() {
       setTimeout(() => setDeliverySaveSuccess(false), 3000);
     },
   });
+
+  const { data: whatsappConfigData, isLoading: loadingWhatsApp } = useQuery({
+    queryKey: ['whatsapp-config'],
+    queryFn: () => apiGet<{ config: any }>('/v1/whatsapp/config'),
+  });
+
+  const connectWhatsAppMutation = useMutation({
+    mutationFn: (data: { account_sid: string; auth_token: string; whatsapp_number: string }) =>
+      apiPost('/v1/whatsapp/connect', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-config'] });
+      setShowWhatsAppModal(false);
+      setWaAccountSid(''); setWaAuthToken(''); setWaNumber(''); setWaError('');
+    },
+    onError: (err: Error) => setWaError(err.message),
+  });
+
+  const disconnectWhatsAppMutation = useMutation({
+    mutationFn: () => apiDelete('/v1/whatsapp/disconnect'),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['whatsapp-config'] }),
+  });
+
+  const testWhatsAppMutation = useMutation({
+    mutationFn: (data: { to: string }) => apiPost('/v1/whatsapp/test', data),
+  });
+
+  const whatsappConfig = whatsappConfigData?.config;
 
   const telegramConfig = telegramConfigData?.config;
   const telegramChats = telegramChatsData ?? [];
@@ -545,6 +578,71 @@ export function Settings() {
         )}
       </Card>
 
+      <Card title="WhatsApp Integration (Twilio)">
+        {loadingWhatsApp ? (
+          <div className="flex justify-center py-4"><Spinner /></div>
+        ) : whatsappConfig ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between bg-surface-light rounded-lg p-4 border border-border-default">
+              <div className="flex items-center gap-3">
+                <MessageCircle size={18} className="text-green-500" />
+                <div>
+                  <p className="text-text-primary font-medium">{whatsappConfig.whatsapp_number}</p>
+                  <p className="text-xs text-text-muted">
+                    Account SID: {whatsappConfig.account_sid?.slice(0, 8)}...
+                    {whatsappConfig.created_at && ` · ${new Date(whatsappConfig.created_at).toLocaleDateString()}`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="active">Connected</Badge>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => disconnectWhatsAppMutation.mutate()}
+                  disabled={disconnectWhatsAppMutation.isPending}
+                >
+                  <Unlink size={14} className="mr-1" /> Disconnect
+                </Button>
+              </div>
+            </div>
+            <div className="bg-surface-light rounded-lg p-4 border border-border-default space-y-3">
+              <p className="text-text-secondary text-xs font-medium uppercase tracking-wide">Webhook URL (paste into Twilio)</p>
+              <code className="block text-text-primary text-xs bg-white border border-border-default rounded px-3 py-2 break-all">
+                {window.location.origin}/v1/whatsapp/webhook
+              </code>
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <Input
+                    label="Test: Send to number"
+                    value={waTestTo}
+                    onChange={(e) => setWaTestTo(e.target.value)}
+                    placeholder="+1234567890 or whatsapp:+1234567890"
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => testWhatsAppMutation.mutate({ to: waTestTo })}
+                  disabled={!waTestTo || testWhatsAppMutation.isPending}
+                  className="mb-0.5"
+                >
+                  <Send size={12} className="mr-1" /> Send Test
+                </Button>
+              </div>
+              {testWhatsAppMutation.isSuccess && <p className="text-green-600 text-xs">Test message sent!</p>}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-text-muted text-sm">Connect Twilio WhatsApp to send and receive commands via WhatsApp. Use the sandbox for testing — no business verification needed.</p>
+            <Button onClick={() => setShowWhatsAppModal(true)} variant="secondary" size="sm">
+              <MessageCircle size={16} className="mr-1.5" /> Connect WhatsApp (Twilio)
+            </Button>
+          </div>
+        )}
+      </Card>
+
       <Card title="Webhooks">
         {loadingWebhooks ? (
           <div className="flex justify-center py-4"><Spinner /></div>
@@ -808,6 +906,42 @@ export function Settings() {
         </div>
       </Modal>
 
+      <Modal open={showWhatsAppModal} onClose={() => { setShowWhatsAppModal(false); setWaError(''); }} title="Connect WhatsApp (Twilio)">
+        <div className="space-y-4">
+          <p className="text-text-secondary text-sm">
+            Create a <a href="https://www.twilio.com/try-twilio" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Twilio account</a>, enable the WhatsApp sandbox, and paste your credentials below.
+          </p>
+          <Input
+            label="Account SID"
+            value={waAccountSid}
+            onChange={(e) => setWaAccountSid(e.target.value)}
+            placeholder="ACxxxxxxxxxxxxx"
+          />
+          <Input
+            label="Auth Token"
+            type="password"
+            value={waAuthToken}
+            onChange={(e) => setWaAuthToken(e.target.value)}
+            placeholder="Your Twilio auth token"
+          />
+          <Input
+            label="WhatsApp Number"
+            value={waNumber}
+            onChange={(e) => setWaNumber(e.target.value)}
+            placeholder="+14155238886 (sandbox number)"
+          />
+          {waError && <p className="text-sm text-red-400">{waError}</p>}
+          <Button
+            onClick={() => connectWhatsAppMutation.mutate({ account_sid: waAccountSid, auth_token: waAuthToken, whatsapp_number: waNumber })}
+            disabled={!waAccountSid || !waAuthToken || !waNumber || connectWhatsAppMutation.isPending}
+            className="w-full"
+          >
+            {connectWhatsAppMutation.isPending ? <Spinner size="sm" className="mr-2" /> : null}
+            Connect WhatsApp
+          </Button>
+        </div>
+      </Modal>
+
       <Modal open={showTelegramModal} onClose={() => { setShowTelegramModal(false); setTelegramError(''); }} title="Connect Telegram Bot">
         <div className="space-y-4">
           <p className="text-text-secondary text-sm">
@@ -832,13 +966,13 @@ export function Settings() {
         </div>
       </Modal>
 
-      <Modal open={showConnectModal} onClose={() => { setShowConnectModal(false); setConnectError(''); }} title="Connect Provider">
+      <Modal open={showConnectModal} onClose={() => { setShowConnectModal(false); setConnectError(''); setNewApiKey(''); }} title="Connect Provider">
         <div className="space-y-4">
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-text-secondary">Provider</label>
             <select
               value={newProvider}
-              onChange={(e) => setNewProvider(e.target.value)}
+              onChange={(e) => { setNewProvider(e.target.value); setNewApiKey(e.target.value === 'ollama' ? 'http://localhost:11434' : ''); }}
               className="w-full px-4 py-2.5 bg-white border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
             >
               <option value="openai">OpenAI</option>
@@ -846,15 +980,28 @@ export function Settings() {
               <option value="google">Google (Gemini)</option>
               <option value="mistral">Mistral</option>
               <option value="groq">Groq</option>
+              <option value="ollama">Ollama (Local LLM)</option>
             </select>
           </div>
-          <Input
-            label="API Key"
-            type="password"
-            value={newApiKey}
-            onChange={(e) => setNewApiKey(e.target.value)}
-            placeholder="sk-..."
-          />
+          {newProvider === 'ollama' ? (
+            <div className="space-y-2">
+              <Input
+                label="Ollama Host URL"
+                value={newApiKey}
+                onChange={(e) => setNewApiKey(e.target.value)}
+                placeholder="http://localhost:11434"
+              />
+              <p className="text-xs text-text-muted">Ollama must be running on your machine. Install with: <code className="bg-surface-light px-1 rounded">brew install ollama</code></p>
+            </div>
+          ) : (
+            <Input
+              label="API Key"
+              type="password"
+              value={newApiKey}
+              onChange={(e) => setNewApiKey(e.target.value)}
+              placeholder="sk-..."
+            />
+          )}
           {connectError && <p className="text-sm text-red-400">{connectError}</p>}
           <Button
             onClick={() => connectMutation.mutate({ provider: newProvider, api_key: newApiKey })}

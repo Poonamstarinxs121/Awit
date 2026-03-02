@@ -13,6 +13,7 @@ import { startHeartbeatService } from './services/heartbeatService.js';
 import { startCronScheduler } from './services/cronScheduler.js';
 import { initWebSocket } from './services/realtimeService.js';
 import { startAllPollers } from './services/telegramService.js';
+import { startMachineMonitor } from './services/machineMonitorService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,6 +24,7 @@ const PORT = isProduction ? 5000 : 3001;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 app.use((_req, res, next) => {
   res.set('Cache-Control', 'no-cache');
@@ -56,6 +58,7 @@ async function start() {
       startHeartbeatService();
       startCronScheduler();
       startAllPollers();
+      startMachineMonitor();
     });
   } catch (error) {
     console.error('Failed to start server:', error);

@@ -20,6 +20,7 @@ import { SquadChat } from './pages/SquadChat';
 import { MemoryGraph } from './pages/MemoryGraph';
 import { HelpCenter } from './pages/HelpCenter';
 import { Subscription } from './pages/Subscription';
+import { Machines } from './pages/Machines';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,6 +60,7 @@ export default function App() {
               <Route path="/documents" element={<Documents />} />
               <Route path="/squad-chat" element={<SquadChat />} />
               <Route path="/memory-graph" element={<MemoryGraph />} />
+              <Route path="/machines" element={<Machines />} />
               <Route path="/help" element={<HelpCenter />} />
             </Route>
           </Routes>
