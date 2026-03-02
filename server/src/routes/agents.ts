@@ -142,31 +142,44 @@ router.post('/:id/message', requireMinRole('operator'), async (req: Request, res
     }
 
     if (stream) {
-      res.setHeader('Content-Type', 'text/event-stream');
-      res.setHeader('Cache-Control', 'no-cache');
-      res.setHeader('Connection', 'keep-alive');
-      res.flushHeaders();
+      let streamingStarted = false;
+      try {
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.flushHeaders();
+        streamingStarted = true;
 
-      const result = await executeAgentTurnStream(
-        req.user!.tenantId,
-        req.params.id,
-        message,
-        (chunk: string) => {
-          res.write(`data: ${JSON.stringify({ type: 'chunk', content: chunk })}\n\n`);
-        },
-        session_key
-      );
+        const result = await executeAgentTurnStream(
+          req.user!.tenantId,
+          req.params.id,
+          message,
+          (chunk: string) => {
+            res.write(`data: ${JSON.stringify({ type: 'chunk', content: chunk })}\n\n`);
+          },
+          session_key
+        );
 
-      res.write(`data: ${JSON.stringify({
-        type: 'done',
-        session_id: result.sessionId,
-        tokens_in: result.tokensIn,
-        tokens_out: result.tokensOut,
-        model: result.model,
-        provider: result.provider,
-      })}\n\n`);
+        res.write(`data: ${JSON.stringify({
+          type: 'done',
+          session_id: result.sessionId,
+          tokens_in: result.tokensIn,
+          tokens_out: result.tokensOut,
+          model: result.model,
+          provider: result.provider,
+        })}\n\n`);
 
-      res.end();
+        res.end();
+      } catch (streamError: unknown) {
+        console.error('Agent stream error:', streamError);
+        const errorMessage = streamError instanceof Error ? streamError.message : 'Failed to process message';
+        if (streamingStarted) {
+          res.write(`data: ${JSON.stringify({ type: 'error', error: errorMessage })}\n\n`);
+          res.end();
+        } else {
+          res.status(500).json({ error: errorMessage });
+        }
+      }
     } else {
       const result = await executeAgentTurn(
         req.user!.tenantId,

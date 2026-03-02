@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Send, Trash2, Loader2, Bot, User, AlertCircle } from 'lucide-react';
+import { Send, Trash2, Loader2, Bot, User, AlertCircle, Key } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { apiGet, apiDelete } from '../api/client';
 import { Button } from './ui/Button';
 
@@ -22,6 +23,7 @@ function getToken(): string | null {
 
 export function AgentChat({ agentId, agentName }: AgentChatProps) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
@@ -91,17 +93,20 @@ export function AgentChat({ agentId, agentName }: AgentChatProps) {
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
+            let data: any;
             try {
-              const data = JSON.parse(line.slice(6));
-              if (data.type === 'chunk') {
-                fullContent += data.content;
-                setStreamingContent(fullContent);
-              } else if (data.type === 'done') {
-                setLocalMessages(prev => [...prev, { role: 'assistant', content: fullContent }]);
-                setStreamingContent('');
-              }
+              data = JSON.parse(line.slice(6));
             } catch {
-              // ignore parse errors for incomplete chunks
+              continue;
+            }
+            if (data.type === 'chunk') {
+              fullContent += data.content;
+              setStreamingContent(fullContent);
+            } else if (data.type === 'done') {
+              setLocalMessages(prev => [...prev, { role: 'assistant', content: fullContent }]);
+              setStreamingContent('');
+            } else if (data.type === 'error') {
+              throw new Error(data.error || 'Agent returned an error');
             }
           }
         }
@@ -197,10 +202,33 @@ export function AgentChat({ agentId, agentName }: AgentChatProps) {
       </div>
 
       {error && (
-        <div className="mx-4 mb-2 flex items-center gap-2 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
-          <AlertCircle size={14} />
-          {error}
-        </div>
+        error.toLowerCase().includes('no active api key') || error.toLowerCase().includes('api key') ? (
+          <div className="mx-4 mb-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+            <div className="flex items-start gap-2">
+              <Key size={16} className="text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-amber-800">No AI provider connected</p>
+                <p className="text-xs text-amber-700 mt-0.5">
+                  Agents need an API key to respond.{' '}
+                  <button
+                    onClick={() => navigate('/settings')}
+                    className="underline font-medium hover:text-amber-900"
+                  >
+                    Go to Settings → API Providers
+                  </button>{' '}
+                  to add your Anthropic or OpenAI key.
+                </p>
+              </div>
+              <button onClick={() => setError(null)} className="text-amber-500 hover:text-amber-700 text-xs">✕</button>
+            </div>
+          </div>
+        ) : (
+          <div className="mx-4 mb-2 flex items-center gap-2 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+            <AlertCircle size={14} />
+            <span className="flex-1">{error}</span>
+            <button onClick={() => setError(null)} className="text-red-300 hover:text-red-500 text-xs">✕</button>
+          </div>
+        )
       )}
 
       <div className="p-4 border-t border-border-default">

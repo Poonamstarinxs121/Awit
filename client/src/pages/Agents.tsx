@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Users, Plus } from 'lucide-react';
+import { Users, Plus, Key } from 'lucide-react';
 import { apiGet } from '../api/client';
 import { Spinner } from '../components/ui/Spinner';
 import { Badge } from '../components/ui/Badge';
@@ -31,8 +31,13 @@ export function Agents() {
     queryKey: ['agents'],
     queryFn: () => apiGet<{ agents: Agent[] }>('/v1/agents'),
   });
+  const { data: providersData } = useQuery({
+    queryKey: ['providers'],
+    queryFn: () => apiGet<{ providers: { id: string; provider: string }[] }>('/v1/config/providers'),
+  });
 
   const agents = data?.agents ?? [];
+  const hasProvider = (providersData?.providers ?? []).length > 0;
 
   return (
     <div className="space-y-6">
@@ -46,6 +51,25 @@ export function Agents() {
           Create Agent
         </Button>
       </div>
+
+      {!hasProvider && !isLoading && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
+          <Key size={18} className="text-amber-600 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-amber-800">No AI provider connected</p>
+            <p className="text-sm text-amber-700 mt-0.5">
+              Your agents won't be able to respond without an API key.{' '}
+              <button
+                onClick={() => navigate('/settings')}
+                className="underline font-medium hover:text-amber-900"
+              >
+                Go to Settings → API Providers
+              </button>{' '}
+              to add your Anthropic or OpenAI key.
+            </p>
+          </div>
+        </div>
+      )}
 
       {isLoading && (
         <div className="flex items-center justify-center py-20">
