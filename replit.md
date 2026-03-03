@@ -8,24 +8,27 @@ SquidJob is a multi-tenant SaaS platform designed to orchestrate independent AI 
 - Background (#0C0C0C), accent red (#FF3B30), dark cards (#1A1A1A), dark borders (#2A2A2A)
 - Inter (body) + JetBrains Mono (mono) + Sora (headings) fonts
 - Shell: Collapsible Dock (68px collapsed / 220px expanded, left) + 48px TopBar + 32px StatusBar (bottom)
-- Monorepo structure with separate server/ and client/ directories
+- Monorepo structure with separate server/, client/, node/, and extension/ directories
 
 ## System Architecture
 SquidJob uses a **Hub + Node** architecture:
-- **Hub** (this app): Central VPS with React/Vite + Express/PostgreSQL for fleet dashboard, 3D Office, and board memory.
-- **Node** (per machine): Next.js app running alongside OpenClaw for agent discovery, system monitoring, and hub synchronization.
+- **Hub** (this app): Central VPS with React/Vite + Express/PostgreSQL for fleet dashboard, 3D Office, board memory, task dispatch, fleet search, and fleet analytics.
+- **Node** (per machine): Next.js app running alongside OpenClaw for agent discovery, system monitoring, hub synchronization, file browsing, memory editing, session/cost tracking, cron management, and terminal access.
+- **Chrome Extension**: Lightweight fleet status viewer with background polling, notifications, and badge counts.
 
-The codebase is a monorepo with `server/`, `client/`, and `node/` directories.
+The codebase is a monorepo with `server/`, `client/`, `node/`, and `extension/` directories.
 
 **Technology Stack:**
 - **Frontend**: React, Vite, Tailwind CSS
 - **Backend**: Node.js, Express, TypeScript
-- **Database**: PostgreSQL with `pgvector` extension
+- **Database**: PostgreSQL with `pgvector` extension (Hub), SQLite via better-sqlite3 (Node)
 - **Authentication**: JWT, bcryptjs, RBAC (Owner/Admin/Operator/Viewer)
 - **LLM Integration**: OpenAI SDK supporting OpenAI, Anthropic, Google Gemini, Mistral, Groq (BYOK), and Ollama (local LLM).
 - **Real-time**: WebSocket layer using PostgreSQL LISTEN/NOTIFY.
-- **Search**: pgvector + BM25 hybrid memory search with Reciprocal Rank Fusion.
-- **File Storage**: Multer-based file uploads.
+- **Search**: pgvector + BM25 hybrid memory search with Reciprocal Rank Fusion (Hub); text-based local search across files/sessions/memories (Node).
+- **File Storage**: Multer-based file uploads (Hub); filesystem API with path traversal protection (Node).
+- **Code Editor**: Monaco Editor (@monaco-editor/react) in Node file browser and memory browser.
+- **Chrome Extension**: Manifest V3, vanilla JS, no build step.
 
 **Core Architectural Features & Design Patterns:**
 - **Multi-tenancy**: Implemented at the database level with `tenant_id` and enforced via JWT claims and RLS policies.
@@ -44,10 +47,83 @@ The codebase is a monorepo with `server/`, `client/`, and `node/` directories.
 - **Approval Flows**: Implements approval workflows with pending/approved/rejected states and a dedicated UI.
 - **Board Groups**: Organizes tasks into board groups with filtering capabilities in the Kanban view.
 - **Activity Timeline**: Provides a comprehensive event timeline with filtering by event type and pagination.
+- **Task Dispatch**: Hub dispatches tasks to specific nodes with full lifecycle tracking (pending→dispatched→accepted→running→completed/failed).
+- **Cross-Machine Agent Routing**: When @mentioning an agent that exists on a remote node, the Hub automatically creates a cross-node dispatch.
+- **Fleet-Wide Search**: Fan-out search to all online nodes + Hub memory, with per-source result grouping.
+- **Fleet Analytics**: Aggregated cost/usage analytics across Hub and all nodes with daily trends, per-model/per-agent breakdowns.
+- **Node-to-Node Messaging**: Hub-relayed inter-node messaging supporting agent_request, search_request, status_request, and custom message types.
+- **Node Dispatch Worker**: Polls Hub for pending dispatches, executes tasks locally, reports results back.
+- **Node Local Search**: Searches across agent memory files, filesystem, and SQLite session history.
+
+## Hub DB Tables (Phase 3+4)
+- `task_dispatches` — dispatched tasks to nodes with lifecycle status tracking
+- `node_messages` — Hub-relayed inter-node messages with pending/delivered/processed/failed states
+- `tasks.target_node_id` — optional node targeting column on tasks table
+
+## Node SQLite Tables
+- `sessions` — local session history (agent_id, model, tokens, status, timestamps)
+- `costs` — per-session cost records (agent_id, model, tokens, estimated_cost)
+- `activity` — local activity log (event_type, description, metadata)
+- `sync_state` — tracks last telemetry sync timestamp for Hub sync
+
+## Node Pages
+- `/` — Dashboard with system stats, agent overview, recent activity
+- `/agents` — Agent list from OpenClaw discovery
+- `/system` — System monitor (CPU, RAM, disk, network)
+- `/files` — File browser with Monaco editor, directory tree, breadcrumbs
+- `/memory` — Memory browser for agent .md files (SOUL, AGENTS, TOOLS, MEMORY, HEARTBEAT, IDENTITY)
+- `/sessions` — Session history with stats, filters, inline expansion
+- `/costs` — Cost tracking with breakdowns, daily trend SVG chart
+- `/cron` — Cron manager for OpenClaw scheduled tasks
+- `/terminal` — Command execution terminal with history, quick commands
+
+## Hub Pages (Phase 3+4)
+- `/fleet-analytics` — Aggregated cross-node cost/usage analytics
+- SearchPage Fleet tab — Cross-node search with per-source grouping
+- Board task detail — Dispatch to Node section with status timeline
+- Fleet node detail — Recent Dispatches section
+
+## Hub API Endpoints (Phase 3+4)
+- `POST /v1/tasks/:id/dispatch` — dispatch task to node
+- `GET /v1/tasks/:id/dispatch` — get dispatch status
+- `GET /v1/tasks/dispatch-by-node/:nodeId` — dispatches for a node
+- `PATCH /v1/task-dispatches/:id` — node updates dispatch status
+- `GET /v1/nodes/:id/dispatches` — list pending dispatches for a node
+- `POST /v1/fleet/search` — fleet-wide search fan-out
+- `GET /v1/fleet/analytics/costs` — aggregated fleet costs
+- `GET /v1/fleet/analytics/usage` — aggregated fleet usage
+- `POST /v1/nodes/:id/messages` — send message to another node
+- `GET /v1/nodes/:id/messages/inbox` — poll incoming messages
+- `PATCH /v1/node-messages/:id` — mark message delivered/processed
+
+## Node API Endpoints
+- `GET /api/agents` — list discovered agents
+- `GET /api/agents/:id` — agent detail
+- `GET /api/system/stats` — system metrics
+- `GET /api/health` — health check
+- `GET /api/hub/status` — hub connection status
+- `GET /api/files?path=` — list directory
+- `GET /api/files/read?path=` — read file
+- `PUT /api/files/write` — write file
+- `GET /api/sessions` — list sessions
+- `GET /api/sessions/:id` — session detail
+- `GET /api/costs` — cost summary
+- `GET /api/costs/daily` — daily cost breakdown
+- `GET /api/activity` — activity feed
+- `GET /api/cron` — cron tasks
+- `POST /api/terminal/exec` — execute command
+- `GET /api/search?q=` — local search
+- `GET /api/dispatches` — local dispatch history
+
+## Chrome Extension (`extension/`)
+- Manifest V3, vanilla JS, no build step
+- Popup: fleet status viewer with node cards (CPU/RAM/disk bars), agent roster, summary counts
+- Background: polls Hub every 60s, sends notifications on node status changes, updates badge count
+- Options: Hub URL + API key configuration, notification toggles, poll interval selector
 
 ## External Dependencies
 - **LLM Providers**: OpenAI, Anthropic, Google Gemini, Mistral, Groq, Ollama.
-- **Database**: PostgreSQL with `pgvector` extension.
+- **Database**: PostgreSQL with `pgvector` extension (Hub); SQLite via better-sqlite3 (Node).
 - **Real-time Communication**: PostgreSQL LISTEN/NOTIFY.
 - **Email Service**: Resend.
 - **Messaging Platforms**: Twilio (for WhatsApp), Telegram Bot API, Slack (webhooks).
@@ -55,3 +131,4 @@ The codebase is a monorepo with `server/`, `client/`, and `node/` directories.
 - **SSH Connectivity**: `ssh2` npm package.
 - **File Uploads**: Multer.
 - **Payment Processing**: Stripe.
+- **Code Editor**: @monaco-editor/react (Node file/memory browser).

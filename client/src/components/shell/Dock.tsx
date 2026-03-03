@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Monitor, Brain, Bot, Activity,
   Clock, DollarSign, Settings, History, Search,
   BarChart3, Calendar, Terminal, FileText, Zap,
-  Server, ShieldCheck, HelpCircle, CreditCard, Columns3,
+  Server, ShieldCheck, HelpCircle, CreditCard, Columns3, PieChart,
   LogOut, Palette, ChevronRight, Building2, ChevronDown,
   ChevronLeft, Store, Package, Box, Wifi,
 } from 'lucide-react';
@@ -37,6 +37,7 @@ const dockSections = [
       { href: '/costs',     label: 'Costs',     icon: DollarSign },
       { href: '/memory',    label: 'Memory',    icon: Brain },
       { href: '/search',    label: 'Search',    icon: Search },
+      { href: '/fleet-analytics', label: 'Fleet Analytics', icon: PieChart },
     ],
   },
   {

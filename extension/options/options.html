@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SquidJob Settings</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0C0C0C;
+      color: #F5F5F5;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .container {
+      width: 460px;
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card {
+      background: #1A1A1A;
+      border: 1px solid #2A2A2A;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+    .field {
+      margin-bottom: 14px;
+    }
+    .field:last-child { margin-bottom: 0; }
+    label {
+      display: block;
+      font-size: 11px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 10px 12px;
+      background: #0C0C0C;
+      border: 1px solid #2A2A2A;
+      border-radius: 8px;
+      color: #F5F5F5;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      outline: none;
+    }
+    input:focus { border-color: #FF3B30; }
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+    }
+    .toggle-label { font-size: 13px; }
+    .toggle {
+      position: relative;
+      width: 40px;
+      height: 22px;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #2A2A2A;
+      border-radius: 11px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .toggle-slider:before {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      left: 3px;
+      top: 3px;
+      background: #888;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+    .toggle input:checked + .toggle-slider { background: #FF3B30; }
+    .toggle input:checked + .toggle-slider:before { transform: translateX(18px); background: #fff; }
+    .btn-save {
+      background: #FF3B30;
+      color: #fff;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+    }
+    .btn-save:hover { opacity: 0.9; }
+    .status { margin-top: 10px; font-size: 12px; text-align: center; }
+    .status.success { color: #22C55E; }
+    .status.error { color: #EF4444; }
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      background: #0C0C0C;
+      border: 1px solid #2A2A2A;
+      border-radius: 8px;
+      color: #F5F5F5;
+      font-size: 13px;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1><span>&#x1F991;</span> SquidJob Settings</h1>
+
+    <div class="card">
+      <div class="card-title">Hub Connection</div>
+      <div class="field">
+        <label>Hub URL</label>
+        <input type="text" id="hubUrl" placeholder="https://your-squidjob-hub.com">
+      </div>
+      <div class="field">
+        <label>API Key</label>
+        <input type="password" id="apiKey" placeholder="sqj_...">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Notifications</div>
+      <div class="toggle-row">
+        <span class="toggle-label">Enable notifications</span>
+        <label class="toggle"><input type="checkbox" id="notifications" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Show badge count</span>
+        <label class="toggle"><input type="checkbox" id="badge" checked><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Polling</div>
+      <div class="field">
+        <label>Poll Interval</label>
+        <select id="pollInterval">
+          <option value="0.5">30 seconds</option>
+          <option value="1" selected>1 minute</option>
+          <option value="5">5 minutes</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn-save" id="save">Save Settings</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

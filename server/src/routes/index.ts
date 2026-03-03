@@ -30,8 +30,11 @@ import sessionsRoutes from './sessions.js';
 import weatherRoutes from './weather.js';
 import healthRoutes from './health.js';
 import marketplaceRoutes from './marketplace.js';
-import nodesRoutes, { startNodeStatusChecker } from './nodes.js';
+import nodesRoutes, { startNodeStatusChecker, nodeMessagesRouter } from './nodes.js';
 import boardMemoriesRoutes from './boardMemories.js';
+import taskDispatchRoutes from './taskDispatch.js';
+import fleetSearchRoutes from './fleetSearch.js';
+import fleetAnalyticsRoutes from './fleetAnalytics.js';
 
 const router = Router();
 
@@ -68,7 +71,11 @@ router.use('/v1/api-tokens', authMiddleware, tenantMiddleware, apiTokensRoutes);
 router.use('/v1/billing', billingRoutes);
 router.use('/v1/marketplace', authMiddleware, tenantMiddleware, marketplaceRoutes);
 router.use('/v1/nodes', nodesRoutes);
+router.use('/v1/node-messages', nodeMessagesRouter);
 router.use('/v1/board-memories', authMiddleware, tenantMiddleware, boardMemoriesRoutes);
+router.use('/v1', authMiddleware, tenantMiddleware, taskDispatchRoutes);
+router.use('/v1/fleet/search', authMiddleware, tenantMiddleware, fleetSearchRoutes);
+router.use('/v1/fleet/analytics', authMiddleware, tenantMiddleware, fleetAnalyticsRoutes);
 router.use('/admin/v1', adminRoutes);
 
 startNodeStatusChecker();

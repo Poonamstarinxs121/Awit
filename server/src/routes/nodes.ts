@@ -194,6 +194,106 @@ router.delete('/:id', authMiddleware, tenantMiddleware, async (req: Request, res
   }
 });
 
+router.post('/:id/messages', async (req: Request, res: Response) => {
+  try {
+    const auth = await authenticateNodeApiKey(req, res);
+    if (!auth) return;
+    const { target_node_id, message_type, payload } = req.body;
+    if (!target_node_id || !message_type) {
+      res.status(400).json({ error: 'target_node_id and message_type are required' });
+      return;
+    }
+    const validTypes = ['agent_request', 'search_request', 'status_request', 'custom'];
+    if (!validTypes.includes(message_type)) {
+      res.status(400).json({ error: `message_type must be one of: ${validTypes.join(', ')}` });
+      return;
+    }
+    const targetNode = await pool.query(
+      'SELECT id FROM nodes WHERE id = $1 AND tenant_id = $2',
+      [target_node_id, auth.tenantId]
+    );
+    if (targetNode.rows.length === 0) {
+      res.status(404).json({ error: 'Target node not found or not in same tenant' });
+      return;
+    }
+    const result = await pool.query(
+      `INSERT INTO node_messages (sender_node_id, target_node_id, message_type, payload)
+       VALUES ($1, $2, $3, $4) RETURNING id, created_at`,
+      [auth.nodeId, target_node_id, message_type, JSON.stringify(payload || {})]
+    );
+    res.json({ id: result.rows[0].id, created_at: result.rows[0].created_at });
+  } catch (error) {
+    console.error('Send node message error:', error);
+    res.status(500).json({ error: 'Failed to send message' });
+  }
+});
+
+router.get('/:id/messages/inbox', async (req: Request, res: Response) => {
+  try {
+    const auth = await authenticateNodeApiKey(req, res);
+    if (!auth) return;
+    const status = (req.query.status as string) || 'pending';
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+    const result = await pool.query(
+      `SELECT nm.id, nm.sender_node_id, n.name as sender_node_name, nm.message_type, nm.payload, nm.status, nm.created_at
+       FROM node_messages nm
+       JOIN nodes n ON n.id = nm.sender_node_id
+       WHERE nm.target_node_id = $1 AND nm.status = $2
+       ORDER BY nm.created_at ASC
+       LIMIT $3`,
+      [auth.nodeId, status, limit]
+    );
+    res.json({ messages: result.rows });
+  } catch (error) {
+    console.error('Get node inbox error:', error);
+    res.status(500).json({ error: 'Failed to get inbox' });
+  }
+});
+
+export const nodeMessagesRouter = Router();
+
+nodeMessagesRouter.patch('/:id', async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'Missing authorization' });
+      return;
+    }
+    const token = authHeader.substring(7);
+    const hash = hashApiKey(token);
+    const messageId = req.params.id;
+    const msgResult = await pool.query(
+      `SELECT nm.id, nm.target_node_id, n.api_key_hash
+       FROM node_messages nm
+       JOIN nodes n ON n.id = nm.target_node_id
+       WHERE nm.id = $1`,
+      [messageId]
+    );
+    if (msgResult.rows.length === 0) {
+      res.status(404).json({ error: 'Message not found' });
+      return;
+    }
+    if (msgResult.rows[0].api_key_hash !== hash) {
+      res.status(401).json({ error: 'Invalid node API key' });
+      return;
+    }
+    const { status } = req.body;
+    const validStatuses = ['delivered', 'processed', 'failed'];
+    if (!status || !validStatuses.includes(status)) {
+      res.status(400).json({ error: `status must be one of: ${validStatuses.join(', ')}` });
+      return;
+    }
+    await pool.query(
+      'UPDATE node_messages SET status = $1 WHERE id = $2',
+      [status, messageId]
+    );
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Update node message error:', error);
+    res.status(500).json({ error: 'Failed to update message' });
+  }
+});
+
 export default router;
 
 let statusCheckerStarted = false;

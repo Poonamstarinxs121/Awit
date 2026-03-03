@@ -12,6 +12,7 @@ import { logActivity } from './activityService.js';
 import { hybridMemorySearch, loadRecentMemories, saveMemoryWithEmbedding } from './memorySearchService.js';
 import { allocateContextBudget } from './tokenBudgetAllocator.js';
 import { getMachines, getMachinesInGroup, executeRemoteCommand } from './sshService.js';
+import { isRemoteAgent, createDispatchForRemoteAgent } from './nodeRouterService.js';
 
 export interface AgentTurnResult {
   response: string;
@@ -355,6 +356,66 @@ export async function executeAgentTurn(
     model: llmResponse.model,
     provider: llmResponse.provider,
   };
+}
+
+const AGENT_MENTION_PATTERN = /@([A-Za-z0-9_][A-Za-z0-9_ -]*)/g;
+
+export async function resolveAgentMention(
+  tenantId: string,
+  agentName: string,
+  userMessage: string
+): Promise<{ remote: boolean; dispatched?: boolean; dispatchMessage?: string; agentId?: string }> {
+  try {
+    const remoteCheck = await isRemoteAgent(agentName, tenantId);
+    if (!remoteCheck.remote) {
+      const localAgent = await pool.query(
+        `SELECT id FROM agents WHERE tenant_id = $1 AND status = 'active' AND (
+          LOWER(REPLACE(name, ' ', '')) = LOWER(REPLACE($2, ' ', ''))
+          OR LOWER(name) = LOWER($2)
+        ) LIMIT 1`,
+        [tenantId, agentName]
+      );
+      return {
+        remote: false,
+        agentId: localAgent.rows[0]?.id || undefined,
+      };
+    }
+
+    const dispatch = await createDispatchForRemoteAgent(
+      tenantId,
+      agentName,
+      remoteCheck.nodeId!,
+      userMessage
+    );
+
+    await logActivity(
+      tenantId,
+      'system',
+      'remote_dispatch',
+      'agent',
+      agentName,
+      {
+        node_id: remoteCheck.nodeId,
+        node_name: remoteCheck.nodeName,
+        dispatch_id: dispatch.dispatchId,
+        task_id: dispatch.taskId,
+      }
+    );
+
+    return {
+      remote: true,
+      dispatched: true,
+      dispatchMessage: `Task dispatched to ${remoteCheck.nodeName} for agent @${agentName}. Dispatch ID: ${dispatch.dispatchId}`,
+    };
+  } catch (error) {
+    console.error(`[NodeRouter] Failed to resolve agent mention @${agentName}:`, error instanceof Error ? error.message : error);
+    return { remote: false };
+  }
+}
+
+export function extractMentions(content: string): string[] {
+  const matches = [...content.matchAll(AGENT_MENTION_PATTERN)];
+  return matches.map(m => m[1].trim());
 }
 
 export async function executeAgentTurnStream(

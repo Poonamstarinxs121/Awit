@@ -1,6 +1,8 @@
 import { NODE_CONFIG, isHubConfigured } from '../config/node';
 import { getSystemStats } from './system-monitor';
 import { discoverAgents } from './openclaw-reader';
+import { getSyncState, setSyncState, getSessionsSince, getCostsSince, getActivitySince } from './local-db';
+import { startDispatchWorker } from './dispatch-worker';
 
 export class HubSyncClient {
   private hubUrl: string;
@@ -106,8 +108,55 @@ export function startHubScheduler() {
     if (ok) lastHeartbeat = new Date();
   }, 60000);
 
+  collectAndSendTelemetry(client).then(ok => {
+    if (ok) lastTelemetry = new Date();
+  });
+
   setInterval(async () => {
-    const ok = await client.sendTelemetry([]);
+    const ok = await collectAndSendTelemetry(client);
     if (ok) lastTelemetry = new Date();
   }, 300000);
+
+  startDispatchWorker();
+}
+
+const SYNC_STATE_KEY = 'lastTelemetrySyncAt';
+
+async function collectAndSendTelemetry(client: HubSyncClient): Promise<boolean> {
+  if (!client.isConfigured()) return false;
+
+  try {
+    const lastSync = getSyncState(SYNC_STATE_KEY) || '1970-01-01T00:00:00.000Z';
+    const now = new Date().toISOString();
+
+    const sessions = getSessionsSince(lastSync);
+    const costs = getCostsSince(lastSync);
+    const activities = getActivitySince(lastSync);
+
+    const entries: Array<{ type: string; payload: any; recorded_at: string }> = [];
+
+    for (const s of sessions) {
+      entries.push({ type: 'session', payload: s, recorded_at: s.created_at || now });
+    }
+    for (const c of costs) {
+      entries.push({ type: 'cost', payload: c, recorded_at: c.recorded_at || now });
+    }
+    for (const a of activities) {
+      entries.push({ type: 'activity', payload: a, recorded_at: a.created_at || now });
+    }
+
+    if (entries.length === 0) {
+      setSyncState(SYNC_STATE_KEY, now);
+      return true;
+    }
+
+    const ok = await client.sendTelemetry(entries);
+    if (ok) {
+      setSyncState(SYNC_STATE_KEY, now);
+    }
+    return ok;
+  } catch (error) {
+    console.error('[HubSync] Telemetry collection failed:', error);
+    return false;
+  }
 }

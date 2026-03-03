@@ -738,6 +738,45 @@ export async function runMigrations(): Promise<void> {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_board_memories_tenant ON board_memories(tenant_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_board_memories_board_group ON board_memories(board_group_id)`);
 
+    // Phase 3: Task dispatches
+    try {
+      await client.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS target_node_id UUID REFERENCES nodes(id)`);
+    } catch (e) {
+      // ignore if column exists
+    }
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS task_dispatches (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+        node_id UUID NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+        status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','dispatched','accepted','running','completed','failed')),
+        dispatched_at TIMESTAMPTZ,
+        accepted_at TIMESTAMPTZ,
+        completed_at TIMESTAMPTZ,
+        result JSONB,
+        error TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_task_dispatches_node ON task_dispatches(node_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_task_dispatches_task ON task_dispatches(task_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_task_dispatches_status ON task_dispatches(status)`);
+
+    // Phase 4: Node-to-node messaging
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS node_messages (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        sender_node_id UUID NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+        target_node_id UUID NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+        message_type TEXT NOT NULL CHECK (message_type IN ('agent_request','search_request','status_request','custom')),
+        payload JSONB NOT NULL DEFAULT '{}',
+        status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','delivered','processed','failed')),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_node_messages_target ON node_messages(target_node_id, status)`);
+
     await client.query('COMMIT');
     console.log('Migrations completed successfully');
 

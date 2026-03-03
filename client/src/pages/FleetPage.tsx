@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Server, CheckCircle, AlertTriangle, XCircle, Plus,
   X, Copy, ChevronRight, Trash2, Clock, Cpu, HardDrive,
-  MemoryStick, Bot, Wifi,
+  MemoryStick, Bot, Wifi, Send,
 } from 'lucide-react';
 import { apiGet, apiPost, apiDelete } from '../api/client';
 import { Spinner } from '../components/ui/Spinner';
@@ -511,6 +511,32 @@ NODE_ID=${registerResult.node_id}`}
   );
 }
 
+interface NodeDispatch {
+  id: string;
+  task_id: string;
+  node_id: string;
+  node_name?: string;
+  task_title?: string;
+  task_description?: string;
+  task_priority?: string;
+  status: string;
+  dispatched_at: string | null;
+  accepted_at: string | null;
+  completed_at: string | null;
+  result: Record<string, unknown> | null;
+  error: string | null;
+  created_at: string;
+}
+
+const DISPATCH_STATUS_COLORS: Record<string, { color: string; bg: string }> = {
+  pending: { color: '#9CA3AF', bg: 'rgba(156,163,175,0.12)' },
+  dispatched: { color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
+  accepted: { color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
+  running: { color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
+  completed: { color: '#22C55E', bg: 'rgba(34,197,94,0.12)' },
+  failed: { color: '#EF4444', bg: 'rgba(239,68,68,0.12)' },
+};
+
 function DetailPanel({ data, onClose, onDelete, deleting }: {
   data: NodeDetail;
   onClose: () => void;
@@ -524,6 +550,14 @@ function DetailPanel({ data, onClose, onDelete, deleting }: {
   const disk = node.system_info?.disk_percent ?? 0;
 
   const latestAgents = heartbeats.length > 0 ? (heartbeats[0].agent_statuses || []) : [];
+
+  const { data: dispatchesData } = useQuery({
+    queryKey: ['node-dispatches', node.id],
+    queryFn: () => apiGet<{ dispatches: NodeDispatch[] }>(`/v1/tasks/dispatch-by-node/${node.id}`),
+    refetchInterval: 10000,
+  });
+
+  const nodeDispatches = dispatchesData?.dispatches ?? [];
 
   return (
     <>
@@ -625,6 +659,54 @@ function DetailPanel({ data, onClose, onDelete, deleting }: {
                     </span>
                     <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
                       {agent.status || 'unknown'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {nodeDispatches.length > 0 && (
+          <div style={{
+            backgroundColor: 'var(--card)', border: '1px solid var(--border)',
+            borderRadius: '12px', padding: '16px', marginBottom: '16px',
+          }}>
+            <h3 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 12px' }}>
+              Recent Dispatches ({nodeDispatches.length})
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {nodeDispatches.slice(0, 15).map((d) => {
+                const statusCfg = DISPATCH_STATUS_COLORS[d.status] || DISPATCH_STATUS_COLORS.pending;
+                return (
+                  <div key={d.id} style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    padding: '8px 10px', borderRadius: '8px',
+                    backgroundColor: 'var(--surface-elevated)',
+                  }}>
+                    <Send size={11} style={{ color: statusCfg.color, flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{
+                        fontSize: '12px', fontWeight: 500, color: 'var(--text-primary)',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0,
+                      }}>
+                        {d.task_title || `Task ${d.task_id.slice(0, 8)}...`}
+                      </p>
+                      {d.error && (
+                        <p style={{ fontSize: '10px', color: '#EF4444', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {d.error}
+                        </p>
+                      )}
+                    </div>
+                    <span style={{
+                      fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px',
+                      padding: '2px 6px', borderRadius: '4px', flexShrink: 0,
+                      backgroundColor: statusCfg.bg, color: statusCfg.color,
+                    }}>
+                      {d.status}
+                    </span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', flexShrink: 0 }}>
+                      {timeSince(d.dispatched_at || d.created_at)}
                     </span>
                   </div>
                 );

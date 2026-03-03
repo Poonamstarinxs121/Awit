@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SquidJob Fleet Monitor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app">
+    <header id="header">
+      <div class="header-left">
+        <span class="logo">&#x1F991;</span>
+        <span class="title">SquidJob</span>
+        <span id="status-dot" class="status-dot offline"></span>
+      </div>
+      <div class="header-right">
+        <button id="refresh-btn" class="icon-btn" title="Refresh">&#x21bb;</button>
+        <button id="settings-btn" class="icon-btn" title="Settings">&#x2699;</button>
+      </div>
+    </header>
+
+    <div id="unconfigured" class="state-panel" style="display:none;">
+      <div class="state-icon">&#x1F517;</div>
+      <div class="state-title">Not Connected</div>
+      <div class="state-desc">Set up your Hub connection to monitor your fleet.</div>
+      <button id="open-options" class="btn-accent">Open Settings</button>
+    </div>
+
+    <div id="error-panel" class="state-panel" style="display:none;">
+      <div class="state-icon">&#x26A0;</div>
+      <div class="state-title">Cannot Reach Hub</div>
+      <div class="state-desc" id="error-msg"></div>
+      <div class="state-meta" id="last-success"></div>
+      <button id="retry-btn" class="btn-accent">Retry</button>
+    </div>
+
+    <div id="loading" class="state-panel" style="display:none;">
+      <div class="spinner"></div>
+      <div class="state-title">Connecting...</div>
+    </div>
+
+    <div id="content" style="display:none;">
+      <div id="summary" class="summary-bar">
+        <div class="summary-item">
+          <span class="summary-count" id="online-count">0</span>
+          <span class="summary-label">Online</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-count degraded" id="degraded-count">0</span>
+          <span class="summary-label">Degraded</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-count offline" id="offline-count">0</span>
+          <span class="summary-label">Offline</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-count agents" id="agent-total">0</span>
+          <span class="summary-label">Agents</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Nodes</div>
+        <div id="nodes-list" class="nodes-list"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Agents</div>
+        <div id="agents-list" class="agents-list"></div>
+      </div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

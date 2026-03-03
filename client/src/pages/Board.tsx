@@ -14,7 +14,7 @@ import {
   Network, Play, Pause, List, LayoutGrid, Filter, Settings,
   Pencil, Zap, AlertCircle, Activity, Building2, Check, Clipboard,
   Store, Package, Brain, BookOpen, Lightbulb, FileText, ChevronRight,
-  Save,
+  Save, Server, Send,
 } from 'lucide-react';
 import type { Task, TaskStatus, TaskPriority, Agent, Comment, Activity as ActivityType } from '../types';
 import { useLocation } from 'react-router-dom';
@@ -1432,6 +1432,209 @@ function CreateTaskModal({
   );
 }
 
+interface DispatchRecord {
+  id: string;
+  task_id: string;
+  node_id: string;
+  node_name: string;
+  status: string;
+  dispatched_at: string | null;
+  accepted_at: string | null;
+  completed_at: string | null;
+  result: Record<string, unknown> | null;
+  error: string | null;
+  created_at: string;
+}
+
+interface FleetNode {
+  id: string;
+  name: string;
+  status: 'online' | 'offline' | 'degraded';
+}
+
+const DISPATCH_STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  pending: { label: 'Pending', color: '#9CA3AF', bg: 'rgba(156,163,175,0.12)' },
+  dispatched: { label: 'Dispatched', color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
+  accepted: { label: 'Accepted', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
+  running: { label: 'Running', color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
+  completed: { label: 'Completed', color: '#22C55E', bg: 'rgba(34,197,94,0.12)' },
+  failed: { label: 'Failed', color: '#EF4444', bg: 'rgba(239,68,68,0.12)' },
+};
+
+const DISPATCH_STEPS = ['pending', 'dispatched', 'accepted', 'running', 'completed'];
+
+function DispatchToNodeSection({ taskId }: { taskId: string }) {
+  const queryClient = useQueryClient();
+  const [selectedNodeId, setSelectedNodeId] = useState('');
+
+  const { data: nodesData } = useQuery({
+    queryKey: ['fleet-nodes-dispatch'],
+    queryFn: () => apiGet<{ nodes: FleetNode[] }>('/v1/nodes'),
+  });
+
+  const { data: dispatchData } = useQuery({
+    queryKey: ['task-dispatches', taskId],
+    queryFn: () => apiGet<{ dispatches: DispatchRecord[] }>(`/v1/tasks/${taskId}/dispatch`),
+    refetchInterval: 5000,
+  });
+
+  const dispatchMutation = useMutation({
+    mutationFn: (nodeId: string) => apiPost(`/v1/tasks/${taskId}/dispatch`, { node_id: nodeId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['task-dispatches', taskId] });
+      setSelectedNodeId('');
+    },
+  });
+
+  const nodes = nodesData?.nodes ?? [];
+  const onlineNodes = nodes.filter(n => n.status !== 'offline');
+  const dispatches = dispatchData?.dispatches ?? [];
+
+  function getStepIndex(status: string): number {
+    if (status === 'failed') return DISPATCH_STEPS.indexOf('completed');
+    return DISPATCH_STEPS.indexOf(status);
+  }
+
+  return (
+    <div className="border-t border-[var(--border)] pt-5 space-y-4">
+      <div className="flex items-center gap-2">
+        <Server size={16} className="text-[var(--text-secondary)]" />
+        <h3 className="text-sm font-semibold text-[var(--text)]">Dispatch to Node</h3>
+      </div>
+
+      <div className="flex gap-2">
+        <select
+          value={selectedNodeId}
+          onChange={(e) => setSelectedNodeId(e.target.value)}
+          style={{
+            flex: 1, padding: '8px 12px',
+            backgroundColor: 'var(--card)', border: '1px solid var(--border)',
+            borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', outline: 'none',
+          }}
+        >
+          <option value="">Select a node...</option>
+          {onlineNodes.map(n => (
+            <option key={n.id} value={n.id}>
+              {n.name} ({n.status})
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={() => selectedNodeId && dispatchMutation.mutate(selectedNodeId)}
+          disabled={!selectedNodeId || dispatchMutation.isPending}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '5px',
+            padding: '8px 14px', borderRadius: '8px', border: 'none',
+            backgroundColor: !selectedNodeId || dispatchMutation.isPending ? 'var(--surface-elevated)' : 'var(--accent)',
+            color: !selectedNodeId || dispatchMutation.isPending ? 'var(--text-muted)' : '#fff',
+            fontSize: '13px', fontWeight: 600, cursor: !selectedNodeId ? 'not-allowed' : 'pointer',
+            opacity: dispatchMutation.isPending ? 0.6 : 1,
+          }}
+        >
+          <Send size={13} />
+          {dispatchMutation.isPending ? 'Dispatching...' : 'Dispatch'}
+        </button>
+      </div>
+
+      {dispatchMutation.isError && (
+        <p style={{ fontSize: '12px', color: '#EF4444' }}>
+          {(dispatchMutation.error as Error).message}
+        </p>
+      )}
+
+      {onlineNodes.length === 0 && (
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+          No online nodes available. Register and connect nodes in Fleet.
+        </p>
+      )}
+
+      {dispatches.length > 0 && (
+        <div className="space-y-3">
+          {dispatches.map((d) => {
+            const stepIdx = getStepIndex(d.status);
+            const statusCfg = DISPATCH_STATUS_CONFIG[d.status] || DISPATCH_STATUS_CONFIG.pending;
+            return (
+              <div key={d.id} style={{
+                backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)',
+                borderRadius: '10px', padding: '12px 14px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Server size={12} style={{ color: 'var(--text-muted)' }} />
+                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {d.node_name}
+                    </span>
+                  </div>
+                  <span style={{
+                    fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px',
+                    backgroundColor: statusCfg.bg, color: statusCfg.color,
+                    textTransform: 'uppercase', letterSpacing: '0.3px',
+                  }}>
+                    {statusCfg.label}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0', marginBottom: '8px' }}>
+                  {DISPATCH_STEPS.map((step, i) => {
+                    const isActive = i <= stepIdx;
+                    const isFailed = d.status === 'failed' && i === stepIdx;
+                    const dotColor = isFailed ? '#EF4444' : isActive ? '#22C55E' : 'var(--border)';
+                    return (
+                      <div key={step} style={{ display: 'flex', alignItems: 'center', flex: i < DISPATCH_STEPS.length - 1 ? 1 : 'none' }}>
+                        <div style={{
+                          width: '8px', height: '8px', borderRadius: '50%',
+                          backgroundColor: dotColor, flexShrink: 0,
+                          boxShadow: isActive ? `0 0 6px ${dotColor}40` : 'none',
+                        }} />
+                        {i < DISPATCH_STEPS.length - 1 && (
+                          <div style={{
+                            flex: 1, height: '2px',
+                            backgroundColor: i < stepIdx ? '#22C55E' : 'var(--border)',
+                          }} />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  {DISPATCH_STEPS.map((step, i) => (
+                    <span key={step} style={{
+                      fontSize: '9px', color: i <= stepIdx ? 'var(--text-secondary)' : 'var(--text-muted)',
+                      textTransform: 'capitalize',
+                      width: i < DISPATCH_STEPS.length - 1 ? `${100 / DISPATCH_STEPS.length}%` : 'auto',
+                    }}>
+                      {step === 'completed' ? (d.status === 'failed' ? 'Failed' : 'Done') : step}
+                    </span>
+                  ))}
+                </div>
+
+                {d.error && (
+                  <p style={{ fontSize: '11px', color: '#EF4444', marginTop: '8px', padding: '6px 8px', backgroundColor: 'rgba(239,68,68,0.08)', borderRadius: '6px' }}>
+                    {d.error}
+                  </p>
+                )}
+
+                <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                  {d.dispatched_at && (
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                      Dispatched {relativeTime(d.dispatched_at)}
+                    </span>
+                  )}
+                  {d.completed_at && (
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                      Finished {relativeTime(d.completed_at)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TaskDetailModal({ taskId, agents, tags, onClose }: { taskId: string; agents: Agent[]; tags: TagObject[]; onClose: () => void; }) {
   const queryClient = useQueryClient();
 
@@ -1627,6 +1830,8 @@ function TaskDetailModal({ taskId, agents, tags, onClose }: { taskId: string; ag
                 {updateMutation.isPending ? <Spinner size="sm" className="mr-2" /> : null} Save Changes
               </Button>
             </div>
+
+            <DispatchToNodeSection taskId={taskId} />
 
             <div className="border-t border-[var(--border)] pt-5 space-y-4">
               <div className="flex items-center justify-between">

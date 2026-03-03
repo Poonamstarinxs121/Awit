@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { pool } from '../db/index.js';
 import { emitDatabaseEvent } from '../services/realtimeService.js';
-import { executeAgentTurn } from '../services/orchestrationEngine.js';
+import { executeAgentTurn, resolveAgentMention } from '../services/orchestrationEngine.js';
 
 const router = Router();
 
@@ -155,15 +155,30 @@ router.post('/messages', async (req: Request, res: Response) => {
 
       if (mentionNames.length > 0) {
         for (const mentionName of mentionNames) {
-          const agentResult = await pool.query(
-            `SELECT id, name FROM agents WHERE tenant_id = $1 AND status = 'active' AND (
-              LOWER(REPLACE(name, ' ', '')) = LOWER(REPLACE($2, ' ', ''))
-              OR LOWER(name) = LOWER($2)
-            ) LIMIT 1`,
-            [tenantId, mentionName]
-          );
-          if (agentResult.rows.length > 0) {
-            targetAgents.push(agentResult.rows[0]);
+          const mentionResult = await resolveAgentMention(tenantId, mentionName, trimmedContent);
+          if (mentionResult.remote && mentionResult.dispatched) {
+            await postAgentResponse(tenantId, userId, mentionResult.dispatchMessage || `Task dispatched for @${mentionName}`);
+            continue;
+          }
+          if (mentionResult.agentId) {
+            const agentResult = await pool.query(
+              `SELECT id, name FROM agents WHERE id = $1 AND tenant_id = $2`,
+              [mentionResult.agentId, tenantId]
+            );
+            if (agentResult.rows.length > 0) {
+              targetAgents.push(agentResult.rows[0]);
+            }
+          } else {
+            const agentResult = await pool.query(
+              `SELECT id, name FROM agents WHERE tenant_id = $1 AND status = 'active' AND (
+                LOWER(REPLACE(name, ' ', '')) = LOWER(REPLACE($2, ' ', ''))
+                OR LOWER(name) = LOWER($2)
+              ) LIMIT 1`,
+              [tenantId, mentionName]
+            );
+            if (agentResult.rows.length > 0) {
+              targetAgents.push(agentResult.rows[0]);
+            }
           }
         }
       }
