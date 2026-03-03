@@ -10,9 +10,9 @@ import { BoardChat } from '../components/board/BoardChat';
 import {
   Plus, Calendar, X, MessageSquare, Clock, Paperclip, Download, Trash2, Upload,
   ChevronLeft, Tag, Bot, PanelRightOpen, PanelRightClose, ChevronDown,
-  LayoutDashboard, Columns3, Tags, ShieldCheck, Layers, Cpu, Users,
-  Network, Play, Pause, List, LayoutGrid, Filter, Settings, Copy,
-  Pencil, ZapOff, AlertCircle, Activity, Building2,
+  LayoutDashboard, Columns3, Tags, ShieldCheck, Layers,
+  Network, Play, Pause, List, LayoutGrid, Filter, Settings,
+  Pencil, Zap, AlertCircle, Activity, Building2, Check, Clipboard,
 } from 'lucide-react';
 import type { Task, TaskStatus, TaskPriority, Agent, Comment, Activity as ActivityType } from '../types';
 import { useLocation } from 'react-router-dom';
@@ -230,7 +230,7 @@ function BoardSidebar({
 
         <SectionLabel label="Skills" />
         <NavItem href="/agents" icon={Bot} label="Agents" />
-        <NavItem href="/automation" icon={ZapOff} label="Automation" />
+        <NavItem href="/automation" icon={Zap} label="Automation" />
 
         <SectionLabel label="Administration" />
         <NavItem href="/organisation" icon={Building2} label="Organization" />
@@ -288,6 +288,7 @@ function BoardSidebar({
 
 export function Board() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const boardGroupId = searchParams.get('boardGroupId');
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null);
@@ -298,8 +299,12 @@ export function Board() {
   const [filterTagId, setFilterTagId] = useState<string>('');
   const [chatOpen, setChatOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('board');
-  const [isPlaying, setIsPlaying] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+  const [globalPaused, setGlobalPaused] = useState(false);
+  const [pauseLoading, setPauseLoading] = useState(false);
 
   const { data: boardGroupData } = useQuery({
     queryKey: ['board-group', boardGroupId],
@@ -356,6 +361,55 @@ export function Board() {
     },
   });
 
+  const renameMutation = useMutation({
+    mutationFn: (name: string) =>
+      apiPatch(`/v1/board-groups/${boardGroupId}`, { name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['board-group', boardGroupId] });
+      queryClient.invalidateQueries({ queryKey: ['board-groups'] });
+      setRenameOpen(false);
+    },
+  });
+
+  useQuery({
+    queryKey: ['board-pause-status'],
+    queryFn: async () => {
+      const data = await apiGet<{ globalPaused: boolean }>('/v1/settings/pause-status');
+      setGlobalPaused(data.globalPaused);
+      return data;
+    },
+    refetchInterval: 60000,
+    retry: false,
+  });
+
+  const handleCopyLink = useCallback(() => {
+    navigator.clipboard.writeText(window.location.href).catch(() => {});
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  }, []);
+
+  const handleEditBoard = useCallback(() => {
+    if (boardGroupId && boardGroupData) {
+      setRenameValue(boardGroupData.name ?? '');
+      setRenameOpen(true);
+    } else {
+      navigate('/boards');
+    }
+  }, [boardGroupId, boardGroupData, navigate]);
+
+  const handleTogglePause = useCallback(async () => {
+    setPauseLoading(true);
+    try {
+      const endpoint = globalPaused ? '/v1/settings/resume-all' : '/v1/settings/pause-all';
+      const data = await apiPost<{ globalPaused: boolean }>(endpoint, {});
+      setGlobalPaused(data.globalPaused);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setPauseLoading(false);
+    }
+  }, [globalPaused]);
+
   const handleDragStart = useCallback((e: React.DragEvent, taskId: string) => {
     e.dataTransfer.setData('text/plain', taskId);
     e.dataTransfer.effectAllowed = 'move';
@@ -395,20 +449,22 @@ export function Board() {
 
   const boardTitle = boardGroupId ? (boardGroupData?.name ?? 'Board') : 'Boards';
 
-  function ToolbarBtn({ icon: Icon, onClick, active = false, title }: { icon: typeof Play; onClick?: () => void; active?: boolean; title?: string }) {
+  function ToolbarBtn({ icon: Icon, onClick, active = false, title, disabled = false }: { icon: typeof Play; onClick?: () => void; active?: boolean; title?: string; disabled?: boolean }) {
     return (
       <button
         onClick={onClick}
         title={title}
+        disabled={disabled}
         style={{
           width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          borderRadius: '6px', border: '1px solid var(--border)', cursor: 'pointer',
+          borderRadius: '6px', border: '1px solid var(--border)', cursor: disabled ? 'not-allowed' : 'pointer',
           backgroundColor: active ? 'var(--accent-soft)' : 'var(--surface-elevated)',
           color: active ? 'var(--accent)' : 'var(--text-secondary)',
+          opacity: disabled ? 0.5 : 1,
           transition: 'all 150ms',
         }}
-        onMouseEnter={(e) => { if (!active) { e.currentTarget.style.backgroundColor = 'var(--surface-hover)'; e.currentTarget.style.color = 'var(--text-primary)'; } }}
-        onMouseLeave={(e) => { if (!active) { e.currentTarget.style.backgroundColor = 'var(--surface-elevated)'; e.currentTarget.style.color = 'var(--text-secondary)'; } }}
+        onMouseEnter={(e) => { if (!active && !disabled) { e.currentTarget.style.backgroundColor = 'var(--surface-hover)'; e.currentTarget.style.color = 'var(--text-primary)'; } }}
+        onMouseLeave={(e) => { if (!active && !disabled) { e.currentTarget.style.backgroundColor = 'var(--surface-elevated)'; e.currentTarget.style.color = 'var(--text-secondary)'; } }}
       >
         <Icon size={14} />
       </button>
@@ -485,11 +541,11 @@ export function Board() {
 
               <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border)', margin: '0 2px' }} />
 
-              <ToolbarBtn icon={isPlaying ? Pause : Play} onClick={() => setIsPlaying(p => !p)} active={isPlaying} title={isPlaying ? 'Pause automation' : 'Run automation'} />
-              <ToolbarBtn icon={Filter} onClick={() => setFilterOpen(f => !f)} active={filterOpen} title="Filter" />
-              <ToolbarBtn icon={Copy} title="Duplicate board" />
-              <ToolbarBtn icon={Pencil} title="Edit board" />
-              <ToolbarBtn icon={Settings} title="Board settings" />
+              <ToolbarBtn icon={globalPaused ? Play : Pause} onClick={handleTogglePause} active={!globalPaused} title={globalPaused ? 'Resume all agents' : 'Pause all agents'} disabled={pauseLoading} />
+              <ToolbarBtn icon={Filter} onClick={() => setFilterOpen(f => !f)} active={filterOpen} title="Filter by tag" />
+              <ToolbarBtn icon={linkCopied ? Check : Clipboard} onClick={handleCopyLink} active={linkCopied} title={linkCopied ? 'Copied!' : 'Copy board link'} />
+              <ToolbarBtn icon={Pencil} onClick={handleEditBoard} title={boardGroupId ? 'Rename board' : 'Manage boards'} />
+              <ToolbarBtn icon={Settings} onClick={() => navigate('/settings')} title="Settings" />
 
               <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border)', margin: '0 2px' }} />
 
@@ -619,6 +675,48 @@ export function Board() {
           tags={allTags}
           onClose={() => setDetailTaskId(null)}
         />
+      )}
+
+      {renameOpen && boardGroupId && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setRenameOpen(false)} />
+          <div style={{
+            position: 'relative', backgroundColor: 'var(--card)', border: '1px solid var(--border)',
+            borderRadius: '12px', padding: '24px', width: '360px', zIndex: 1,
+          }}>
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px' }}>
+              Rename Board
+            </h2>
+            <input
+              autoFocus
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && renameValue.trim()) renameMutation.mutate(renameValue.trim()); if (e.key === 'Escape') setRenameOpen(false); }}
+              placeholder="Board name"
+              style={{
+                width: '100%', padding: '10px 12px', borderRadius: '8px',
+                backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)',
+                color: 'var(--text-primary)', fontSize: '14px', outline: 'none',
+                marginBottom: '16px',
+              }}
+            />
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setRenameOpen(false)}
+                style={{ padding: '8px 16px', borderRadius: '7px', border: '1px solid var(--border)', backgroundColor: 'transparent', color: 'var(--text-secondary)', fontSize: '13px', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { if (renameValue.trim()) renameMutation.mutate(renameValue.trim()); }}
+                disabled={!renameValue.trim() || renameMutation.isPending}
+                style={{ padding: '8px 16px', borderRadius: '7px', border: 'none', backgroundColor: 'var(--accent)', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', opacity: !renameValue.trim() ? 0.5 : 1 }}
+              >
+                {renameMutation.isPending ? 'Saving...' : 'Rename'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
