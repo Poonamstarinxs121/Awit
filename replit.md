@@ -78,10 +78,13 @@ SquidJob is built as a monorepo with distinct `server/` and `client/` directorie
 - **Workspace**: Boards, Docs, Standups, Approvals
 - **System**: Settings, Billing, Help
 
-## Recent Changes (Phase 12 — Settings & Billing UI/UX Overhaul)
+## Recent Changes (Phase 12 — Settings, Billing, Dock, StatusBar, Theming)
 - **Settings Page**: Complete UI/UX redesign with tabbed layout (General, Integrations, Security, Notifications). Each section uses icon-header cards with subtitles. Provider cards show colored icons. Toggle switches replaced with consistent ToggleSwitch component. Usage stats use colored value cards. All modals use consistent InputField/ActionButton components.
 - **Billing Page**: Added billing schedule timeline, payment details panel, and stat summary cards (Plan, Status, Next Billing, Usage Cost). New `/v1/billing/history` API endpoint returns billing events and summary. Two-column layout: Billing Schedule (left) + Payment Details (right). StatusBadge component for event statuses.
 - **Backend**: Added `GET /v1/billing/history` endpoint in `server/src/routes/billing.ts` — returns billing events from subscription data + usage cost summary.
+- **Dock User Menu**: Added user avatar/initials icon at bottom of Dock with popup menu showing name, email, role, tenant. Menu has Theme picker and Settings shortcut, plus Sign Out. Accessible from any page.
+- **Theme System**: `ThemeContext.tsx` with 4 themes: Dark (default, #0C0C0C), Midnight Blue (#0B1120), Nord (#2E3440), Warm Light (#FAF8F5). Themes apply CSS variables to :root. Persisted in localStorage. Theme picker shows color preview swatches.
+- **StatusBar Upgrade**: Added machine health metrics (CPU%, RAM%, DSK% with mini progress bars + color coding), SVC count (online/total machines), Uptime timer, connection status glow dot. Metrics sourced from `/v1/machines` endpoint.
 
 ## Previous Changes (Phase 11 — App-Wide Consolidation Audit)
 - **9 pages removed** — eliminated all redundancy and duplicate features
