@@ -3,8 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Server, CheckCircle, AlertTriangle, XCircle, Plus,
   X, Copy, ChevronRight, Trash2, Clock, Cpu, HardDrive,
-  MemoryStick, Bot, Wifi, Send,
+  MemoryStick, Bot, Wifi, Send, Building2,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { apiGet, apiPost, apiDelete } from '../api/client';
 import { Spinner } from '../components/ui/Spinner';
 
@@ -101,6 +102,7 @@ function getBarColor(value: number): string {
 
 export function FleetPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [showRegister, setShowRegister] = useState(false);
   const [registerName, setRegisterName] = useState('');
   const [registerResult, setRegisterResult] = useState<RegisterResult | null>(null);
@@ -178,18 +180,30 @@ export function FleetPage() {
             Manage connected OpenClaw nodes across your infrastructure
           </p>
         </div>
-        <button
-          onClick={() => setShowRegister(true)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            padding: '8px 16px', borderRadius: '8px',
-            backgroundColor: 'var(--accent)', border: 'none',
-            color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-            flexShrink: 0,
-          }}
-        >
-          <Plus size={15} /> Register Node
-        </button>
+        <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+          <button
+            onClick={() => navigate('/fleet-office')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '8px 16px', borderRadius: '8px',
+              backgroundColor: 'var(--card)', border: '1px solid var(--border)',
+              color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            <Building2 size={15} /> Fleet Office
+          </button>
+          <button
+            onClick={() => setShowRegister(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '8px 16px', borderRadius: '8px',
+              backgroundColor: 'var(--accent)', border: 'none',
+              color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            <Plus size={15} /> Register Node
+          </button>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
@@ -319,6 +333,18 @@ export function FleetPage() {
                       v{node.openclaw_version}
                     </span>
                   )}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); navigate(`/fleet/nodes/${node.id}/office`); }}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '4px',
+                      fontSize: '11px', fontWeight: 600,
+                      padding: '2px 8px', borderRadius: '5px',
+                      backgroundColor: 'rgba(255,59,48,0.1)', color: '#FF3B30',
+                      border: 'none', cursor: 'pointer', marginLeft: 'auto',
+                    }}
+                  >
+                    <Building2 size={11} /> Office
+                  </button>
                 </div>
               </div>
             );
@@ -543,6 +569,7 @@ function DetailPanel({ data, onClose, onDelete, deleting }: {
   onDelete: () => void;
   deleting: boolean;
 }) {
+  const detailNavigate = useNavigate();
   const { node, heartbeats, telemetry } = data;
   const dot = STATUS_DOT[node.status] || STATUS_DOT.offline;
   const cpu = node.system_info?.cpu_percent ?? 0;
@@ -596,6 +623,18 @@ function DetailPanel({ data, onClose, onDelete, deleting }: {
             <InfoRow label="Uptime" value={formatUptime(node.system_info?.uptime_seconds)} />
             <InfoRow label="Registered" value={new Date(node.created_at).toLocaleDateString()} />
           </div>
+          <button
+            onClick={() => detailNavigate(`/fleet/nodes/${node.id}/office`)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              width: '100%', marginTop: '12px', padding: '10px',
+              borderRadius: '8px', border: '1px solid var(--border)',
+              backgroundColor: 'rgba(255,59,48,0.08)', color: '#FF3B30',
+              fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            <Building2 size={15} /> View 3D Office
+          </button>
         </div>
 
         <div style={{

@@ -38,6 +38,7 @@ const dockSections = [
       { href: '/memory',    label: 'Memory',    icon: Brain },
       { href: '/search',    label: 'Search',    icon: Search },
       { href: '/fleet-analytics', label: 'Fleet Analytics', icon: PieChart },
+      { href: '/fleet-office', label: 'Fleet Office', icon: Building2 },
     ],
   },
   {

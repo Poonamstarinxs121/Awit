@@ -1,10 +1,14 @@
-import { useState, Suspense } from 'react';
+import { useState, Suspense, lazy } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Building2, List, Box, Users } from 'lucide-react';
+import { Box, List, Users } from 'lucide-react';
 import { apiGet } from '../api/client';
 import { Spinner } from '../components/ui/Spinner';
 import type { Agent } from '../types';
+import type { OfficeAgent } from '../components/Office3D/types';
+import { mapStatusForOffice, assignAgentColor } from '../components/Office3D/types';
+
+const Office3DLazy = lazy(() => import('../components/Office3D/Office3D'));
 
 const statusDot: Record<string, string> = {
   active: 'var(--positive)',
@@ -21,6 +25,21 @@ const statusLabel: Record<string, string> = {
 };
 
 const ACCENT_COLORS = ['#FF3B30', '#0A84FF', '#32D74B', '#FF9500', '#BF5AF2', '#FF375F', '#64D2FF', '#FFD60A'];
+
+function mapAgentsToOffice(agents: Agent[]): OfficeAgent[] {
+  return agents.map((agent, index) => ({
+    id: agent.id,
+    name: agent.name,
+    emoji: agent.name.charAt(0).toUpperCase(),
+    color: assignAgentColor(index),
+    role: agent.role,
+    status: mapStatusForOffice(agent.status),
+    currentTask: undefined,
+    model: (agent.model_config as any)?.model || undefined,
+    tokensPerHour: undefined,
+    tasksInQueue: undefined,
+  }));
+}
 
 function AgentListView({ agents }: { agents: Agent[] }) {
   const navigate = useNavigate();
@@ -95,9 +114,11 @@ export function OfficePage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['agents'],
     queryFn: () => apiGet<{ agents: Agent[] }>('/v1/agents'),
+    refetchInterval: 15000,
   });
 
   const agents = data?.agents ?? [];
+  const officeAgents = mapAgentsToOffice(agents);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -209,21 +230,22 @@ export function OfficePage() {
           overflow: 'hidden',
           border: '1px solid var(--border)',
           minHeight: '500px',
+          position: 'relative',
         }}>
           <Suspense fallback={
             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0C0C0C' }}>
               <Spinner size="lg" />
             </div>
           }>
-            <OfficeSceneLazy agents={agents} />
+            <Office3DLazy
+              agents={officeAgents}
+              officeName="Hub Office"
+              compact={true}
+              showFurniture={true}
+            />
           </Suspense>
         </div>
       )}
     </div>
   );
 }
-
-import { lazy } from 'react';
-const OfficeSceneLazy = lazy(() =>
-  import('../components/office/OfficeScene').then(m => ({ default: m.OfficeScene }))
-);

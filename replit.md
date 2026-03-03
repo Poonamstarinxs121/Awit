@@ -77,11 +77,25 @@ The codebase is a monorepo with `server/`, `client/`, `node/`, and `extension/` 
 - `/cron` — Cron manager for OpenClaw scheduled tasks
 - `/terminal` — Command execution terminal with history, quick commands
 
-## Hub Pages (Phase 3+4)
+## Hub Pages (Phase 3+4+6)
 - `/fleet-analytics` — Aggregated cross-node cost/usage analytics
 - SearchPage Fleet tab — Cross-node search with per-source grouping
 - Board task detail — Dispatch to Node section with status timeline
 - Fleet node detail — Recent Dispatches section
+- `/office` — Hub 3D Office with full Office3D (VoxelAvatars, furniture, FPS/orbit modes)
+- `/fleet/nodes/:nodeId/office` — Per-node 3D Office view with system metrics overlay
+- `/fleet-office` — Fleet-wide multi-node 3D overview (all nodes as separate rooms)
+
+## Office3D Components (Phase 6)
+Located in `client/src/components/Office3D/` — 22 components extracted from tenacitOS:
+- `Office3D.tsx` — Main scene accepting dynamic `OfficeAgent[]` props
+- `types.ts` — Shared interfaces (`OfficeAgent`, `OfficeAgentWithPosition`), helpers (`mapStatusForOffice`, `assignAgentColor`, `calculateDeskPositions`)
+- `VoxelAvatar.tsx`, `AgentDesk.tsx`, `AgentPanel.tsx`, `MovingAvatar.tsx` — Agent rendering/interaction
+- `Floor.tsx`, `Walls.tsx`, `Lights.tsx` — Environment
+- `CoffeeMachine.tsx`, `FileCabinet.tsx`, `Whiteboard.tsx`, `PlantPot.tsx`, `WallClock.tsx` — Furniture
+- `FirstPersonControls.tsx` — WASD FPS camera mode
+- `VoxelChair.tsx`, `VoxelKeyboard.tsx`, `VoxelMacMini.tsx` — Desk accessories
+- `ProceduralAvatars.tsx`, `Avatar.tsx`, `AvatarModel.tsx`, `useAvatarModel.ts`, `agentsConfig.ts` — Avatar system
 
 ## Hub API Endpoints (Phase 3+4)
 - `POST /v1/tasks/:id/dispatch` — dispatch task to node
