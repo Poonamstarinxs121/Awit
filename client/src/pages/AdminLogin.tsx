@@ -17,7 +17,7 @@ export function AdminLogin() {
     setLoading(true);
     try {
       await login(email, password);
-      navigate('/dashboard');
+      navigate('/admin');
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {

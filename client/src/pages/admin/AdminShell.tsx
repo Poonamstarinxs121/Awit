@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, CreditCard, TrendingUp, ReceiptText,
+  LayoutDashboard, TrendingUp,
   LogOut, ChevronLeft, ChevronRight, Bell, Building2
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
@@ -28,14 +28,12 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'Tenants',
     items: [
       { href: '/admin/tenants', label: 'All Tenants', icon: Building2 },
-      { href: '/admin/plans', label: 'Subscription Plans', icon: CreditCard },
     ],
   },
   {
     title: 'Finance',
     items: [
       { href: '/admin/finance', label: 'Revenue & MRR', icon: TrendingUp },
-      { href: '/admin/subscriptions', label: 'Subscriptions', icon: ReceiptText },
     ],
   },
 ];
