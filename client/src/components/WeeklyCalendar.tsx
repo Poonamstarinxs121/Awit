@@ -7,8 +7,8 @@ import { apiGet } from '../api/client';
 interface CronJob {
   id: string;
   name: string;
-  cron_expression: string;
-  enabled: boolean;
+  schedule: string;
+  is_active: boolean;
   last_run?: string;
   next_run?: string;
 }
@@ -45,7 +45,7 @@ export function WeeklyCalendar() {
 
   const getCronsForDay = (day: Date) => {
     const jobs = cronData?.jobs || [];
-    return jobs.filter(j => j.next_run && isSameDay(new Date(j.next_run), day) && j.enabled);
+    return jobs.filter(j => j.next_run && isSameDay(new Date(j.next_run), day) && j.is_active);
   };
 
   return (

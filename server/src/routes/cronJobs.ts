@@ -14,7 +14,7 @@ router.get('/', requireMinRole('viewer'), async (req: Request, res: Response) =>
       `SELECT * FROM cron_jobs WHERE tenant_id = $1 ORDER BY created_at DESC`,
       [tenantId]
     );
-    res.json(result.rows);
+    res.json({ jobs: result.rows });
   } catch (error) {
     console.error('Error listing cron jobs:', error);
     res.status(500).json({ error: 'Failed to list cron jobs' });

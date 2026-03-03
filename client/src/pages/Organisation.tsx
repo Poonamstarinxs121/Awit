@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Building2, Users, Shield, Globe, Key, CreditCard } from 'lucide-react';
+import { Building2, Users, Shield, Key, CreditCard } from 'lucide-react';
 import { apiGet } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 
@@ -9,6 +9,14 @@ interface Agent {
   status: string;
   role: string;
   level: string;
+}
+
+interface BillingSummary {
+  current_plan: string;
+  status: string;
+  next_billing_date: string | null;
+  total_usage_cost: number;
+  stripe_connected: boolean;
 }
 
 export function Organisation() {
@@ -24,9 +32,18 @@ export function Organisation() {
     queryFn: () => apiGet<{ providers: { id: string; provider: string; status: string }[] }>('/v1/config/providers'),
   });
 
+  const { data: billingData } = useQuery({
+    queryKey: ['billing-history'],
+    queryFn: () => apiGet<{ summary: BillingSummary }>('/v1/billing/history'),
+    retry: false,
+  });
+
   const agents = agentsData?.agents ?? [];
   const providers = providersData?.providers ?? [];
   const activeAgents = agents.filter(a => a.status === 'active');
+  const plan = billingData?.summary?.current_plan ?? 'starter';
+  const planStatus = billingData?.summary?.status ?? 'active';
+  const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
 
   function InfoRow({ label, value }: { label: string; value: string }) {
     return (
@@ -58,7 +75,7 @@ export function Organisation() {
     { label: 'Total Agents', value: agents.length, sub: `${activeAgents.length} active`, color: '#32D74B' },
     { label: 'Role', value: user?.role || 'User', sub: 'Your access level', color: '#60A5FA' },
     { label: 'Providers', value: providers.filter(p => p.status === 'active').length, sub: `${providers.length} configured`, color: '#A78BFA' },
-    { label: 'Plan', value: 'Starter', sub: 'Current plan', color: '#FFD60A' },
+    { label: 'Plan', value: planLabel, sub: planStatus === 'active' ? 'Active subscription' : planStatus, color: '#FFD60A' },
   ];
 
   return (
@@ -92,10 +109,10 @@ export function Organisation() {
 
         <SectionCard title="Subscription" icon={CreditCard} subtitle="Plan and billing information">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <InfoRow label="Current Plan" value="Starter" />
-            <InfoRow label="Status" value="Active" />
-            <InfoRow label="Agents Limit" value="10" />
-            <InfoRow label="Tasks Limit" value="Unlimited" />
+            <InfoRow label="Current Plan" value={planLabel} />
+            <InfoRow label="Status" value={planStatus.charAt(0).toUpperCase() + planStatus.slice(1)} />
+            <InfoRow label="Usage Cost" value={billingData?.summary ? `$${billingData.summary.total_usage_cost.toFixed(2)}` : '—'} />
+            <InfoRow label="Stripe Connected" value={billingData?.summary?.stripe_connected ? 'Yes' : 'No'} />
           </div>
           <button
             style={{

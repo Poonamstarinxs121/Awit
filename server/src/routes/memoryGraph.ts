@@ -107,4 +107,46 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/nodes', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const query = (req.query.query as string || '').toLowerCase().trim();
+    const limit = Math.min(parseInt(req.query.limit as string || '20'), 100);
+
+    let sql = `
+      SELECT me.id, me.agent_id, me.memory_type as type, me.content, me.created_at,
+             a.name as agent_name
+      FROM memory_entries me
+      LEFT JOIN agents a ON a.id = me.agent_id AND a.tenant_id = me.tenant_id
+      WHERE me.tenant_id = $1
+    `;
+    const params: any[] = [tenantId];
+
+    if (query) {
+      sql += ` AND LOWER(me.content) LIKE $2`;
+      params.push(`%${query}%`);
+    }
+
+    sql += ` ORDER BY me.created_at DESC LIMIT $${params.length + 1}`;
+    params.push(limit);
+
+    const result = await pool.query(sql, params);
+
+    const nodes = result.rows.map((row: any) => ({
+      id: `memory-${row.id}`,
+      content: row.content,
+      agent_id: row.agent_id,
+      type: row.type,
+      created_at: row.created_at,
+      agentName: row.agent_name,
+      similarity: query ? 1.0 : undefined,
+    }));
+
+    res.json({ nodes });
+  } catch (error: any) {
+    console.error('Memory nodes error:', error);
+    res.status(500).json({ error: 'Failed to search memory nodes' });
+  }
+});
+
 export default router;

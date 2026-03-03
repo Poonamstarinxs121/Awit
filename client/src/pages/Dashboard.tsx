@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bot, Zap, CheckCircle, ShieldCheck, Brain, Server, MessageSquare, Columns3, BarChart3, DollarSign, Settings } from 'lucide-react';
+import { Bot, Zap, CheckCircle, ShieldCheck, Brain, Server, MessageSquare, Columns3, BarChart3, DollarSign, Settings, AlertTriangle, X } from 'lucide-react';
 import { StatsCard } from '../components/ui/StatsCard';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { ActivityFeed } from '../components/ActivityFeed';
@@ -25,20 +25,32 @@ export function Dashboard() {
   const [stats, setStats] = useState<Stats>({ total: 0, today: 0, success: 0, error: 0 });
   const [agents, setAgents] = useState<Agent[]>([]);
   const [pendingApprovals, setPendingApprovals] = useState(0);
+  const [noProviders, setNoProviders] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(() => {
+    return sessionStorage.getItem('sqj_no_provider_dismissed') === 'true';
+  });
 
   useEffect(() => {
     Promise.all([
       apiGet<any>('/v1/activity/stats').catch(() => null),
       apiGet<{ agents: Agent[] }>('/v1/agents').catch(() => ({ agents: [] })),
       apiGet<{ pending: number }>('/v1/approvals/count').catch(() => ({ pending: 0 })),
-    ]).then(([actStats, agentsData, approvalData]) => {
+      apiGet<{ providers: any[] }>('/v1/config/providers').catch(() => ({ providers: [] })),
+    ]).then(([actStats, agentsData, approvalData, providersData]) => {
       if (actStats) setStats({ total: actStats.total || 0, today: actStats.today || 0, success: actStats.success || 0, error: actStats.error || 0 });
       setAgents(agentsData?.agents || []);
       setPendingApprovals(approvalData?.pending || 0);
+      const providers = providersData?.providers || [];
+      setNoProviders(providers.length === 0);
     }).catch(console.error);
   }, []);
 
   const onlineAgents = agents.filter(a => a.status === 'online');
+
+  const dismissBanner = () => {
+    setBannerDismissed(true);
+    sessionStorage.setItem('sqj_no_provider_dismissed', 'true');
+  };
 
   return (
     <div>
@@ -50,6 +62,38 @@ export function Dashboard() {
           Overview of your SquidJob agent workforce
         </p>
       </div>
+
+      {noProviders && !bannerDismissed && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '12px',
+          padding: '12px 16px', marginBottom: '20px',
+          backgroundColor: 'rgba(255, 149, 0, 0.08)',
+          border: '1px solid rgba(255, 149, 0, 0.25)',
+          borderRadius: '10px',
+        }}>
+          <AlertTriangle size={16} style={{ color: '#FF9500', flexShrink: 0 }} />
+          <p style={{ flex: 1, fontSize: '13px', color: '#FF9500', margin: 0 }}>
+            No LLM provider connected — agents cannot execute until you add an API key.
+          </p>
+          <Link
+            to="/settings"
+            style={{
+              fontSize: '12px', fontWeight: 600, color: '#FF9500',
+              textDecoration: 'none', padding: '5px 12px',
+              border: '1px solid rgba(255,149,0,0.4)', borderRadius: '6px',
+              whiteSpace: 'nowrap', flexShrink: 0,
+            }}
+          >
+            Add API Key
+          </Link>
+          <button
+            onClick={dismissBanner}
+            style={{ padding: '4px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,149,0,0.6)', flexShrink: 0 }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
         <StatsCard title="Total Agents" value={agents.length} icon={<Bot size={18} />} iconColor="var(--accent)" />

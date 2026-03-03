@@ -77,7 +77,15 @@ SquidJob is built as a monorepo with distinct `server/` and `client/` directorie
 - **Workspace**: Boards, Docs, Standups, Approvals
 - **System**: Org, Settings, Billing, Help
 
-## Recent Changes (Phase 14 — Machines Redesign + Agent Detail Redesign + Layout Cleanup)
+## Recent Changes (Phase 15 — Bug Fixes & API Audit)
+- **CronJobs API**: `GET /v1/cron-jobs` now returns `{ jobs: [...] }` instead of raw array — fixes WorkflowsPage and WeeklyCalendar empty states
+- **WeeklyCalendar**: Fixed interface field names (`cron_expression→schedule`, `enabled→is_active`) to match actual DB schema
+- **Memory /nodes endpoint**: Added `GET /v1/memory-graph/nodes?query=` route with content filtering — fixes SearchPage 404 on memory search
+- **Dead analytics route removed**: Deleted `server/src/routes/analytics.ts` (queried non-existent `activity_log` table) and unmounted it from `index.ts`
+- **Organisation page**: Now fetches real plan/status from `/v1/billing/history` API with graceful fallback instead of hardcoded "Starter"
+- **Dashboard warning banner**: Shows dismissible amber banner when no LLM provider is configured, linking to Settings
+
+## Previous Changes (Phase 14 — Machines Redesign + Agent Detail Redesign + Layout Cleanup)
 - **AppSidebar removed**: Was causing a duplicate sidebar alongside the Dock. Layout now uses only Dock + main content. marginLeft = dockWidth only.
 - **Machines page redesign**: Stat cards (total/online/offline/groups), table-style machine list with status glow dots, slide-in panels for add/edit/terminal (replacing Modals), SSH terminal output in dark terminal window.
 - **Agent Detail redesign**: Hero header card with avatar + status glow + level badge, vertical tab sidebar grouped into INTERACT/CONFIGURE/AUTOMATE, save button in each card header, model config with provider dropdown + temperature slider.
