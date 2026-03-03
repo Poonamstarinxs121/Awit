@@ -97,6 +97,13 @@ Located in `client/src/components/Office3D/` — 22 components extracted from te
 - `VoxelChair.tsx`, `VoxelKeyboard.tsx`, `VoxelMacMini.tsx` — Desk accessories
 - `ProceduralAvatars.tsx`, `Avatar.tsx`, `AvatarModel.tsx`, `useAvatarModel.ts`, `agentsConfig.ts` — Avatar system
 
+## Downloads
+- `GET /v1/downloads/node` — Streams `node/` directory as `squidjob-node.zip` (excludes node_modules, .next, .env, .git)
+- `GET /v1/downloads/extension` — Streams `extension/` directory as `squidjob-extension.zip` (excludes node_modules, .env, .git)
+- Settings page has a "Downloads" tab with download buttons and quick-start guides for both
+- Fleet registration flow includes a "Download Node App" button
+- Help Center has "Node Setup" and "Browser Setup" topics with download links
+
 ## Hub API Endpoints (Phase 3+4)
 - `POST /v1/tasks/:id/dispatch` — dispatch task to node
 - `GET /v1/tasks/:id/dispatch` — get dispatch status

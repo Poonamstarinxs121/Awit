@@ -35,6 +35,7 @@ import boardMemoriesRoutes from './boardMemories.js';
 import taskDispatchRoutes from './taskDispatch.js';
 import fleetSearchRoutes from './fleetSearch.js';
 import fleetAnalyticsRoutes from './fleetAnalytics.js';
+import downloadsRoutes from './downloads.js';
 
 const router = Router();
 
@@ -76,6 +77,7 @@ router.use('/v1/board-memories', authMiddleware, tenantMiddleware, boardMemories
 router.use('/v1', authMiddleware, tenantMiddleware, taskDispatchRoutes);
 router.use('/v1/fleet/search', authMiddleware, tenantMiddleware, fleetSearchRoutes);
 router.use('/v1/fleet/analytics', authMiddleware, tenantMiddleware, fleetAnalyticsRoutes);
+router.use('/v1/downloads', authMiddleware, downloadsRoutes);
 router.use('/admin/v1', adminRoutes);
 
 startNodeStatusChecker();

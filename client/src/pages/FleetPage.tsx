@@ -515,10 +515,53 @@ NODE_ID=${registerResult.node_id}`}
                       </pre>
                     </div>
 
+                    <div style={{
+                      marginTop: '16px', padding: '14px 16px',
+                      backgroundColor: 'var(--surface)', border: '1px solid var(--border)',
+                      borderRadius: '10px',
+                    }}>
+                      <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 8px' }}>
+                        Don't have the Node app yet?
+                      </p>
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 10px', lineHeight: 1.5 }}>
+                        Download the SquidJob Node dashboard to run alongside OpenClaw on your machine.
+                      </p>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const token = localStorage.getItem('squidjob_token');
+                            const resp = await fetch('/api/v1/downloads/node', {
+                              headers: { Authorization: `Bearer ${token}` },
+                            });
+                            if (!resp.ok) throw new Error();
+                            const blob = await resp.blob();
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'squidjob-node.zip';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                          } catch {
+                            alert('Download failed. Please try again.');
+                          }
+                        }}
+                        style={{
+                          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                          padding: '9px', borderRadius: '8px',
+                          backgroundColor: 'rgba(255,59,48,0.1)', border: '1px solid rgba(255,59,48,0.2)',
+                          color: '#FF3B30', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                        }}
+                      >
+                        <Server size={14} /> Download Node App (.zip)
+                      </button>
+                    </div>
+
                     <button
                       onClick={closeRegister}
                       style={{
-                        width: '100%', marginTop: '16px', padding: '10px',
+                        width: '100%', marginTop: '12px', padding: '10px',
                         backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)',
                         borderRadius: '8px', color: 'var(--text-primary)',
                         fontSize: '13px', fontWeight: 600, cursor: 'pointer',

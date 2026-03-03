@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Key, Trash2, Plus, LogOut, ChevronDown, ChevronUp, Webhook, Eye, ToggleLeft, ToggleRight,
   Send, MessageCircle, Unlink, Mail, Hash, Save, Tag, Copy, Check, AlertCircle,
-  Settings as SettingsIcon, Shield, Zap, Bell, Globe, User, Building2, CreditCard, Lock
+  Settings as SettingsIcon, Shield, Zap, Bell, Globe, User, Building2, CreditCard, Lock,
+  Download, Monitor, Chrome, ExternalLink, Package
 } from 'lucide-react';
 import { apiGet, apiPost, apiDelete, apiPatch, apiPut } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
@@ -85,13 +86,14 @@ const PROVIDER_ICONS: Record<string, { label: string; color: string }> = {
   ollama: { label: 'Ollama', color: '#ffffff' },
 };
 
-type SettingsTab = 'general' | 'integrations' | 'security' | 'notifications';
+type SettingsTab = 'general' | 'integrations' | 'security' | 'notifications' | 'downloads';
 
 const tabs: { key: SettingsTab; label: string; icon: typeof SettingsIcon }[] = [
   { key: 'general', label: 'General', icon: SettingsIcon },
   { key: 'integrations', label: 'Integrations', icon: Globe },
   { key: 'security', label: 'Security', icon: Shield },
   { key: 'notifications', label: 'Notifications', icon: Bell },
+  { key: 'downloads', label: 'Downloads', icon: Download },
 ];
 
 function SectionCard({ title, icon: Icon, children, subtitle }: { title: string; icon: typeof Key; children: React.ReactNode; subtitle?: string }) {
@@ -949,6 +951,101 @@ export function Settings() {
     </div>
   );
 
+  const handleDownload = async (type: 'node' | 'extension') => {
+    try {
+      const token = localStorage.getItem('squidjob_token');
+      const resp = await fetch(`/api/v1/downloads/${type}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!resp.ok) throw new Error('Download failed');
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = type === 'node' ? 'squidjob-node.zip' : 'squidjob-extension.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Download failed. Please try again.');
+    }
+  };
+
+  const renderDownloads = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <SectionCard title="SquidJob Node" icon={Monitor} subtitle="Run agents on any machine and sync with the Hub">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+            The SquidJob Node is a Next.js dashboard that runs alongside OpenClaw on any machine. It provides agent monitoring, file browsing, cost tracking, session history, cron management, terminal access, and real-time sync with this Hub.
+          </p>
+
+          <ActionButton onClick={() => handleDownload('node')} variant="primary" fullWidth>
+            <Download size={16} /> Download Node App (.zip)
+          </ActionButton>
+
+          <div style={{ backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)', borderRadius: '10px', padding: '16px' }}>
+            <h4 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Package size={14} style={{ color: 'var(--accent)' }} /> Quick Start
+            </h4>
+            <ol style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {[
+                'Download and unzip the file',
+                <>Run <code style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', backgroundColor: 'var(--surface)', padding: '2px 6px', borderRadius: '4px' }}>npm install</code></>,
+                <>Copy <code style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', backgroundColor: 'var(--surface)', padding: '2px 6px', borderRadius: '4px' }}>.env.example</code> to <code style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', backgroundColor: 'var(--surface)', padding: '2px 6px', borderRadius: '4px' }}>.env</code> and fill in your Hub URL, API key, and Node ID (<a href="/fleet" style={{ color: 'var(--accent)', textDecoration: 'none' }}>register a node here</a>)</>,
+                <>Run <code style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', backgroundColor: 'var(--surface)', padding: '2px 6px', borderRadius: '4px' }}>npm run dev</code> to start the dashboard</>,
+              ].map((step, i) => (
+                <li key={i} style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{step}</li>
+              ))}
+            </ol>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <SmallBadge color="#64D2FF">Node.js 18+</SmallBadge>
+            <SmallBadge color="#64D2FF">npm</SmallBadge>
+            <SmallBadge color="#30D158">Next.js</SmallBadge>
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Chrome Extension" icon={Globe} subtitle="Monitor fleet status from your browser toolbar">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+            The SquidJob Fleet Monitor extension shows node statuses, agent counts, and system metrics right in your browser toolbar. Get notifications when nodes go offline or come back online.
+          </p>
+
+          <ActionButton onClick={() => handleDownload('extension')} variant="primary" fullWidth>
+            <Download size={16} /> Download Chrome Extension (.zip)
+          </ActionButton>
+
+          <div style={{ backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)', borderRadius: '10px', padding: '16px' }}>
+            <h4 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Package size={14} style={{ color: 'var(--accent)' }} /> Quick Start
+            </h4>
+            <ol style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {[
+                'Download and unzip the file',
+                <>Open Chrome and go to <code style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', backgroundColor: 'var(--surface)', padding: '2px 6px', borderRadius: '4px' }}>chrome://extensions</code></>,
+                'Enable "Developer mode" in the top right corner',
+                'Click "Load unpacked" and select the unzipped folder',
+                'Click the extension icon in your toolbar and configure your Hub URL and API key',
+              ].map((step, i) => (
+                <li key={i} style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{step}</li>
+              ))}
+            </ol>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <SmallBadge color="#64D2FF">Chrome</SmallBadge>
+            <SmallBadge color="#64D2FF">Edge</SmallBadge>
+            <SmallBadge color="#64D2FF">Brave</SmallBadge>
+            <SmallBadge color="#30D158">Manifest V3</SmallBadge>
+          </div>
+        </div>
+      </SectionCard>
+    </div>
+  );
+
   return (
     <div>
       <div style={{ marginBottom: '24px' }}>
@@ -984,6 +1081,7 @@ export function Settings() {
       {activeTab === 'integrations' && renderIntegrations()}
       {activeTab === 'security' && renderSecurity()}
       {activeTab === 'notifications' && renderNotifications()}
+      {activeTab === 'downloads' && renderDownloads()}
 
       {showConnectModal && (
         <Modal title="Connect Provider" onClose={() => { setShowConnectModal(false); setConnectError(''); }}>
