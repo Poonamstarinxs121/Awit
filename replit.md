@@ -64,8 +64,15 @@ SquidJob is built as a monorepo with distinct `server/` and `client/` directorie
 - `/subscription` — Plan management (protected, standalone dark page)
 - All other routes (`/agents`, `/kanban`, `/settings`, etc.) — protected, inside Layout shell
 
-## Recent Changes (Phase 9 — Landing + Subscription)
-- **Public Landing Page**: `LandingPage.tsx` at `/` for unauthenticated users; purple (#7C3AED) + brown (#92400E) + offwhite (#FFF8F0) + yellow (#F59E0B) color palette; hero, how-it-works, squad preview, single $99/mo pricing card, BYOK explanation, login/signup CTAs; fully responsive with mobile nav
-- **Subscription Page Redesign**: Current plan section with Crown icon + status badge + renewal date; 3 plan cards (Starter/Professional/Enterprise) with unique color themes (blue/purple/gold); upgrade/downgrade buttons; feature checklists with green checks; BYOK info section; all dark-themed with rgba() colors
-- **Routing Update**: `HomeRedirect` component at `/` checks auth state — shows LandingPage if not logged in, redirects to `/dashboard` if logged in; Dashboard moved to `/dashboard` route; all nav links (Dock, Login, Register, Subscription back-link) updated to use `/dashboard`
-- **Dark Theme Cleanup**: All remaining light-theme class remnants (bg-white, bg-gray-*, bg-slate-*, border-border-default, bg-surface-light) replaced across every page and component with CSS var equivalents; legacy Tailwind class overrides in index.css as safety net
+## Recent Changes (Phase 10 — Unified Board + Chat)
+- **Unified Board Page**: Merged Squad Chat and Kanban into single `Board.tsx` with split layout — Kanban columns left + Board Chat panel right + Agents sidebar
+- **Board Chat Panel**: `client/src/components/board/BoardChat.tsx` — persistent chat in right panel with @mention autocomplete for agents, keyboard navigation, 5s polling
+- **@mention Agent Routing**: Backend POST `/v1/squad-chat/messages` now parses @AgentName mentions, routes to named agent (or lead agent as fallback), posts agent responses back to chat
+- **Agents Sidebar**: Left column showing all agents with status dots (green=active, yellow=idle, red=error, gray=disabled), links to agent detail pages
+- **Routing Cleanup**: `/squad-chat` route removed; `/kanban` now renders unified Board page; Squad Chat dock icon removed; Dashboard and Sidebar links updated
+- **Responsive**: Chat panel toggleable via PanelRight icon; mobile overlay for chat on small screens; agents sidebar hidden below `lg` breakpoint
+
+## Previous Changes (Phase 9 — Landing + Subscription)
+- **Public Landing Page**: `LandingPage.tsx` at `/` for unauthenticated users; purple (#7C3AED) + brown + offwhite + yellow palette
+- **Subscription Page Redesign**: Dark-themed with plan cards and upgrade/downgrade buttons
+- **Dark Theme Cleanup**: All light-theme class remnants replaced with CSS var equivalents

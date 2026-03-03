@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Monitor, FolderOpen, Brain, Bot, Activity,
   Clock, Puzzle, DollarSign, Settings, History, Search, GitBranch,
-  BarChart3, Calendar, Terminal, FileText, Zap, MessageSquare,
+  BarChart3, Calendar, Terminal, FileText, Zap,
   Server, ShieldCheck, HelpCircle, CreditCard, Columns3, ScrollText,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -52,7 +52,6 @@ const dockSections = [
     label: 'Workspace',
     items: [
       { href: '/boards', label: 'Boards', icon: Columns3 },
-      { href: '/squad-chat', label: 'Chat', icon: MessageSquare },
       { href: '/documents', label: 'Docs', icon: FileText },
       { href: '/standups', label: 'Standups', icon: Clock },
       { href: '/approvals', label: 'Approvals', icon: ShieldCheck },

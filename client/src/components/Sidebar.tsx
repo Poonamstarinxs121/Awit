@@ -18,7 +18,7 @@ const knowledgeNav = [
 ];
 
 const commsNav = [
-  { to: '/squad-chat', label: 'Squad Chat', icon: MessageSquare },
+  { to: '/kanban', label: 'Board Chat', icon: MessageSquare },
 ];
 
 const infraNav = [

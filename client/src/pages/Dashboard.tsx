@@ -12,7 +12,7 @@ interface Agent { id: string; name: string; emoji?: string; color?: string; stat
 const quickLinks = [
   { to: '/agents', label: 'Agents', icon: Bot, color: 'var(--accent)' },
   { to: '/boards', label: 'Boards', icon: Columns3, color: 'var(--info)' },
-  { to: '/squad-chat', label: 'Chat', icon: MessageSquare, color: 'var(--positive)' },
+  { to: '/kanban', label: 'Board', icon: MessageSquare, color: 'var(--positive)' },
   { to: '/memory-graph', label: 'Memory', icon: Brain, color: 'var(--type-command)' },
   { to: '/machines', label: 'Machines', icon: Server, color: 'var(--type-file)' },
   { to: '/approvals', label: 'Approvals', icon: ShieldCheck, color: 'var(--warning)' },
