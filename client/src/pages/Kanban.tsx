@@ -1,11 +1,12 @@
 import { useState, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams, Link } from 'react-router-dom';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../api/client';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Spinner } from '../components/ui/Spinner';
-import { Plus, Calendar, X, MessageSquare, Clock, Paperclip, Download, Trash2, Upload } from 'lucide-react';
+import { Plus, Calendar, X, MessageSquare, Clock, Paperclip, Download, Trash2, Upload, ChevronLeft } from 'lucide-react';
 import type { Task, TaskStatus, TaskPriority, Agent, Comment, Activity } from '../types';
 
 interface TaskWithAgents extends Task {
@@ -61,15 +62,26 @@ function relativeTime(dateStr: string): string {
 
 export function Kanban() {
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const boardGroupId = searchParams.get('boardGroupId');
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createDefaultStatus, setCreateDefaultStatus] = useState<TaskStatus>('inbox');
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
 
+  const { data: boardGroupData } = useQuery({
+    queryKey: ['board-group', boardGroupId],
+    queryFn: () => apiGet<{ board_groups: { id: string; name: string; color: string }[] }>('/v1/board-groups'),
+    enabled: !!boardGroupId,
+    select: (data) => data.board_groups.find((g) => g.id === boardGroupId),
+  });
+
+  const tasksUrl = boardGroupId ? `/v1/tasks?board_group_id=${boardGroupId}` : '/v1/tasks';
+
   const { data: tasksData, isLoading: tasksLoading } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: () => apiGet<{ tasks: TaskWithAgents[] }>('/v1/tasks'),
+    queryKey: ['tasks', boardGroupId],
+    queryFn: () => apiGet<{ tasks: TaskWithAgents[] }>(tasksUrl),
   });
 
   const { data: statsData } = useQuery({
@@ -151,7 +163,21 @@ export function Kanban() {
   return (
     <div className="space-y-4 h-full flex flex-col">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">Mission Queue</h1>
+        <div className="flex items-center gap-2">
+          {boardGroupId && (
+            <Link
+              to="/boards"
+              className="flex items-center gap-1 text-sm text-text-secondary hover:text-brand-accent transition-colors"
+            >
+              <ChevronLeft size={16} />
+              Boards
+            </Link>
+          )}
+          {boardGroupId && <span className="text-text-muted">/</span>}
+          <h1 className="text-xl font-bold text-text-primary font-heading">
+            {boardGroupId ? (boardGroupData?.name ?? 'Board') : 'Mission Queue'}
+          </h1>
+        </div>
         <Button onClick={() => openCreateModal('inbox')} size="sm">
           <Plus size={16} className="mr-1" /> New Task
         </Button>

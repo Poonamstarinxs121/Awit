@@ -11,6 +11,6 @@ const sizeClasses: Record<string, string> = {
 
 export function Spinner({ size = 'md', className = '' }: SpinnerProps) {
   return (
-    <div className={`animate-spin rounded-full border-2 border-border-default border-t-brand-accent ${sizeClasses[size]} ${className}`} />
+    <div className={`animate-spin rounded-full border-2 border-slate-200 border-t-brand-accent ${sizeClasses[size]} ${className}`} />
   );
 }

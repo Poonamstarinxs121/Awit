@@ -59,6 +59,14 @@ router.get('/', requireMinRole('viewer'), async (req: Request, res: Response) =>
       values.push(`%${search}%`);
       paramIndex++;
     }
+    const { board_group_id } = req.query;
+    if (board_group_id === 'null' || board_group_id === 'none') {
+      conditions.push(`t.board_group_id IS NULL`);
+    } else if (board_group_id) {
+      conditions.push(`t.board_group_id = $${paramIndex}`);
+      values.push(board_group_id);
+      paramIndex++;
+    }
 
     const result = await pool.query(
       `SELECT t.*,

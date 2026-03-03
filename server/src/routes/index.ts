@@ -19,6 +19,8 @@ import documentsRoutes from './documents.js';
 import squadChatRoutes from './squadChat.js';
 import machinesRoutes from './machines.js';
 import whatsappRoutes, { whatsappWebhookRouter } from './whatsapp.js';
+import approvalsRoutes from './approvals.js';
+import boardGroupsRoutes from './boardGroups.js';
 
 const router = Router();
 
@@ -43,5 +45,7 @@ router.use('/v1/memory-graph', authMiddleware, tenantMiddleware, memoryGraphRout
 router.use('/v1/squad-chat', authMiddleware, tenantMiddleware, squadChatRoutes);
 router.use('/v1/machines', authMiddleware, tenantMiddleware, machinesRoutes);
 router.use('/v1/whatsapp', authMiddleware, tenantMiddleware, whatsappRoutes);
+router.use('/v1/approvals', authMiddleware, tenantMiddleware, approvalsRoutes);
+router.use('/v1/board-groups', authMiddleware, tenantMiddleware, boardGroupsRoutes);
 
 export default router;

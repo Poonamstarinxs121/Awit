@@ -454,6 +454,41 @@ export async function runMigrations(): Promise<void> {
       )
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS board_groups (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        description TEXT,
+        color TEXT NOT NULL DEFAULT '#2563eb',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (tenant_id, name)
+      )
+    `);
+
+    await client.query(`
+      ALTER TABLE tasks ADD COLUMN IF NOT EXISTS board_group_id UUID REFERENCES board_groups(id) ON DELETE SET NULL
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS approvals (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        description TEXT,
+        action_type TEXT NOT NULL,
+        payload JSONB,
+        requested_by_agent_id UUID REFERENCES agents(id) ON DELETE SET NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        reviewed_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        reviewed_at TIMESTAMPTZ,
+        expires_at TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '24 hours',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_approvals_tenant_status ON approvals(tenant_id, status)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_board_groups_tenant ON board_groups(tenant_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_machines_tenant ON machines(tenant_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_machine_groups_tenant ON machine_groups(tenant_id)`);
 
@@ -465,7 +500,8 @@ export async function runMigrations(): Promise<void> {
       'thread_subscriptions', 'webhooks', 'webhook_deliveries',
       'telegram_configs', 'telegram_chat_links', 'telegram_notification_queue',
       'tenant_settings', 'documents', 'squad_messages',
-      'machine_groups', 'machines', 'whatsapp_configs'
+      'machine_groups', 'machines', 'whatsapp_configs',
+      'board_groups', 'approvals'
     ];
 
     for (const table of rlsTables) {

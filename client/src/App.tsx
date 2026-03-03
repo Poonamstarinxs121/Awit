@@ -21,6 +21,9 @@ import { MemoryGraph } from './pages/MemoryGraph';
 import { HelpCenter } from './pages/HelpCenter';
 import { Subscription } from './pages/Subscription';
 import { Machines } from './pages/Machines';
+import { Approvals } from './pages/Approvals';
+import { BoardGroups } from './pages/BoardGroups';
+import { Activity } from './pages/Activity';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,6 +54,7 @@ export default function App() {
               }
             >
               <Route path="/" element={<Dashboard />} />
+              <Route path="/boards" element={<BoardGroups />} />
               <Route path="/kanban" element={<Kanban />} />
               <Route path="/agents" element={<Agents />} />
               <Route path="/agents/new" element={<AgentNew />} />
@@ -61,6 +65,8 @@ export default function App() {
               <Route path="/squad-chat" element={<SquadChat />} />
               <Route path="/memory-graph" element={<MemoryGraph />} />
               <Route path="/machines" element={<Machines />} />
+              <Route path="/activity" element={<Activity />} />
+              <Route path="/approvals" element={<Approvals />} />
               <Route path="/help" element={<HelpCenter />} />
             </Route>
           </Routes>

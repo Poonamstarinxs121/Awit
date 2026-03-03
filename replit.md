@@ -4,9 +4,10 @@
 SquidJob is a multi-tenant SaaS platform designed to orchestrate independent AI agents into cohesive, coordinated teams. It enables customers to bring their own API keys (BYOK) for various LLM providers and offers a comprehensive platform including an orchestration layer, a "Mission Control" UI, a shared database, and robust agent management capabilities. The platform's vision is to streamline complex AI workflows, enhance productivity, and enable advanced automation through intelligent agent collaboration.
 
 ## User Preferences
-- Warm light theme (MissionControlHQ-inspired)
-- Cream background (#FAF7F2), gold accent (#C4943D), purple for Telegram (#7C3AED)
-- White cards with warm borders (#E5E1D8), subtle shadows
+- Clean slate/blue theme (OpenClaw Mission Control-inspired) — Phase 6 redesign
+- Background (#f8fafc), accent blue (#2563eb), white cards, slate borders (#e2e8f0)
+- IBM Plex Sans (body) + Sora (headings) fonts via Google Fonts CDN
+- Purple for Telegram (#7c3aed) retained
 - Monorepo structure with separate server/ and client/ directories
 
 ## System Architecture
@@ -66,10 +67,11 @@ SquidJob is built as a monorepo with distinct `server/` and `client/` directorie
 - **SquidJob Server**: `cd /home/runner/workspace/server && npx tsx watch src/index.ts` (port 3001)
 
 ## Key Routes (Frontend)
-- `/` Dashboard, `/kanban` Kanban, `/agents` Agents, `/agents/:id` Agent Detail, `/agents/new` New Agent
-- `/standups` Standups, `/settings` Settings, `/documents` Documents, `/squad-chat` Squad Chat
-- `/memory-graph` Memory Graph, `/machines` Infrastructure (Machines + Groups), `/help` Help Center
-- `/setup` Setup Wizard, `/setup/provisioning` Provisioning, `/subscription` Subscription
+- `/` Dashboard, `/boards` Board Groups, `/kanban` Kanban (accepts `?boardGroupId=`), `/agents` Agents
+- `/agents/:id` Agent Detail, `/agents/new` New Agent, `/activity` Activity Timeline
+- `/approvals` Approval Flows, `/standups` Standups, `/settings` Settings, `/documents` Documents
+- `/squad-chat` Squad Chat, `/memory-graph` Memory Graph, `/machines` Infrastructure (Machines + Groups)
+- `/help` Help Center, `/setup` Setup Wizard, `/setup/provisioning` Provisioning, `/subscription` Subscription
 
 ## Key API Endpoints
 - **Auth**: POST /auth/register, /auth/login, GET /auth/me
@@ -88,6 +90,19 @@ SquidJob is built as a monorepo with distinct `server/` and `client/` directorie
 - **Memory Graph**: GET /v1/memory-graph/nodes, GET /v1/memory-graph/edges
 - **Settings**: POST /v1/settings/pause-all, POST /v1/settings/resume-all
 - **Setup**: POST /v1/setup/complete
+- **Approvals**: GET /v1/approvals (query `?status=`), GET /v1/approvals/count, POST /v1/approvals, PATCH /v1/approvals/:id
+- **Board Groups**: GET/POST /v1/board-groups, PATCH/DELETE /v1/board-groups/:id, GET /v1/board-groups/:id/tasks
+- **Activity**: GET /v1/activity (query `?type=&limit=&offset=&agent_id=`)
+
+## Recent Changes (Phase 6 — 2026-03-03)
+- **Design System Overhaul**: Replaced warm cream/gold theme with OpenClaw-inspired clean slate/blue palette; IBM Plex Sans + Sora fonts; updated all Tailwind tokens, UI components (Button, Card, Input, Modal, Spinner), Sidebar, Layout
+- **Global Progress Loader**: `GlobalLoader.tsx` — fixed h-0.5 shimmer bar at top using useIsFetching + useIsMutating; mounted in Layout before sidebar
+- **Approval Flows Backend**: `approvals` DB table + `approvalsService.ts` (create, list, review, auto-expire) + `/v1/approvals` routes (GET list, GET count, POST, PATCH :id for admin+)
+- **Approval Flows UI**: `/approvals` page — Pending/Approved/Rejected tabs with approve/reject buttons; Sidebar Governance section with ShieldCheck icon and live pending badge (polls every 30s)
+- **Board Groups Backend**: `board_groups` DB table + `board_group_id` column on tasks + `/v1/board-groups` routes (CRUD + task counts + tasks by group); tasks endpoint accepts `?board_group_id=` filter
+- **Board Groups UI**: `/boards` page — grid of group cards with color pills, task counts, edit/delete; General card for ungrouped; clicking a group opens filtered Kanban; Kanban shows breadcrumb when in group context
+- **Activity Timeline Page**: `/activity` page — full event timeline with filter chips by event type (task, message, heartbeat, cron, ssh, etc.) + load-more pagination; activity route now accepts `?type=` filter
+- **Navigation Updates**: Sidebar restructured with Main/Knowledge/Communication/Infrastructure/Governance/System sections; "Boards" replaces "Mission Queue"; "Activity" added to Main nav
 
 ## Recent Changes (Phase 5 — 2026-03-02)
 - **Ollama Local LLM**: 6th provider option; key stored as host URL (http://localhost:11434); client uses baseURL/v1 with dummy apiKey='ollama'; usage tracking skipped (no cost); AgentBuilder has Ollama model chips (llama3.3, llama3.1, mistral, qwen2.5, deepseek-r1, phi4); Settings shows host URL field instead of API key
