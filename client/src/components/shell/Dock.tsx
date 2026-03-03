@@ -12,7 +12,7 @@ const dockSections = [
   {
     label: 'Core',
     items: [
-      { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+      { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/system', label: 'System', icon: Monitor },
       { href: '/agents', label: 'Agents', icon: Bot },
       { href: '/sessions', label: 'Sessions', icon: History },

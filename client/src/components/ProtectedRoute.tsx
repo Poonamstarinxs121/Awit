@@ -8,7 +8,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-brand-bg">
+      <div className="flex items-center justify-center h-screen" style={{ backgroundColor: 'var(--bg)' }}>
         <Spinner size="lg" />
       </div>
     );

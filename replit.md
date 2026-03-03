@@ -56,3 +56,16 @@ SquidJob is built as a monorepo with distinct `server/` and `client/` directorie
 -   **SSH Connectivity**: `ssh2` npm package.
 -   **File Uploads**: Multer.
 -   **Payment Processing**: Stripe.
+
+## Routing
+- `/` — Public landing page (unauthenticated) or redirect to `/dashboard` (authenticated)
+- `/dashboard` — Main dashboard (protected, inside Layout shell)
+- `/login`, `/register` — Auth pages (public, dark theme)
+- `/subscription` — Plan management (protected, standalone dark page)
+- All other routes (`/agents`, `/kanban`, `/settings`, etc.) — protected, inside Layout shell
+
+## Recent Changes (Phase 9 — Landing + Subscription)
+- **Public Landing Page**: `LandingPage.tsx` at `/` for unauthenticated users; purple (#7C3AED) + brown (#92400E) + offwhite (#FFF8F0) + yellow (#F59E0B) color palette; hero, how-it-works, squad preview, single $99/mo pricing card, BYOK explanation, login/signup CTAs; fully responsive with mobile nav
+- **Subscription Page Redesign**: Current plan section with Crown icon + status badge + renewal date; 3 plan cards (Starter/Professional/Enterprise) with unique color themes (blue/purple/gold); upgrade/downgrade buttons; feature checklists with green checks; BYOK info section; all dark-themed with rgba() colors
+- **Routing Update**: `HomeRedirect` component at `/` checks auth state — shows LandingPage if not logged in, redirects to `/dashboard` if logged in; Dashboard moved to `/dashboard` route; all nav links (Dock, Login, Register, Subscription back-link) updated to use `/dashboard`
+- **Dark Theme Cleanup**: All remaining light-theme class remnants (bg-white, bg-gray-*, bg-slate-*, border-border-default, bg-surface-light) replaced across every page and component with CSS var equivalents; legacy Tailwind class overrides in index.css as safety net

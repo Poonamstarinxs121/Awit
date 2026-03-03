@@ -8,6 +8,7 @@ import { AdminLogin } from './pages/AdminLogin';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
+import { LandingPage } from './pages/LandingPage';
 import { Kanban } from './pages/Kanban';
 import { Agents } from './pages/Agents';
 import { AgentDetail } from './pages/AgentDetail';
@@ -41,6 +42,8 @@ import { GitPage } from './pages/GitPage';
 import { ActionsPage } from './pages/ActionsPage';
 import { AboutPage } from './pages/AboutPage';
 import { CronPage } from './pages/CronPage';
+import { useAuth } from './hooks/useAuth';
+import { Navigate } from 'react-router-dom';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,12 +54,26 @@ const queryClient = new QueryClient({
   },
 });
 
+function HomeRedirect() {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 32, height: 32, border: '3px solid var(--border)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      </div>
+    );
+  }
+  if (user) return <Navigate to="/dashboard" replace />;
+  return <LandingPage />;
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            <Route path="/" element={<HomeRedirect />} />
             <Route path="/login" element={<Login />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
@@ -71,7 +88,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             >
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/boards" element={<BoardGroups />} />
               <Route path="/kanban" element={<Kanban />} />
               <Route path="/agents" element={<Agents />} />
