@@ -5,6 +5,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
 import { AdminLogin } from './pages/AdminLogin';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
 import { Kanban } from './pages/Kanban';
@@ -42,6 +43,7 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/register" element={<Register />} />
             <Route path="/setup" element={<ProtectedRoute><Setup /></ProtectedRoute>} />
             <Route path="/setup/provisioning" element={<ProtectedRoute><Provisioning /></ProtectedRoute>} />

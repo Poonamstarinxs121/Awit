@@ -455,6 +455,53 @@ export async function runMigrations(): Promise<void> {
     `);
 
     await client.query(`
+      CREATE TABLE IF NOT EXISTS tags (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        color TEXT NOT NULL DEFAULT '#2563eb',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (tenant_id, name)
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS task_tags (
+        task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+        tag_id UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+        PRIMARY KEY (task_id, tag_id)
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS api_tokens (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        token_hash TEXT NOT NULL UNIQUE,
+        last_used_at TIMESTAMPTZ,
+        expires_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        stripe_customer_id TEXT,
+        stripe_subscription_id TEXT,
+        plan TEXT NOT NULL DEFAULT 'starter',
+        status TEXT NOT NULL DEFAULT 'active',
+        current_period_end TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (tenant_id)
+      )
+    `);
+
+    await client.query(`
       CREATE TABLE IF NOT EXISTS board_groups (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -501,7 +548,7 @@ export async function runMigrations(): Promise<void> {
       'telegram_configs', 'telegram_chat_links', 'telegram_notification_queue',
       'tenant_settings', 'documents', 'squad_messages',
       'machine_groups', 'machines', 'whatsapp_configs',
-      'board_groups', 'approvals'
+      'board_groups', 'approvals', 'tags', 'api_tokens', 'subscriptions'
     ];
 
     for (const table of rlsTables) {

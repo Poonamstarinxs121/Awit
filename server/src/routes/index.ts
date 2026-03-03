@@ -21,6 +21,10 @@ import machinesRoutes from './machines.js';
 import whatsappRoutes, { whatsappWebhookRouter } from './whatsapp.js';
 import approvalsRoutes from './approvals.js';
 import boardGroupsRoutes from './boardGroups.js';
+import tagsRoutes from './tags.js';
+import apiTokensRoutes from './apiTokens.js';
+import billingRoutes from './billing.js';
+import adminRoutes from './admin.js';
 
 const router = Router();
 
@@ -47,5 +51,9 @@ router.use('/v1/machines', authMiddleware, tenantMiddleware, machinesRoutes);
 router.use('/v1/whatsapp', authMiddleware, tenantMiddleware, whatsappRoutes);
 router.use('/v1/approvals', authMiddleware, tenantMiddleware, approvalsRoutes);
 router.use('/v1/board-groups', authMiddleware, tenantMiddleware, boardGroupsRoutes);
+router.use('/v1/tags', authMiddleware, tenantMiddleware, tagsRoutes);
+router.use('/v1/api-tokens', authMiddleware, tenantMiddleware, apiTokensRoutes);
+router.use('/v1/billing', billingRoutes);
+router.use('/admin/v1', adminRoutes);
 
 export default router;

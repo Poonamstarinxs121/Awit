@@ -6,11 +6,18 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Spinner } from '../components/ui/Spinner';
-import { Plus, Calendar, X, MessageSquare, Clock, Paperclip, Download, Trash2, Upload, ChevronLeft } from 'lucide-react';
+import { Plus, Calendar, X, MessageSquare, Clock, Paperclip, Download, Trash2, Upload, ChevronLeft, Tag } from 'lucide-react';
 import type { Task, TaskStatus, TaskPriority, Agent, Comment, Activity } from '../types';
+
+interface TagObject {
+  id: string;
+  name: string;
+  color: string;
+}
 
 interface TaskWithAgents extends Task {
   assignee_agents: { id: string; name: string }[] | null;
+  tag_objects: TagObject[] | null;
 }
 
 interface TaskDetailResponse {
@@ -30,11 +37,11 @@ const COLUMNS: { status: TaskStatus; label: string; color: string }[] = [
   { status: 'archived', label: 'Archived', color: '#9CA3AF' },
 ];
 
-const PRIORITY_CONFIG: Record<TaskPriority, { color: string; dot: string }> = {
-  critical: { color: 'text-red-600', dot: 'bg-red-500' },
-  high: { color: 'text-orange-600', dot: 'bg-orange-500' },
-  medium: { color: 'text-blue-600', dot: 'bg-blue-500' },
-  low: { color: 'text-text-secondary', dot: 'bg-gray-400' },
+const PRIORITY_CONFIG: Record<TaskPriority, { label: string; strip: string; dot: string; text: string }> = {
+  critical: { label: 'Critical', strip: '#EF4444', dot: 'bg-red-500', text: 'text-red-600' },
+  high: { label: 'High', strip: '#F97316', dot: 'bg-orange-500', text: 'text-orange-600' },
+  medium: { label: 'Medium', strip: '#3B82F6', dot: 'bg-blue-500', text: 'text-blue-600' },
+  low: { label: 'Low', strip: '#9CA3AF', dot: 'bg-gray-400', text: 'text-text-secondary' },
 };
 
 function formatDate(dateStr: string): string {
@@ -60,6 +67,26 @@ function relativeTime(dateStr: string): string {
   return `${days}d ago`;
 }
 
+function getInitials(name: string): string {
+  return name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function TagChip({ tag, small = false }: { tag: TagObject; small?: boolean }) {
+  const style: React.CSSProperties = {
+    backgroundColor: tag.color + '20',
+    color: tag.color,
+    borderColor: tag.color + '40',
+  };
+  return (
+    <span
+      className={`inline-flex items-center rounded border font-medium ${small ? 'text-[10px] px-1.5 py-0' : 'text-xs px-2 py-0.5'}`}
+      style={style}
+    >
+      {tag.name}
+    </span>
+  );
+}
+
 export function Kanban() {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -69,6 +96,7 @@ export function Kanban() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createDefaultStatus, setCreateDefaultStatus] = useState<TaskStatus>('inbox');
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
+  const [filterTagId, setFilterTagId] = useState<string>('');
 
   const { data: boardGroupData } = useQuery({
     queryKey: ['board-group', boardGroupId],
@@ -94,7 +122,17 @@ export function Kanban() {
     queryFn: () => apiGet<{ agents: Agent[] }>('/v1/agents'),
   });
 
-  const tasks = tasksData?.tasks ?? [];
+  const { data: tagsData } = useQuery({
+    queryKey: ['tags'],
+    queryFn: () => apiGet<{ tags: TagObject[] }>('/v1/tags'),
+  });
+
+  const allTags = tagsData?.tags ?? [];
+
+  const tasks = (tasksData?.tasks ?? []).filter((t) => {
+    if (!filterTagId) return true;
+    return t.tag_objects?.some((tg) => tg.id === filterTagId);
+  });
   const agents = agentsData?.agents ?? [];
   const statsCounts = (statsData?.stats ?? []).reduce<Record<string, number>>((acc, s) => {
     acc[s.status] = s.count;
@@ -178,19 +216,34 @@ export function Kanban() {
             {boardGroupId ? (boardGroupData?.name ?? 'Board') : 'Mission Queue'}
           </h1>
         </div>
-        <Button onClick={() => openCreateModal('inbox')} size="sm">
-          <Plus size={16} className="mr-1" /> New Task
-        </Button>
+        <div className="flex items-center gap-3">
+          {allTags.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Tag size={14} className="text-text-muted" />
+              <select
+                value={filterTagId}
+                onChange={(e) => setFilterTagId(e.target.value)}
+                className="text-sm px-3 py-1.5 bg-white border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent"
+              >
+                <option value="">All tags</option>
+                {allTags.map((tag) => (
+                  <option key={tag.id} value={tag.id}>{tag.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <Button size="sm" onClick={() => openCreateModal('inbox')}>
+            <Plus size={16} className="mr-1.5" /> New Task
+          </Button>
+        </div>
       </div>
 
-      <div className="flex gap-4 overflow-x-auto pb-4 flex-1 min-h-0">
+      <div className="flex gap-3 overflow-x-auto pb-4 flex-1">
         {COLUMNS.map((col) => (
           <div
             key={col.status}
-            className={`flex flex-col min-w-[280px] w-[280px] shrink-0 rounded-xl border transition-colors ${
-              dragOverColumn === col.status
-                ? 'border-blue-400/50 bg-blue-50'
-                : 'border-border-default bg-surface-light/50'
+            className={`flex-none w-64 bg-surface-light rounded-xl border flex flex-col transition-colors ${
+              dragOverColumn === col.status ? 'border-brand-accent bg-blue-50' : 'border-border-default'
             }`}
             onDragOver={(e) => handleDragOver(e, col.status)}
             onDragLeave={handleDragLeave}
@@ -203,13 +256,13 @@ export function Kanban() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-text-primary">{col.label}</span>
-                  <span className="text-xs text-text-secondary bg-surface-light px-2 py-0.5 rounded-full">
-                    {statsCounts[col.status] ?? tasksByStatus[col.status].length}
+                  <span className="text-xs text-text-secondary bg-white px-2 py-0.5 rounded-full border border-border-default">
+                    {filterTagId ? tasksByStatus[col.status].length : (statsCounts[col.status] ?? tasksByStatus[col.status].length)}
                   </span>
                 </div>
                 <button
                   onClick={() => openCreateModal(col.status)}
-                  className="text-text-muted hover:text-text-primary transition-colors p-0.5 rounded hover:bg-surface-light"
+                  className="text-text-muted hover:text-text-primary transition-colors p-0.5 rounded hover:bg-white"
                 >
                   <Plus size={16} />
                 </button>
@@ -239,6 +292,8 @@ export function Kanban() {
         <CreateTaskModal
           defaultStatus={createDefaultStatus}
           agents={agents}
+          tags={allTags}
+          boardGroupId={boardGroupId}
           onClose={() => setCreateModalOpen(false)}
         />
       )}
@@ -247,6 +302,7 @@ export function Kanban() {
         <TaskDetailModal
           taskId={detailTaskId}
           agents={agents}
+          tags={allTags}
           onClose={() => setDetailTaskId(null)}
         />
       )}
@@ -266,54 +322,139 @@ function TaskCard({
   onClick: () => void;
 }) {
   const priority = PRIORITY_CONFIG[task.priority];
-  const assigneeNames = task.assignee_agents?.map((a) => a.name) ?? [];
+  const assignees = task.assignee_agents ?? [];
+  const tagObjects = task.tag_objects ?? [];
+  const displayTags = tagObjects.slice(0, 3);
+  const extraTags = tagObjects.length - displayTags.length;
 
   return (
     <div
       draggable
       onDragStart={(e) => onDragStart(e, task.id)}
       onClick={onClick}
-      className={`p-3 rounded-lg border border-border-default bg-white shadow-sm hover:shadow-md hover:border-gray-300 cursor-pointer transition-all ${
+      className={`rounded-lg border border-border-default bg-white shadow-sm hover:shadow-md hover:border-gray-300 cursor-pointer transition-all overflow-hidden flex ${
         isDragging ? 'opacity-50 scale-95' : ''
       }`}
     >
-      <div className="space-y-2">
+      <div
+        className="w-1 shrink-0"
+        style={{ backgroundColor: priority.strip }}
+      />
+      <div className="p-3 flex-1 space-y-2 min-w-0">
         <p className="text-sm font-semibold text-text-primary truncate">{task.title}</p>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1">
-            <span className={`w-2 h-2 rounded-full ${priority.dot}`} />
-            <span className={`text-xs ${priority.color}`}>{task.priority}</span>
-          </div>
+          <span className={`text-xs font-medium ${priority.text}`}>{priority.label}</span>
           {task.is_blocked && (
             <Badge variant="error" className="text-[10px] px-1.5 py-0">BLOCKED</Badge>
           )}
         </div>
 
-        <div className="text-xs text-text-muted">
-          {assigneeNames.length > 0 ? (
-            <span className="text-text-secondary">{assigneeNames.join(', ')}</span>
-          ) : (
-            <span>Unassigned</span>
-          )}
-        </div>
-
-        {(task.due_date || (task.tags && task.tags.length > 0)) && (
-          <div className="flex items-center gap-2 flex-wrap">
-            {task.due_date && (
-              <div className={`flex items-center gap-1 text-xs ${isOverdue(task.due_date) && task.status !== 'done' ? 'text-red-500' : 'text-text-muted'}`}>
-                <Calendar size={12} />
-                {formatDate(task.due_date)}
-              </div>
-            )}
-            {task.tags?.map((tag) => (
-              <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded bg-surface-light text-text-secondary">
-                {tag}
-              </span>
+        {tagObjects.length > 0 && (
+          <div className="flex items-center gap-1 flex-wrap">
+            {displayTags.map((tag) => (
+              <TagChip key={tag.id} tag={tag} small />
             ))}
+            {extraTags > 0 && (
+              <span className="text-[10px] text-text-muted">+{extraTags}</span>
+            )}
           </div>
         )}
+
+        <div className="flex items-center justify-between">
+          <div className="flex -space-x-1">
+            {assignees.slice(0, 3).map((a) => (
+              <div
+                key={a.id}
+                className="w-5 h-5 rounded-full bg-brand-accent flex items-center justify-center text-white text-[8px] font-bold border border-white"
+                title={a.name}
+              >
+                {getInitials(a.name)}
+              </div>
+            ))}
+            {assignees.length === 0 && (
+              <span className="text-[10px] text-text-muted">Unassigned</span>
+            )}
+          </div>
+          {task.due_date && (
+            <div className={`flex items-center gap-1 text-[10px] ${isOverdue(task.due_date) && task.status !== 'done' ? 'text-red-500' : 'text-text-muted'}`}>
+              <Calendar size={10} />
+              {formatDate(task.due_date)}
+            </div>
+          )}
+        </div>
       </div>
+    </div>
+  );
+}
+
+function TagMultiSelect({
+  tags,
+  selected,
+  onChange,
+}: {
+  tags: TagObject[];
+  selected: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const [search, setSearch] = useState('');
+  const filtered = tags.filter((t) => t.name.toLowerCase().includes(search.toLowerCase()));
+
+  const toggle = (id: string) => {
+    onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]);
+  };
+
+  const selectedTags = tags.filter((t) => selected.includes(t.id));
+
+  return (
+    <div className="space-y-2">
+      <label className="block text-sm font-medium text-text-primary">Tags</label>
+      {selectedTags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selectedTags.map((tag) => (
+            <span
+              key={tag.id}
+              className="inline-flex items-center gap-1 rounded-full text-xs px-2.5 py-0.5 font-medium border"
+              style={{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color + '40' }}
+            >
+              {tag.name}
+              <button onClick={() => toggle(tag.id)} className="hover:opacity-70">
+                <X size={10} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search tags..."
+        className="w-full px-3 py-1.5 bg-white border border-border-default rounded-lg text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent"
+      />
+      {filtered.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+          {filtered.map((tag) => (
+            <button
+              key={tag.id}
+              type="button"
+              onClick={() => toggle(tag.id)}
+              className={`inline-flex items-center rounded border text-xs px-2 py-0.5 font-medium transition-opacity ${selected.includes(tag.id) ? 'opacity-100 ring-2 ring-offset-1' : 'opacity-70 hover:opacity-100'}`}
+              style={{
+                backgroundColor: tag.color + '20',
+                color: tag.color,
+                borderColor: tag.color + '40',
+                ringColor: tag.color,
+              }}
+            >
+              {tag.name}
+            </button>
+          ))}
+        </div>
+      )}
+      {filtered.length === 0 && search && (
+        <p className="text-xs text-text-muted">No tags match. Create tags in Settings.</p>
+      )}
     </div>
   );
 }
@@ -321,10 +462,14 @@ function TaskCard({
 function CreateTaskModal({
   defaultStatus,
   agents,
+  tags,
+  boardGroupId,
   onClose,
 }: {
   defaultStatus: TaskStatus;
   agents: Agent[];
+  tags: TagObject[];
+  boardGroupId: string | null;
   onClose: () => void;
 }) {
   const queryClient = useQueryClient();
@@ -333,7 +478,7 @@ function CreateTaskModal({
   const [priority, setPriority] = useState<TaskPriority>('medium');
   const [status, setStatus] = useState<TaskStatus>(defaultStatus);
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
-  const [tagsInput, setTagsInput] = useState('');
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState('');
   const [error, setError] = useState('');
 
@@ -353,18 +498,15 @@ function CreateTaskModal({
       setError('Title is required');
       return;
     }
-    const tags = tagsInput
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean);
     createMutation.mutate({
       title: title.trim(),
       description,
       priority,
       status,
       assignees: selectedAssignees,
-      tags,
+      tag_ids: selectedTagIds,
       due_date: dueDate || null,
+      board_group_id: boardGroupId || null,
     });
   };
 
@@ -457,12 +599,9 @@ function CreateTaskModal({
             </div>
           )}
 
-          <Input
-            label="Tags (comma-separated)"
-            value={tagsInput}
-            onChange={(e) => setTagsInput(e.target.value)}
-            placeholder="e.g. frontend, bug, urgent"
-          />
+          {tags.length > 0 && (
+            <TagMultiSelect tags={tags} selected={selectedTagIds} onChange={setSelectedTagIds} />
+          )}
 
           <Input
             label="Due Date"
@@ -487,10 +626,12 @@ function CreateTaskModal({
 function TaskDetailModal({
   taskId,
   agents,
+  tags,
   onClose,
 }: {
   taskId: string;
   agents: Agent[];
+  tags: TagObject[];
   onClose: () => void;
 }) {
   const queryClient = useQueryClient();
@@ -505,8 +646,8 @@ function TaskDetailModal({
   const [editStatus, setEditStatus] = useState<TaskStatus>('inbox');
   const [editPriority, setEditPriority] = useState<TaskPriority>('medium');
   const [editAssignees, setEditAssignees] = useState<string[]>([]);
+  const [editTagIds, setEditTagIds] = useState<string[]>([]);
   const [editDueDate, setEditDueDate] = useState('');
-  const [editTags, setEditTags] = useState('');
   const [editBlocked, setEditBlocked] = useState(false);
   const [editBlockerReason, setEditBlockerReason] = useState('');
   const [commentText, setCommentText] = useState('');
@@ -522,8 +663,8 @@ function TaskDetailModal({
     setEditStatus(task.status);
     setEditPriority(task.priority);
     setEditAssignees(task.assignees || []);
+    setEditTagIds((task.tag_objects ?? []).map((t) => t.id));
     setEditDueDate(task.due_date ? task.due_date.split('T')[0] : '');
-    setEditTags((task.tags || []).join(', '));
     setEditBlocked(task.is_blocked);
     setEditBlockerReason(task.blocker_reason || '');
     setInitialized(true);
@@ -620,18 +761,14 @@ function TaskDetailModal({
   };
 
   const handleSave = () => {
-    const tags = editTags
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean);
     updateMutation.mutate({
       title: editTitle,
       description: editDescription,
       status: editStatus,
       priority: editPriority,
       assignees: editAssignees,
+      tag_ids: editTagIds,
       due_date: editDueDate || null,
-      tags,
       is_blocked: editBlocked,
       blocker_reason: editBlocked ? editBlockerReason : null,
     });
@@ -734,17 +871,16 @@ function TaskDetailModal({
               </div>
             )}
 
+            {tags.length > 0 && (
+              <TagMultiSelect tags={tags} selected={editTagIds} onChange={setEditTagIds} />
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <Input
                 label="Due Date"
                 type="date"
                 value={editDueDate}
                 onChange={(e) => setEditDueDate(e.target.value)}
-              />
-              <Input
-                label="Tags (comma-separated)"
-                value={editTags}
-                onChange={(e) => setEditTags(e.target.value)}
               />
             </div>
 

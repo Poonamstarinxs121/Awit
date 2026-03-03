@@ -59,7 +59,7 @@ router.patch('/:id', requireMinRole('admin'), async (req: Request, res: Response
     const approval = await reviewApproval(
       req.user!.tenantId,
       req.params.id,
-      req.user!.id,
+      req.user!.userId,
       decision
     );
     if (!approval) {

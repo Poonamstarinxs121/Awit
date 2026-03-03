@@ -72,7 +72,10 @@ router.get('/', requireMinRole('viewer'), async (req: Request, res: Response) =>
       `SELECT t.*,
               (SELECT json_agg(json_build_object('id', a.id, 'name', a.name))
                FROM agents a WHERE a.id = ANY(t.assignees) AND a.tenant_id = t.tenant_id
-              ) as assignee_agents
+              ) as assignee_agents,
+              (SELECT json_agg(json_build_object('id', tg.id, 'name', tg.name, 'color', tg.color))
+               FROM task_tags tt JOIN tags tg ON tg.id = tt.tag_id WHERE tt.task_id = t.id
+              ) as tag_objects
        FROM tasks t
        WHERE ${conditions.join(' AND ')}
        ORDER BY
@@ -90,7 +93,7 @@ router.get('/', requireMinRole('viewer'), async (req: Request, res: Response) =>
 
 router.post('/', requireMinRole('operator'), async (req: Request, res: Response) => {
   try {
-    const { title, description, status, priority, assignees, tags, due_date, parent_task } = req.body;
+    const { title, description, status, priority, assignees, tags, tag_ids, due_date, parent_task, board_group_id } = req.body;
     const tenantId = req.user!.tenantId;
     const userName = req.user!.name;
 
@@ -100,16 +103,26 @@ router.post('/', requireMinRole('operator'), async (req: Request, res: Response)
     }
 
     const result = await pool.query(
-      `INSERT INTO tasks (tenant_id, title, description, status, priority, assignees, created_by, tags, due_date, parent_task)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `INSERT INTO tasks (tenant_id, title, description, status, priority, assignees, created_by, tags, due_date, parent_task, board_group_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
       [
         tenantId, title, description || '', status || 'inbox', priority || 'medium',
         assignees || [], userName, tags || [], due_date || null, parent_task || null,
+        board_group_id || null,
       ]
     );
 
     const task = result.rows[0];
+
+    if (tag_ids && tag_ids.length > 0) {
+      for (const tagId of tag_ids) {
+        await pool.query(
+          `INSERT INTO task_tags (task_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+          [task.id, tagId]
+        );
+      }
+    }
 
     await logActivity(tenantId, req.user!.userId, 'task_created', 'task', task.id, { title });
 
@@ -208,7 +221,19 @@ router.patch('/:id', requireMinRole('operator'), async (req: Request, res: Respo
     }
 
     const existing = existingResult.rows[0];
-    const allowedFields = ['title', 'description', 'status', 'priority', 'assignees', 'tags', 'due_date', 'is_blocked', 'blocker_reason', 'blocked_by'];
+    if (req.body.tag_ids !== undefined) {
+      await pool.query(`DELETE FROM task_tags WHERE task_id = $1`, [taskId]);
+      if (req.body.tag_ids.length > 0) {
+        for (const tagId of req.body.tag_ids) {
+          await pool.query(
+            `INSERT INTO task_tags (task_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+            [taskId, tagId]
+          );
+        }
+      }
+    }
+
+    const allowedFields = ['title', 'description', 'status', 'priority', 'assignees', 'tags', 'due_date', 'is_blocked', 'blocker_reason', 'blocked_by', 'board_group_id'];
     const updates: string[] = [];
     const values: unknown[] = [];
     let paramIndex = 1;

@@ -94,6 +94,14 @@ SquidJob is built as a monorepo with distinct `server/` and `client/` directorie
 - **Board Groups**: GET/POST /v1/board-groups, PATCH/DELETE /v1/board-groups/:id, GET /v1/board-groups/:id/tasks
 - **Activity**: GET /v1/activity (query `?type=&limit=&offset=&agent_id=`)
 
+## Recent Changes (Phase 7 — 2026-03-03)
+- **Tags System**: `tags` + `task_tags` DB tables; `GET/POST/PATCH/DELETE /v1/tags`; tag_ids on task create/update; tag_objects joined in GET /v1/tasks; Kanban task cards show colored tag chips + priority strip; tag filter dropdown in Kanban toolbar; tag multi-select in create/edit modals; Tags management card in Settings (color picker, usage count, delete)
+- **API Tokens**: `api_tokens` DB table; `GET/POST/DELETE /v1/api-tokens`; `sqj_` prefix token format; SHA-256 hashed storage; token shown once at creation with copy button; auth middleware updated to accept API token Bearer headers alongside JWTs; API Tokens section in Settings with revoke UI
+- **Stripe Billing**: `subscriptions` DB table; `stripeService.ts` (checkout sessions, billing portal, webhook handler); `routes/billing.ts` (GET /v1/billing/plans, GET /v1/billing/subscription, POST /v1/billing/checkout, POST /v1/billing/portal, POST /v1/billing/webhook PUBLIC); raw body middleware for Stripe webhook verification; Subscription.tsx redesigned with real plan cards, current plan display, Checkout + Portal buttons; requires STRIPE_SECRET_KEY + STRIPE_PRICE_* env vars
+- **SaaS Admin Console**: `routes/admin.ts` requiring isSaasAdmin JWT claim; GET/admin/v1/tenants (with user/agent/task counts), GET /admin/v1/tenants/:id, PATCH /admin/v1/tenants/:id/plan, GET /admin/v1/usage; `AdminDashboard.tsx` at `/admin/dashboard` with stat cards, tenant table, plan override inline select
+- **Task Cards UI Polish**: Priority color strip on left edge of card (red/orange/blue/gray); assignee avatar initials circles; tag chips with custom colors (up to 3 + overflow count)
+- **Bug Fixes**: auth middleware uses `userId` (not `id`); approvals.ts `req.user!.userId`; apiTokens.ts `req.user!.userId`; board_group_id included in task INSERT
+
 ## Recent Changes (Phase 6 — 2026-03-03)
 - **Design System Overhaul**: Replaced warm cream/gold theme with OpenClaw-inspired clean slate/blue palette; IBM Plex Sans + Sora fonts; updated all Tailwind tokens, UI components (Button, Card, Input, Modal, Spinner), Sidebar, Layout
 - **Global Progress Loader**: `GlobalLoader.tsx` — fixed h-0.5 shimmer bar at top using useIsFetching + useIsMutating; mounted in Layout before sidebar

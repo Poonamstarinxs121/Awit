@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Key, Trash2, Plus, LogOut, ChevronDown, ChevronUp, Webhook, Eye, ToggleLeft, ToggleRight, Send, MessageCircle, Unlink, Mail, Hash, Save } from 'lucide-react';
+import { Key, Trash2, Plus, LogOut, ChevronDown, ChevronUp, Webhook, Eye, ToggleLeft, ToggleRight, Send, MessageCircle, Unlink, Mail, Hash, Save, Tag, Copy, Check, AlertCircle } from 'lucide-react';
 import { apiGet, apiPost, apiDelete, apiPatch, apiPut } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { Card } from '../components/ui/Card';
@@ -105,6 +105,16 @@ export function Settings() {
   const [waNumber, setWaNumber] = useState('');
   const [waError, setWaError] = useState('');
   const [waTestTo, setWaTestTo] = useState('');
+
+  const [showNewTagModal, setShowNewTagModal] = useState(false);
+  const [newTagName, setNewTagName] = useState('');
+  const [newTagColor, setNewTagColor] = useState('#2563eb');
+
+  const [showNewTokenModal, setShowNewTokenModal] = useState(false);
+  const [newTokenName, setNewTokenName] = useState('');
+  const [newTokenExpiry, setNewTokenExpiry] = useState('');
+  const [revealedToken, setRevealedToken] = useState<string | null>(null);
+  const [copiedToken, setCopiedToken] = useState(false);
 
   const { data: providersData, isLoading: loadingProviders } = useQuery({
     queryKey: ['providers'],
@@ -297,6 +307,74 @@ export function Settings() {
   }, [usage]);
 
   const maxAgentCost = useMemo(() => Math.max(...agentUsage.map((a) => Number(a.estimated_cost)), 0.0001), [agentUsage]);
+
+  interface TagItem {
+    id: string;
+    name: string;
+    color: string;
+    usage_count: number;
+  }
+
+  interface ApiToken {
+    id: string;
+    name: string;
+    last_used_at: string | null;
+    expires_at: string | null;
+    created_at: string;
+  }
+
+  const { data: tagsData, isLoading: loadingTags } = useQuery({
+    queryKey: ['tags'],
+    queryFn: () => apiGet<{ tags: TagItem[] }>('/v1/tags'),
+  });
+
+  const { data: apiTokensData, isLoading: loadingApiTokens } = useQuery({
+    queryKey: ['api-tokens'],
+    queryFn: () => apiGet<{ tokens: ApiToken[] }>('/v1/api-tokens'),
+  });
+
+  const tags = tagsData?.tags ?? [];
+  const apiTokens = apiTokensData?.tokens ?? [];
+
+  const createTagMutation = useMutation({
+    mutationFn: (data: { name: string; color: string }) => apiPost('/v1/tags', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tags'] });
+      setShowNewTagModal(false);
+      setNewTagName('');
+      setNewTagColor('#2563eb');
+    },
+  });
+
+  const deleteTagMutation = useMutation({
+    mutationFn: (id: string) => apiDelete(`/v1/tags/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tags'] }),
+  });
+
+  const createTokenMutation = useMutation({
+    mutationFn: (data: { name: string; expires_in_days?: number }) => apiPost<{ token: ApiToken; raw_token: string }>('/v1/api-tokens', data),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['api-tokens'] });
+      setShowNewTokenModal(false);
+      setNewTokenName('');
+      setNewTokenExpiry('');
+      setRevealedToken(data.raw_token);
+    },
+  });
+
+  const deleteTokenMutation = useMutation({
+    mutationFn: (id: string) => apiDelete(`/v1/api-tokens/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['api-tokens'] }),
+  });
+
+  const copyToken = (token: string) => {
+    navigator.clipboard.writeText(token).then(() => {
+      setCopiedToken(true);
+      setTimeout(() => setCopiedToken(false), 2000);
+    });
+  };
+
+  const TAG_COLORS = ['#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626', '#db2777', '#0891b2', '#65a30d'];
 
   return (
     <div className="space-y-6">
@@ -835,6 +913,121 @@ export function Settings() {
         )}
       </Card>
 
+      <Card title="Tags">
+        <div className="space-y-4">
+          <p className="text-text-secondary text-sm">Create coloured tags to categorize and filter your tasks.</p>
+          {loadingTags ? (
+            <div className="flex justify-center py-4"><Spinner /></div>
+          ) : tags.length === 0 ? (
+            <p className="text-text-muted text-sm">No tags yet. Create your first tag.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <div
+                  key={tag.id}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg border"
+                  style={{ backgroundColor: tag.color + '15', borderColor: tag.color + '40' }}
+                >
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: tag.color }}
+                  />
+                  <span className="text-sm font-medium" style={{ color: tag.color }}>{tag.name}</span>
+                  <span className="text-xs text-text-muted">{tag.usage_count}</span>
+                  <button
+                    onClick={() => deleteTagMutation.mutate(tag.id)}
+                    className="text-text-muted hover:text-red-500 transition-colors ml-1"
+                    title="Delete tag"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <Button variant="secondary" size="sm" onClick={() => setShowNewTagModal(true)}>
+            <Tag size={14} className="mr-1.5" /> New Tag
+          </Button>
+        </div>
+      </Card>
+
+      <Card title="API Tokens">
+        <div className="space-y-4">
+          <p className="text-text-secondary text-sm">Personal API tokens let automation clients call the SquidJob API on your behalf.</p>
+
+          {revealedToken && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <AlertCircle size={16} className="text-green-600 shrink-0" />
+                <p className="text-sm font-medium text-green-700">Token created — copy it now, it won't be shown again.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-xs bg-white border border-green-200 rounded px-3 py-2 font-mono text-text-primary break-all">
+                  {revealedToken}
+                </code>
+                <button
+                  onClick={() => copyToken(revealedToken)}
+                  className="shrink-0 p-2 rounded-lg border border-green-200 bg-white hover:bg-green-50 text-green-700 transition-colors"
+                  title="Copy token"
+                >
+                  {copiedToken ? <Check size={14} /> : <Copy size={14} />}
+                </button>
+              </div>
+              <button
+                onClick={() => setRevealedToken(null)}
+                className="text-xs text-green-600 hover:underline"
+              >
+                I've saved my token, dismiss
+              </button>
+            </div>
+          )}
+
+          {loadingApiTokens ? (
+            <div className="flex justify-center py-4"><Spinner /></div>
+          ) : apiTokens.length === 0 ? (
+            <p className="text-text-muted text-sm">No tokens yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {apiTokens.map((token) => (
+                <div key={token.id} className="flex items-center justify-between p-3 bg-surface-light rounded-lg border border-border-default">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Key size={14} className="text-text-muted shrink-0" />
+                      <span className="text-sm font-medium text-text-primary">{token.name}</span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-0.5 pl-5">
+                      <span className="text-xs text-text-muted">
+                        Created {new Date(token.created_at).toLocaleDateString()}
+                      </span>
+                      {token.last_used_at && (
+                        <span className="text-xs text-text-muted">
+                          Last used {new Date(token.last_used_at).toLocaleDateString()}
+                        </span>
+                      )}
+                      {token.expires_at && (
+                        <span className={`text-xs ${new Date(token.expires_at) < new Date() ? 'text-red-500' : 'text-text-muted'}`}>
+                          Expires {new Date(token.expires_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => deleteTokenMutation.mutate(token.id)}
+                    className="p-1.5 rounded text-text-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                    title="Revoke token"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <Button variant="secondary" size="sm" onClick={() => setShowNewTokenModal(true)}>
+            <Plus size={14} className="mr-1.5" /> New Token
+          </Button>
+        </div>
+      </Card>
+
       <Card title="Account">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -1010,6 +1203,92 @@ export function Settings() {
           >
             {connectMutation.isPending ? <Spinner size="sm" className="mr-2" /> : null}
             Connect
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal open={showNewTagModal} onClose={() => { setShowNewTagModal(false); setNewTagName(''); setNewTagColor('#2563eb'); }} title="New Tag">
+        <div className="space-y-4">
+          <Input
+            label="Tag name"
+            value={newTagName}
+            onChange={(e) => setNewTagName(e.target.value)}
+            placeholder="e.g. bug, frontend, urgent"
+          />
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-text-primary">Colour</label>
+            <div className="flex flex-wrap gap-2">
+              {TAG_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setNewTagColor(c)}
+                  className={`w-7 h-7 rounded-full border-2 transition-all ${newTagColor === c ? 'border-gray-800 scale-110' : 'border-transparent hover:scale-105'}`}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+              <input
+                type="color"
+                value={newTagColor}
+                onChange={(e) => setNewTagColor(e.target.value)}
+                className="w-7 h-7 rounded-full cursor-pointer border-0 bg-transparent"
+                title="Custom colour"
+              />
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <span
+                className="inline-flex items-center rounded border text-xs px-2 py-0.5 font-medium"
+                style={{ backgroundColor: newTagColor + '20', color: newTagColor, borderColor: newTagColor + '40' }}
+              >
+                {newTagName || 'Preview'}
+              </span>
+            </div>
+          </div>
+          <Button
+            onClick={() => createTagMutation.mutate({ name: newTagName, color: newTagColor })}
+            disabled={!newTagName.trim() || createTagMutation.isPending}
+            className="w-full"
+          >
+            {createTagMutation.isPending ? <Spinner size="sm" className="mr-2" /> : null}
+            Create Tag
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal open={showNewTokenModal} onClose={() => { setShowNewTokenModal(false); setNewTokenName(''); setNewTokenExpiry(''); }} title="New API Token">
+        <div className="space-y-4">
+          <p className="text-text-secondary text-sm">
+            Give this token a descriptive name so you know what it's used for. Once created, the token will be shown once — copy it immediately.
+          </p>
+          <Input
+            label="Token name"
+            value={newTokenName}
+            onChange={(e) => setNewTokenName(e.target.value)}
+            placeholder="e.g. CI/CD pipeline, Zapier automation"
+          />
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-text-primary">Expiry (optional)</label>
+            <select
+              value={newTokenExpiry}
+              onChange={(e) => setNewTokenExpiry(e.target.value)}
+              className="w-full px-4 py-2.5 bg-white border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent"
+            >
+              <option value="">Never expires</option>
+              <option value="30">30 days</option>
+              <option value="90">90 days</option>
+              <option value="365">1 year</option>
+            </select>
+          </div>
+          <Button
+            onClick={() => createTokenMutation.mutate({
+              name: newTokenName,
+              ...(newTokenExpiry ? { expires_in_days: parseInt(newTokenExpiry) } : {}),
+            })}
+            disabled={!newTokenName.trim() || createTokenMutation.isPending}
+            className="w-full"
+          >
+            {createTokenMutation.isPending ? <Spinner size="sm" className="mr-2" /> : null}
+            Create Token
           </Button>
         </div>
       </Modal>
