@@ -13,7 +13,8 @@ import {
   LayoutDashboard, Columns3, Tags, ShieldCheck, Layers,
   Network, Play, Pause, List, LayoutGrid, Filter, Settings,
   Pencil, Zap, AlertCircle, Activity, Building2, Check, Clipboard,
-  Store, Package,
+  Store, Package, Brain, BookOpen, Lightbulb, FileText, ChevronRight,
+  Save,
 } from 'lucide-react';
 import type { Task, TaskStatus, TaskPriority, Agent, Comment, Activity as ActivityType } from '../types';
 import { useLocation } from 'react-router-dom';
@@ -303,6 +304,7 @@ export function Board() {
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   const [filterTagId, setFilterTagId] = useState<string>('');
   const [chatOpen, setChatOpen] = useState(false);
+  const [memoryOpen, setMemoryOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('board');
   const [filterOpen, setFilterOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -554,7 +556,8 @@ export function Board() {
 
               <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border)', margin: '0 2px' }} />
 
-              <ToolbarBtn icon={chatOpen ? PanelRightClose : PanelRightOpen} onClick={() => setChatOpen(p => !p)} active={chatOpen} title={chatOpen ? 'Hide chat' : 'Show chat'} />
+              <ToolbarBtn icon={Brain} onClick={() => { setMemoryOpen(p => !p); if (!memoryOpen) setChatOpen(false); }} active={memoryOpen} title={memoryOpen ? 'Hide memory' : 'Show memory'} />
+              <ToolbarBtn icon={chatOpen ? PanelRightClose : PanelRightOpen} onClick={() => { setChatOpen(p => !p); if (!chatOpen) setMemoryOpen(false); }} active={chatOpen} title={chatOpen ? 'Hide chat' : 'Show chat'} />
 
               {filterOpen && allTags.length > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '4px' }}>
@@ -654,6 +657,12 @@ export function Board() {
                   <BoardChat onClose={() => setChatOpen(false)} />
                 </div>
               )}
+
+              {memoryOpen && (
+                <div style={{ width: '340px', flexShrink: 0, display: 'flex', flexDirection: 'column', borderLeft: '1px solid var(--border)' }}>
+                  <MemoryPanel boardGroupId={boardGroupId} onClose={() => setMemoryOpen(false)} />
+                </div>
+              )}
             </div>
           ) : (
             <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
@@ -723,6 +732,380 @@ export function Board() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+interface BoardMemory {
+  id: string;
+  tenant_id: string;
+  board_group_id: string | null;
+  title: string;
+  content: string;
+  memory_type: 'note' | 'decision' | 'context' | 'reference';
+  created_by: string | null;
+  creator_name?: string;
+  creator_email?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+const MEMORY_TYPE_CONFIG: Record<string, { label: string; color: string; icon: typeof FileText }> = {
+  note: { label: 'Note', color: '#3B82F6', icon: FileText },
+  decision: { label: 'Decision', color: '#8B5CF6', icon: Lightbulb },
+  context: { label: 'Context', color: '#22C55E', icon: BookOpen },
+  reference: { label: 'Reference', color: '#F59E0B', icon: FileText },
+};
+
+function MemoryPanel({ boardGroupId, onClose }: { boardGroupId: string | null; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [addingMemory, setAddingMemory] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newContent, setNewContent] = useState('');
+  const [newType, setNewType] = useState<string>('note');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [editType, setEditType] = useState('note');
+
+  const memoriesUrl = boardGroupId
+    ? `/v1/board-memories?board_group_id=${boardGroupId}`
+    : '/v1/board-memories';
+
+  const { data: memoriesData, isLoading } = useQuery({
+    queryKey: ['board-memories', boardGroupId],
+    queryFn: () => apiGet<{ memories: BoardMemory[] }>(memoriesUrl),
+  });
+
+  const memories = memoriesData?.memories ?? [];
+
+  const createMutation = useMutation({
+    mutationFn: (data: { board_group_id: string | null; title: string; content: string; memory_type: string }) =>
+      apiPost<BoardMemory>('/v1/board-memories', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['board-memories', boardGroupId] });
+      setAddingMemory(false);
+      setNewTitle('');
+      setNewContent('');
+      setNewType('note');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { title?: string; content?: string; memory_type?: string } }) =>
+      apiPatch<BoardMemory>(`/v1/board-memories/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['board-memories', boardGroupId] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiDelete(`/v1/board-memories/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['board-memories', boardGroupId] });
+      setExpandedId(null);
+    },
+  });
+
+  const handleExpand = (memory: BoardMemory) => {
+    if (expandedId === memory.id) {
+      setExpandedId(null);
+    } else {
+      setExpandedId(memory.id);
+      setEditTitle(memory.title);
+      setEditContent(memory.content);
+      setEditType(memory.memory_type);
+    }
+  };
+
+  const handleSaveEdit = (id: string) => {
+    updateMutation.mutate({ id, data: { title: editTitle, content: editContent, memory_type: editType } });
+  };
+
+  const handleCreateSubmit = () => {
+    if (!newTitle.trim() || !newContent.trim()) return;
+    createMutation.mutate({ board_group_id: boardGroupId, title: newTitle.trim(), content: newContent.trim(), memory_type: newType });
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: 'var(--surface)' }}>
+      <div style={{
+        padding: '12px 16px',
+        borderBottom: '1px solid var(--border)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexShrink: 0,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Brain size={16} style={{ color: 'var(--accent)' }} />
+          <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Memory</span>
+          <span style={{
+            fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)',
+            backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)',
+            borderRadius: '999px', padding: '0 6px',
+          }}>{memories.length}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <button
+            onClick={() => setAddingMemory(true)}
+            style={{
+              width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: '6px', border: '1px solid var(--border)', cursor: 'pointer',
+              backgroundColor: 'var(--accent)', color: '#fff',
+            }}
+            title="Add Memory"
+          >
+            <Plus size={13} />
+          </button>
+          <button
+            onClick={onClose}
+            style={{
+              width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: '6px', border: 'none', cursor: 'pointer',
+              backgroundColor: 'transparent', color: 'var(--text-muted)',
+            }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
+        {addingMemory && (
+          <div style={{
+            padding: '12px',
+            borderRadius: '8px',
+            border: '1px solid var(--accent)',
+            backgroundColor: 'var(--card)',
+            marginBottom: '8px',
+          }}>
+            <input
+              autoFocus
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              placeholder="Memory title..."
+              style={{
+                width: '100%', padding: '8px 10px', borderRadius: '6px', marginBottom: '8px',
+                backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)',
+                color: 'var(--text-primary)', fontSize: '13px', outline: 'none',
+              }}
+            />
+            <textarea
+              value={newContent}
+              onChange={(e) => setNewContent(e.target.value)}
+              placeholder="Memory content..."
+              rows={3}
+              style={{
+                width: '100%', padding: '8px 10px', borderRadius: '6px', marginBottom: '8px',
+                backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)',
+                color: 'var(--text-primary)', fontSize: '12px', outline: 'none', resize: 'vertical',
+              }}
+            />
+            <select
+              value={newType}
+              onChange={(e) => setNewType(e.target.value)}
+              style={{
+                width: '100%', padding: '6px 10px', borderRadius: '6px', marginBottom: '10px',
+                backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)',
+                color: 'var(--text-primary)', fontSize: '12px', outline: 'none',
+              }}
+            >
+              <option value="note">Note</option>
+              <option value="decision">Decision</option>
+              <option value="context">Context</option>
+              <option value="reference">Reference</option>
+            </select>
+            <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => { setAddingMemory(false); setNewTitle(''); setNewContent(''); setNewType('note'); }}
+                style={{
+                  padding: '5px 12px', borderRadius: '6px', border: '1px solid var(--border)',
+                  backgroundColor: 'transparent', color: 'var(--text-secondary)', fontSize: '12px', cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateSubmit}
+                disabled={!newTitle.trim() || !newContent.trim() || createMutation.isPending}
+                style={{
+                  padding: '5px 12px', borderRadius: '6px', border: 'none',
+                  backgroundColor: 'var(--accent)', color: '#fff', fontSize: '12px', fontWeight: 600,
+                  cursor: !newTitle.trim() || !newContent.trim() ? 'not-allowed' : 'pointer',
+                  opacity: !newTitle.trim() || !newContent.trim() ? 0.5 : 1,
+                }}
+              >
+                {createMutation.isPending ? 'Saving...' : 'Add'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {isLoading ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0' }}>
+            <Spinner size="sm" />
+          </div>
+        ) : memories.length === 0 ? (
+          <div style={{
+            textAlign: 'center', padding: '40px 16px',
+            color: 'var(--text-muted)', fontSize: '13px',
+          }}>
+            <Brain size={32} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
+            <p>No shared memories yet.</p>
+            <p style={{ fontSize: '11px', marginTop: '4px' }}>Add context, decisions, and notes for your team.</p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {memories.map((memory) => {
+              const typeConfig = MEMORY_TYPE_CONFIG[memory.memory_type] || MEMORY_TYPE_CONFIG.note;
+              const TypeIcon = typeConfig.icon;
+              const isExpanded = expandedId === memory.id;
+
+              return (
+                <div
+                  key={memory.id}
+                  style={{
+                    borderRadius: '8px',
+                    border: `1px solid ${isExpanded ? typeConfig.color + '60' : 'var(--border)'}`,
+                    backgroundColor: 'var(--card)',
+                    overflow: 'hidden',
+                    transition: 'border-color 150ms',
+                  }}
+                >
+                  <div
+                    onClick={() => handleExpand(memory)}
+                    style={{
+                      padding: '10px 12px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--surface-hover)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <ChevronRight
+                      size={14}
+                      style={{
+                        color: 'var(--text-muted)',
+                        flexShrink: 0,
+                        marginTop: '2px',
+                        transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                        transition: 'transform 150ms',
+                      }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                        <span style={{
+                          fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)',
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
+                        }}>
+                          {memory.title}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{
+                          fontSize: '10px', fontWeight: 600, padding: '1px 6px', borderRadius: '3px',
+                          backgroundColor: typeConfig.color + '18', color: typeConfig.color,
+                          textTransform: 'uppercase', letterSpacing: '0.3px',
+                          display: 'inline-flex', alignItems: 'center', gap: '3px',
+                        }}>
+                          <TypeIcon size={9} />
+                          {typeConfig.label}
+                        </span>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                          {relativeTime(memory.created_at)}
+                        </span>
+                      </div>
+                      {!isExpanded && (
+                        <p style={{
+                          fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px',
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        }}>
+                          {memory.content}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {isExpanded && (
+                    <div style={{ padding: '0 12px 12px', borderTop: '1px solid var(--border)' }}>
+                      <div style={{ padding: '10px 0' }}>
+                        <input
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          style={{
+                            width: '100%', padding: '6px 8px', borderRadius: '6px', marginBottom: '8px',
+                            backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)',
+                            color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600, outline: 'none',
+                          }}
+                        />
+                        <textarea
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          rows={4}
+                          style={{
+                            width: '100%', padding: '6px 8px', borderRadius: '6px', marginBottom: '8px',
+                            backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)',
+                            color: 'var(--text-primary)', fontSize: '12px', outline: 'none', resize: 'vertical',
+                          }}
+                        />
+                        <select
+                          value={editType}
+                          onChange={(e) => setEditType(e.target.value)}
+                          style={{
+                            width: '100%', padding: '5px 8px', borderRadius: '6px', marginBottom: '10px',
+                            backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)',
+                            color: 'var(--text-primary)', fontSize: '12px', outline: 'none',
+                          }}
+                        >
+                          <option value="note">Note</option>
+                          <option value="decision">Decision</option>
+                          <option value="context">Context</option>
+                          <option value="reference">Reference</option>
+                        </select>
+                        {memory.creator_name && (
+                          <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                            Created by {memory.creator_name}
+                          </p>
+                        )}
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'space-between' }}>
+                          <button
+                            onClick={() => deleteMutation.mutate(memory.id)}
+                            disabled={deleteMutation.isPending}
+                            style={{
+                              padding: '5px 10px', borderRadius: '6px', border: '1px solid rgba(239,68,68,0.3)',
+                              backgroundColor: 'rgba(239,68,68,0.08)', color: '#EF4444',
+                              fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+                            }}
+                          >
+                            <Trash2 size={11} />
+                            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                          </button>
+                          <button
+                            onClick={() => handleSaveEdit(memory.id)}
+                            disabled={updateMutation.isPending}
+                            style={{
+                              padding: '5px 12px', borderRadius: '6px', border: 'none',
+                              backgroundColor: 'var(--accent)', color: '#fff',
+                              fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+                              display: 'flex', alignItems: 'center', gap: '4px',
+                            }}
+                          >
+                            <Save size={11} />
+                            {updateMutation.isPending ? 'Saving...' : 'Save'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -30,6 +30,8 @@ import sessionsRoutes from './sessions.js';
 import weatherRoutes from './weather.js';
 import healthRoutes from './health.js';
 import marketplaceRoutes from './marketplace.js';
+import nodesRoutes, { startNodeStatusChecker } from './nodes.js';
+import boardMemoriesRoutes from './boardMemories.js';
 
 const router = Router();
 
@@ -65,6 +67,10 @@ router.use('/v1/tags', authMiddleware, tenantMiddleware, tagsRoutes);
 router.use('/v1/api-tokens', authMiddleware, tenantMiddleware, apiTokensRoutes);
 router.use('/v1/billing', billingRoutes);
 router.use('/v1/marketplace', authMiddleware, tenantMiddleware, marketplaceRoutes);
+router.use('/v1/nodes', nodesRoutes);
+router.use('/v1/board-memories', authMiddleware, tenantMiddleware, boardMemoriesRoutes);
 router.use('/admin/v1', adminRoutes);
+
+startNodeStatusChecker();
 
 export default router;

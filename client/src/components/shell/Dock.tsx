@@ -6,7 +6,7 @@ import {
   BarChart3, Calendar, Terminal, FileText, Zap,
   Server, ShieldCheck, HelpCircle, CreditCard, Columns3,
   LogOut, Palette, ChevronRight, Building2, ChevronDown,
-  ChevronLeft, Store, Package,
+  ChevronLeft, Store, Package, Box, Wifi,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiGet } from '../../api/client';
@@ -27,6 +27,7 @@ const dockSections = [
       { href: '/agents',    label: 'Agents',    icon: Bot },
       { href: '/sessions',  label: 'Sessions',  icon: History },
       { href: '/activity',  label: 'Activity',  icon: Activity },
+      { href: '/office',    label: 'Office',    icon: Box },
     ],
   },
   {
@@ -55,6 +56,7 @@ const dockSections = [
   {
     label: 'Infrastructure',
     items: [
+      { href: '/fleet',    label: 'Fleet',    icon: Wifi },
       { href: '/machines', label: 'Machines', icon: Server },
       { href: '/terminal', label: 'Terminal', icon: Terminal },
     ],

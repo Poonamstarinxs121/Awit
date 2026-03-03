@@ -676,6 +676,68 @@ export async function runMigrations(): Promise<void> {
     await client.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'trial'))`);
     await client.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS subdomain TEXT`);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS nodes (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        url TEXT,
+        api_key_hash TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'offline' CHECK (status IN ('online', 'offline', 'degraded')),
+        last_heartbeat TIMESTAMPTZ,
+        system_info JSONB DEFAULT '{}',
+        openclaw_version TEXT,
+        agent_count INTEGER DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_nodes_tenant ON nodes(tenant_id)`);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS node_heartbeats (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        node_id UUID NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+        cpu_percent REAL,
+        memory_percent REAL,
+        disk_percent REAL,
+        uptime_seconds INTEGER,
+        agent_statuses JSONB DEFAULT '[]',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_node_heartbeats_node ON node_heartbeats(node_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_node_heartbeats_created ON node_heartbeats(created_at)`);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS node_telemetry (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        node_id UUID NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+        telemetry_type TEXT NOT NULL CHECK (telemetry_type IN ('session', 'cost', 'activity')),
+        payload JSONB NOT NULL DEFAULT '{}',
+        recorded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_node_telemetry_node ON node_telemetry(node_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_node_telemetry_type ON node_telemetry(telemetry_type)`);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS board_memories (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        board_group_id UUID REFERENCES board_groups(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        memory_type TEXT NOT NULL DEFAULT 'note' CHECK (memory_type IN ('note', 'decision', 'context', 'reference')),
+        created_by UUID REFERENCES users(id),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_board_memories_tenant ON board_memories(tenant_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_board_memories_board_group ON board_memories(board_group_id)`);
+
     await client.query('COMMIT');
     console.log('Migrations completed successfully');
 

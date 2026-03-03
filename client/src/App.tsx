@@ -42,6 +42,8 @@ import { AboutPage } from './pages/AboutPage';
 import { Organisation } from './pages/Organisation';
 import { MarketplacePage } from './pages/MarketplacePage';
 import { PacksPage } from './pages/PacksPage';
+import { OfficePage } from './pages/OfficePage';
+import { FleetPage } from './pages/FleetPage';
 import { useAuth } from './hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 
@@ -132,6 +134,8 @@ export default function App() {
               <Route path="/organisation" element={<Organisation />} />
               <Route path="/marketplace" element={<MarketplacePage />} />
               <Route path="/packs" element={<PacksPage />} />
+              <Route path="/office" element={<OfficePage />} />
+              <Route path="/fleet" element={<FleetPage />} />
             </Route>
           </Routes>
           </BrowserRouter>

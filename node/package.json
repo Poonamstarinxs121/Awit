@@ -1,0 +1,23 @@
+{
+  "name": "squidjob-node",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -H 0.0.0.0 -p 3200",
+    "build": "next build",
+    "start": "next start -H 0.0.0.0 -p 3200"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.563.0",
+    "next": "^14.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "typescript": "^5"
+  }
+}
