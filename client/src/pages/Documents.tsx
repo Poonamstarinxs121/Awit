@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Card } from '../components/ui/Card';
 import { Modal } from '../components/ui/Modal';
 import { Spinner } from '../components/ui/Spinner';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../api/client';
 import {
   Search, Plus, FileText, ClipboardList, Microscope, ScrollText, CheckSquare,
-  StickyNote, File, Pencil, Trash2, ArrowLeft, X
+  StickyNote, File, Pencil, Trash2, ArrowLeft, X, Info, Clock
 } from 'lucide-react';
 
 type DocType = 'deliverable' | 'brief' | 'research' | 'protocol' | 'checklist' | 'note';
@@ -25,25 +24,48 @@ interface Document {
   updated_at: string;
 }
 
-const DOC_TYPES: { key: FilterType; label: string; icon: typeof FileText; color: string }[] = [
-  { key: 'all', label: 'All', icon: File, color: 'text-text-secondary' },
-  { key: 'deliverable', label: 'Deliverable', icon: FileText, color: 'text-blue-600' },
-  { key: 'brief', label: 'Brief', icon: ClipboardList, color: 'text-purple-600' },
-  { key: 'research', label: 'Research', icon: Microscope, color: 'text-green-600' },
-  { key: 'protocol', label: 'Protocol', icon: ScrollText, color: 'text-amber-600' },
-  { key: 'checklist', label: 'Checklist', icon: CheckSquare, color: 'text-teal-600' },
-  { key: 'note', label: 'Note', icon: StickyNote, color: 'text-[var(--text-secondary)]' },
+const DOC_TYPES: { key: FilterType; label: string; icon: typeof FileText; color: string; bg: string }[] = [
+  { key: 'all', label: 'All', icon: File, color: 'var(--text-secondary)', bg: 'transparent' },
+  { key: 'deliverable', label: 'Deliverable', icon: FileText, color: '#60A5FA', bg: 'rgba(96,165,250,0.1)' },
+  { key: 'brief', label: 'Brief', icon: ClipboardList, color: '#BF5AF2', bg: 'rgba(191,90,242,0.1)' },
+  { key: 'research', label: 'Research', icon: Microscope, color: '#32D74B', bg: 'rgba(50,215,75,0.1)' },
+  { key: 'protocol', label: 'Protocol', icon: ScrollText, color: '#FF9F0A', bg: 'rgba(255,159,10,0.1)' },
+  { key: 'checklist', label: 'Checklist', icon: CheckSquare, color: '#64D2FF', bg: 'rgba(100,210,255,0.1)' },
+  { key: 'note', label: 'Note', icon: StickyNote, color: 'var(--text-muted)', bg: 'rgba(150,150,150,0.08)' },
 ];
 
-function getDocIcon(type: DocType) {
+function getDocConfig(type: DocType) {
   const dt = DOC_TYPES.find(d => d.key === type);
-  if (!dt) return { Icon: FileText, color: 'text-text-secondary' };
-  return { Icon: dt.icon, color: dt.color };
+  if (!dt) return { Icon: FileText, color: 'var(--text-secondary)', bg: 'transparent' };
+  return { Icon: dt.icon, color: dt.color, bg: dt.bg };
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
+
+function formatRelative(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return formatDate(iso);
+}
+
+const inputStyle: React.CSSProperties = {
+  width: '100%', padding: '9px 12px', borderRadius: '8px',
+  backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)',
+  color: 'var(--text-primary)', fontSize: '13px', outline: 'none',
+};
+
+const labelStyle: React.CSSProperties = {
+  display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)',
+  marginBottom: '5px', letterSpacing: '0.02em',
+};
 
 export function Documents() {
   const [filter, setFilter] = useState<FilterType>('all');
@@ -51,17 +73,13 @@ export function Documents() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
-
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-
   const [formTitle, setFormTitle] = useState('');
   const [formType, setFormType] = useState<DocType>('note');
   const [formContent, setFormContent] = useState('');
@@ -85,42 +103,23 @@ export function Documents() {
   }, [filter, search]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchDocuments();
-    }, search ? 300 : 0);
+    const timer = setTimeout(() => { fetchDocuments(); }, search ? 300 : 0);
     return () => clearTimeout(timer);
   }, [fetchDocuments, search]);
 
-  const resetForm = () => {
-    setFormTitle('');
-    setFormType('note');
-    setFormContent('');
-    setFormTaskId('');
-  };
-
-  const openCreate = () => {
-    resetForm();
-    setShowCreate(true);
-  };
+  const resetForm = () => { setFormTitle(''); setFormType('note'); setFormContent(''); setFormTaskId(''); };
+  const openCreate = () => { resetForm(); setShowCreate(true); };
 
   const handleCreate = async () => {
     if (!formTitle.trim()) return;
     try {
       setCreating(true);
-      await apiPost('/v1/documents', {
-        title: formTitle.trim(),
-        type: formType,
-        content: formContent,
-        task_id: formTaskId.trim() || null,
-      });
+      await apiPost('/v1/documents', { title: formTitle.trim(), type: formType, content: formContent, task_id: formTaskId.trim() || null });
       setShowCreate(false);
       resetForm();
       fetchDocuments();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create document');
-    } finally {
-      setCreating(false);
-    }
+    } catch (err: unknown) { setError(err instanceof Error ? err.message : 'Failed to create document'); }
+    finally { setCreating(false); }
   };
 
   const openEdit = () => {
@@ -136,20 +135,12 @@ export function Documents() {
     if (!selectedDoc || !formTitle.trim()) return;
     try {
       setSaving(true);
-      const data = await apiPatch<{ document: Document }>(`/v1/documents/${selectedDoc.id}`, {
-        title: formTitle.trim(),
-        type: formType,
-        content: formContent,
-        task_id: formTaskId.trim() || null,
-      });
+      const data = await apiPatch<{ document: Document }>(`/v1/documents/${selectedDoc.id}`, { title: formTitle.trim(), type: formType, content: formContent, task_id: formTaskId.trim() || null });
       setSelectedDoc(data.document);
       setEditing(false);
       fetchDocuments();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to update document');
-    } finally {
-      setSaving(false);
-    }
+    } catch (err: unknown) { setError(err instanceof Error ? err.message : 'Failed to update document'); }
+    finally { setSaving(false); }
   };
 
   const handleDelete = async (id: string) => {
@@ -159,84 +150,60 @@ export function Documents() {
       setDeleteConfirm(null);
       if (selectedDoc?.id === id) setSelectedDoc(null);
       fetchDocuments();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to delete document');
-    } finally {
-      setDeleting(false);
-    }
+    } catch (err: unknown) { setError(err instanceof Error ? err.message : 'Failed to delete document'); }
+    finally { setDeleting(false); }
   };
 
   if (selectedDoc && !editing) {
-    const { Icon, color } = getDocIcon(selectedDoc.type);
+    const { Icon, color } = getDocConfig(selectedDoc.type);
     return (
-      <div className="space-y-6">
+      <div>
         <button
           onClick={() => setSelectedDoc(null)}
-          className="inline-flex items-center gap-1 text-text-secondary hover:text-text-primary text-sm transition-colors"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '13px', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '20px', padding: '6px 0' }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
         >
-          <ArrowLeft size={16} />
-          Back to Documents
+          <ArrowLeft size={15} /> Back to Documents
         </button>
 
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <Icon size={24} className={color} />
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: getDocConfig(selectedDoc.type).bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon size={20} style={{ color }} />
+            </div>
             <div>
-              <h1 className="text-2xl font-bold text-text-primary">{selectedDoc.title}</h1>
-              <div className="flex items-center gap-3 mt-1 text-sm text-text-secondary">
-                <span className="capitalize">{selectedDoc.type}</span>
-                <span>·</span>
+              <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '3px' }}>{selectedDoc.title}</h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                <span style={{ textTransform: 'capitalize', color, fontWeight: 600 }}>{selectedDoc.type}</span>
+                <span style={{ opacity: 0.4 }}>|</span>
                 <span>{formatDate(selectedDoc.updated_at)}</span>
-                {selectedDoc.agent_name && (
-                  <>
-                    <span>·</span>
-                    <span>{selectedDoc.agent_name}</span>
-                  </>
-                )}
+                {selectedDoc.agent_name && (<><span style={{ opacity: 0.4 }}>|</span><span>{selectedDoc.agent_name}</span></>)}
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={openEdit}
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary border border-[var(--border)] rounded-lg transition-colors"
-            >
-              <Pencil size={14} />
-              Edit
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={openEdit} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '7px 12px', borderRadius: '7px', border: '1px solid var(--border)', backgroundColor: 'var(--surface-elevated)', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }}>
+              <Pencil size={13} /> Edit
             </button>
-            <button
-              onClick={() => setDeleteConfirm(selectedDoc.id)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-[var(--negative)] hover:text-[var(--negative)] border border-[rgba(255,59,48,0.3)] rounded-lg transition-colors"
-            >
-              <Trash2 size={14} />
-              Delete
+            <button onClick={() => setDeleteConfirm(selectedDoc.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '7px 12px', borderRadius: '7px', border: '1px solid rgba(255,69,58,0.3)', backgroundColor: 'rgba(255,69,58,0.06)', color: '#FF453A', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }}>
+              <Trash2 size={13} /> Delete
             </button>
           </div>
         </div>
 
-        <Card>
-          <div className="p-6 whitespace-pre-wrap text-text-primary text-sm leading-relaxed min-h-[200px]">
-            {selectedDoc.content || <span className="text-text-muted italic">No content</span>}
-          </div>
-        </Card>
+        <div style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', whiteSpace: 'pre-wrap', fontSize: '13px', lineHeight: 1.7, color: 'var(--text-primary)', minHeight: '200px' }}>
+          {selectedDoc.content || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No content</span>}
+        </div>
 
         {deleteConfirm && (
           <Modal open={true} onClose={() => setDeleteConfirm(null)} title="Delete Document">
-            <p className="text-text-secondary text-sm mb-4">
-              Are you sure you want to delete "{selectedDoc.title}"? This action cannot be undone.
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+              Are you sure you want to delete "<strong>{selectedDoc.title}</strong>"? This action cannot be undone.
             </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 text-sm text-text-secondary border border-[var(--border)] rounded-lg hover:bg-[var(--surface-elevated)] transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDelete(deleteConfirm)}
-                disabled={deleting}
-                className="px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50"
-              >
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <button onClick={() => setDeleteConfirm(null)} style={{ padding: '8px 16px', borderRadius: '7px', border: '1px solid var(--border)', backgroundColor: 'transparent', color: 'var(--text-secondary)', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => handleDelete(deleteConfirm)} disabled={deleting} style={{ padding: '8px 16px', borderRadius: '7px', border: 'none', backgroundColor: '#FF453A', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', opacity: deleting ? 0.7 : 1 }}>
                 {deleting ? 'Deleting...' : 'Delete'}
               </button>
             </div>
@@ -248,254 +215,222 @@ export function Documents() {
 
   if (selectedDoc && editing) {
     return (
-      <div className="space-y-6">
-        <button
-          onClick={() => setEditing(false)}
-          className="inline-flex items-center gap-1 text-text-secondary hover:text-text-primary text-sm transition-colors"
-        >
-          <X size={16} />
-          Cancel editing
+      <div>
+        <button onClick={() => setEditing(false)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '13px', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '20px', padding: '6px 0' }}>
+          <X size={15} /> Cancel editing
         </button>
-
-        <h1 className="text-2xl font-bold text-text-primary">Edit Document</h1>
-
-        <Card>
-          <div className="p-6 space-y-4">
+        <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '20px' }}>Edit Document</h1>
+        <div style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">Title</label>
-              <input
-                type="text"
-                value={formTitle}
-                onChange={(e) => setFormTitle(e.target.value)}
-                className="w-full px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              />
+              <label style={labelStyle}>Title</label>
+              <input type="text" value={formTitle} onChange={e => setFormTitle(e.target.value)} style={inputStyle} onFocus={e => (e.target.style.borderColor = 'var(--accent)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">Type</label>
-              <select
-                value={formType}
-                onChange={(e) => setFormType(e.target.value as DocType)}
-                className="w-full px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              >
-                {DOC_TYPES.filter(d => d.key !== 'all').map(dt => (
-                  <option key={dt.key} value={dt.key}>{dt.label}</option>
-                ))}
+              <label style={labelStyle}>Type</label>
+              <select value={formType} onChange={e => setFormType(e.target.value as DocType)} style={{ ...inputStyle, cursor: 'pointer' }}>
+                {DOC_TYPES.filter(d => d.key !== 'all').map(dt => <option key={dt.key} value={dt.key}>{dt.label}</option>)}
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">Content</label>
-              <textarea
-                value={formContent}
-                onChange={(e) => setFormContent(e.target.value)}
-                rows={12}
-                className="w-full px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent resize-y"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">Task ID (optional)</label>
-              <input
-                type="text"
-                value={formTaskId}
-                onChange={(e) => setFormTaskId(e.target.value)}
-                placeholder="Link to a task by ID"
-                className="w-full px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                onClick={() => setEditing(false)}
-                className="px-4 py-2 text-sm text-text-secondary border border-[var(--border)] rounded-lg hover:bg-[var(--surface-elevated)] transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving || !formTitle.trim()}
-                className="px-4 py-2 text-sm text-white bg-brand-accent hover:bg-brand-accent-hover rounded-lg transition-colors disabled:opacity-50"
-              >
-                {saving ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
           </div>
-        </Card>
+          <div style={{ marginBottom: '16px' }}>
+            <label style={labelStyle}>Content</label>
+            <textarea value={formContent} onChange={e => setFormContent(e.target.value)} rows={14} style={{ ...inputStyle, resize: 'vertical', fontFamily: 'var(--font-mono)', lineHeight: 1.6 }} onFocus={e => (e.target.style.borderColor = 'var(--accent)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
+          </div>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={labelStyle}>Task ID (optional)</label>
+            <input type="text" value={formTaskId} onChange={e => setFormTaskId(e.target.value)} placeholder="Link to a task by ID" style={inputStyle} onFocus={e => (e.target.style.borderColor = 'var(--accent)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+            <button onClick={() => setEditing(false)} style={{ padding: '8px 16px', borderRadius: '7px', border: '1px solid var(--border)', backgroundColor: 'transparent', color: 'var(--text-secondary)', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
+            <button onClick={handleSave} disabled={saving || !formTitle.trim()} style={{ padding: '8px 16px', borderRadius: '7px', border: 'none', backgroundColor: 'var(--accent)', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', opacity: saving || !formTitle.trim() ? 0.6 : 1 }}>
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
+  const typeCounts = DOC_TYPES.filter(d => d.key !== 'all').map(dt => ({
+    ...dt,
+    count: documents.filter(d => d.type === dt.key).length,
+  }));
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
         <div>
           <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.5px', marginBottom: '4px' }}>Documents</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Your squad's shared knowledge base</p>
         </div>
-        <button
-          onClick={openCreate}
-          className="inline-flex items-center gap-2 bg-brand-accent hover:bg-brand-accent-hover text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-        >
-          <Plus size={16} />
-          New Document
+        <button onClick={openCreate} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--accent)', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+          <Plus size={14} /> New Document
         </button>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', backgroundColor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '8px' }}>
-        <FileText size={14} style={{ color: '#60A5FA', flexShrink: 0 }} />
-        <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-          <span style={{ fontWeight: 600, color: '#60A5FA' }}>Tip:</span> Task file attachments (deliverables uploaded by agents) are accessible via the task detail panel on the{' '}
-          <a href="/kanban" style={{ color: '#60A5FA', textDecoration: 'underline' }}>Board</a>.
-          Use this page to store shared knowledge base documents, protocols, and notes.
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+        <button
+          onClick={() => setFilter('all')}
+          style={{
+            backgroundColor: filter === 'all' ? 'var(--accent-soft)' : 'var(--card)',
+            border: `1px solid ${filter === 'all' ? 'rgba(255,59,48,0.2)' : 'var(--border)'}`,
+            borderRadius: '10px', padding: '12px 14px', cursor: 'pointer',
+            transition: 'all 150ms', textAlign: 'left',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+            <File size={13} style={{ color: filter === 'all' ? 'var(--accent)' : 'var(--text-muted)' }} />
+            <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>All</span>
+          </div>
+          <span style={{ fontFamily: 'var(--font-heading)', fontSize: '22px', fontWeight: 700, color: filter === 'all' ? 'var(--accent)' : 'var(--text-primary)' }}>
+            {documents.length}
+          </span>
+        </button>
+        {typeCounts.map(dt => (
+          <button
+            key={dt.key}
+            onClick={() => setFilter(dt.key === filter ? 'all' : dt.key as FilterType)}
+            style={{
+              backgroundColor: filter === dt.key ? `${dt.bg}` : 'var(--card)',
+              border: `1px solid ${filter === dt.key ? `${dt.color}33` : 'var(--border)'}`,
+              borderRadius: '10px', padding: '12px 14px', cursor: 'pointer',
+              transition: 'all 150ms', textAlign: 'left',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+              <dt.icon size={13} style={{ color: dt.color }} />
+              <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{dt.label}</span>
+            </div>
+            <span style={{ fontFamily: 'var(--font-heading)', fontSize: '22px', fontWeight: 700, color: filter === dt.key ? dt.color : 'var(--text-primary)' }}>
+              {dt.count}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', backgroundColor: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: '8px', marginBottom: '16px' }}>
+        <Info size={14} style={{ color: '#60A5FA', flexShrink: 0 }} />
+        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+          <span style={{ fontWeight: 600, color: '#60A5FA' }}>Tip:</span> Task file attachments are accessible via the task detail panel on the{' '}
+          <a href="/kanban" style={{ color: '#60A5FA', textDecoration: 'none', fontWeight: 500 }}>Board</a>.
+          This page is for shared knowledge base documents, protocols, and notes.
         </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', padding: '12px 16px', backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '10px', alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: 1 }}>
+          <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
             type="text"
-            placeholder="Search documents..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent text-sm"
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search documents by title or content..."
+            style={{ width: '100%', paddingLeft: '36px', padding: '9px 12px 9px 36px', backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', outline: 'none' }}
+            onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+            onBlur={e => (e.target.style.borderColor = 'var(--border)')}
           />
         </div>
-
-        <div className="flex gap-1 flex-wrap">
-          {DOC_TYPES.map((dt) => (
-            <button
-              key={dt.key}
-              onClick={() => setFilter(dt.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                filter === dt.key
-                  ? 'bg-brand-accent text-white'
-                  : 'bg-[var(--surface-elevated)] text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              {dt.label}
-            </button>
-          ))}
-        </div>
+        {filter !== 'all' && (
+          <button onClick={() => setFilter('all')} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '7px 12px', borderRadius: '7px', border: '1px solid var(--border)', backgroundColor: 'var(--surface-elevated)', color: 'var(--text-secondary)', fontSize: '12px', cursor: 'pointer' }}>
+            <X size={12} /> Clear filter
+          </button>
+        )}
       </div>
 
       {error && (
-        <div className="bg-[rgba(255,59,48,0.1)] border border-[rgba(255,59,48,0.3)] rounded-lg px-4 py-3 text-[var(--negative)] text-sm">
-          {error}
-          <button onClick={() => setError(null)} className="ml-2 underline">Dismiss</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '8px', backgroundColor: 'rgba(255,69,58,0.06)', border: '1px solid rgba(255,69,58,0.2)', marginBottom: '16px' }}>
+          <span style={{ fontSize: '12px', color: '#FF453A', flex: 1 }}>{error}</span>
+          <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: '#FF453A', cursor: 'pointer', fontSize: '11px', textDecoration: 'underline' }}>Dismiss</button>
         </div>
       )}
 
       {loading ? (
-        <div className="flex justify-center py-16">
-          <Spinner />
-        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><Spinner /></div>
       ) : documents.length === 0 ? (
-        <Card>
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <FileText size={48} className="text-text-muted mb-4" />
-            <h3 className="text-lg font-medium text-text-primary">No documents yet</h3>
-            <p className="text-text-secondary text-sm mt-1 max-w-md">
-              Documents are your squad's shared brain. Create documents to share knowledge, templates, and guidelines across all your agents.
-            </p>
-            <button
-              onClick={openCreate}
-              className="mt-4 inline-flex items-center gap-2 bg-brand-accent hover:bg-brand-accent-hover text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            >
-              <Plus size={16} />
-              Create your first document
-            </button>
+        <div style={{ backgroundColor: 'var(--card)', border: '1px dashed var(--border)', borderRadius: '14px', padding: '60px 20px', textAlign: 'center' }}>
+          <div style={{ width: '56px', height: '56px', borderRadius: '14px', backgroundColor: 'var(--surface-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <FileText size={26} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
           </div>
-        </Card>
+          <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
+            {filter !== 'all' ? `No ${filter} documents` : 'No documents yet'}
+          </h3>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '380px', margin: '0 auto 20px', lineHeight: 1.5 }}>
+            Documents are your squad's shared brain. Create documents to share knowledge, templates, and guidelines across all your agents.
+          </p>
+          <button onClick={openCreate} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 18px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--accent)', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+            <Plus size={14} /> Create your first document
+          </button>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {documents.map((doc) => {
-            const { Icon, color } = getDocIcon(doc.type);
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '12px' }}>
+          {documents.map(doc => {
+            const { Icon, color, bg } = getDocConfig(doc.type);
             return (
-              <Card key={doc.id}>
-                <button
-                  onClick={() => setSelectedDoc(doc)}
-                  className="w-full text-left p-4 hover:bg-[var(--surface-elevated)] transition-colors rounded-lg"
-                >
-                  <div className="flex items-start gap-3">
-                    <Icon size={20} className={`${color} mt-0.5 flex-shrink-0`} />
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-medium text-text-primary truncate">{doc.title}</h3>
-                      <p className="text-xs text-text-secondary mt-1 capitalize">{doc.type}</p>
-                      <p className="text-xs text-text-muted mt-1 line-clamp-2">
-                        {doc.content || 'No content'}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2 text-xs text-text-muted">
-                        <span>{formatDate(doc.updated_at)}</span>
-                        {doc.agent_name && (
-                          <>
-                            <span>·</span>
-                            <span>{doc.agent_name}</span>
-                          </>
-                        )}
-                      </div>
+              <button
+                key={doc.id}
+                onClick={() => setSelectedDoc(doc)}
+                style={{
+                  width: '100%', textAlign: 'left', padding: '16px 18px',
+                  backgroundColor: 'var(--card)', border: '1px solid var(--border)',
+                  borderRadius: '12px', cursor: 'pointer', transition: 'all 150ms',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = `${color}44`;
+                  e.currentTarget.style.backgroundColor = 'var(--surface-hover)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                  e.currentTarget.style.backgroundColor = 'var(--card)';
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                  <div style={{ width: '34px', height: '34px', borderRadius: '8px', backgroundColor: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' }}>
+                    <Icon size={16} style={{ color }} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h3 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.title}</h3>
+                    <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', color, padding: '1px 6px', borderRadius: '4px', backgroundColor: bg, marginBottom: '6px', letterSpacing: '0.03em' }}>{doc.type}</span>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>
+                      {doc.content || 'No content'}
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', fontSize: '10px', color: 'var(--text-muted)' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}><Clock size={10} /> {formatRelative(doc.updated_at)}</span>
+                      {doc.agent_name && (<><span style={{ opacity: 0.3 }}>|</span><span>{doc.agent_name}</span></>)}
                     </div>
                   </div>
-                </button>
-              </Card>
+                </div>
+              </button>
             );
           })}
         </div>
       )}
 
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="New Document">
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">Title</label>
-            <input
-              type="text"
-              value={formTitle}
-              onChange={(e) => setFormTitle(e.target.value)}
-              placeholder="Document title"
-              className="w-full px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
-            />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label style={labelStyle}>Title *</label>
+              <input type="text" value={formTitle} onChange={e => setFormTitle(e.target.value)} placeholder="Document title" style={inputStyle} onFocus={e => (e.target.style.borderColor = 'var(--accent)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
+            </div>
+            <div>
+              <label style={labelStyle}>Type</label>
+              <select value={formType} onChange={e => setFormType(e.target.value as DocType)} style={{ ...inputStyle, cursor: 'pointer' }}>
+                {DOC_TYPES.filter(d => d.key !== 'all').map(dt => <option key={dt.key} value={dt.key}>{dt.label}</option>)}
+              </select>
+            </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">Type</label>
-            <select
-              value={formType}
-              onChange={(e) => setFormType(e.target.value as DocType)}
-              className="w-full px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
-            >
-              {DOC_TYPES.filter(d => d.key !== 'all').map(dt => (
-                <option key={dt.key} value={dt.key}>{dt.label}</option>
-              ))}
-            </select>
+            <label style={labelStyle}>Content</label>
+            <textarea value={formContent} onChange={e => setFormContent(e.target.value)} rows={10} placeholder="Write your document content..." style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }} onFocus={e => (e.target.style.borderColor = 'var(--accent)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">Content</label>
-            <textarea
-              value={formContent}
-              onChange={(e) => setFormContent(e.target.value)}
-              rows={8}
-              placeholder="Write your document content..."
-              className="w-full px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent resize-y"
-            />
+            <label style={labelStyle}>Task ID (optional)</label>
+            <input type="text" value={formTaskId} onChange={e => setFormTaskId(e.target.value)} placeholder="Link to a task by ID" style={inputStyle} onFocus={e => (e.target.style.borderColor = 'var(--accent)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">Task ID (optional)</label>
-            <input
-              type="text"
-              value={formTaskId}
-              onChange={(e) => setFormTaskId(e.target.value)}
-              placeholder="Link to a task by ID"
-              className="w-full px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
-            />
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              onClick={() => setShowCreate(false)}
-              className="px-4 py-2 text-sm text-text-secondary border border-[var(--border)] rounded-lg hover:bg-[var(--surface-elevated)] transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleCreate}
-              disabled={creating || !formTitle.trim()}
-              className="px-4 py-2 text-sm text-white bg-brand-accent hover:bg-brand-accent-hover rounded-lg transition-colors disabled:opacity-50"
-            >
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', paddingTop: '4px' }}>
+            <button onClick={() => setShowCreate(false)} style={{ padding: '8px 16px', borderRadius: '7px', border: '1px solid var(--border)', backgroundColor: 'transparent', color: 'var(--text-secondary)', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
+            <button onClick={handleCreate} disabled={creating || !formTitle.trim()} style={{ padding: '8px 16px', borderRadius: '7px', border: 'none', backgroundColor: 'var(--accent)', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', opacity: creating || !formTitle.trim() ? 0.6 : 1 }}>
               {creating ? 'Creating...' : 'Create Document'}
             </button>
           </div>
