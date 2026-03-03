@@ -20,7 +20,7 @@ interface MachineHealth {
   }>;
 }
 
-export function StatusBar() {
+export function StatusBar({ dockWidth = 68 }: { dockWidth?: number }) {
   const { user } = useAuth();
   const [time, setTime] = useState(new Date());
   const [connected, setConnected] = useState(true);
@@ -130,7 +130,8 @@ export function StatusBar() {
       style={{
         position: 'fixed',
         bottom: 0,
-        left: '68px',
+        left: `${dockWidth}px`,
+        transition: 'left 200ms ease',
         right: 0,
         height: '32px',
         backgroundColor: 'var(--surface)',

@@ -5,7 +5,7 @@ import { Badge } from '../ui/Badge';
 import { apiPost, apiGet } from '../../api/client';
 import { useQuery } from '@tanstack/react-query';
 
-export function TopBar() {
+export function TopBar({ dockWidth = 68 }: { dockWidth?: number }) {
   const { user } = useAuth();
   const [globalPaused, setGlobalPaused] = useState(false);
   const [pauseLoading, setPauseLoading] = useState(false);
@@ -41,7 +41,8 @@ export function TopBar() {
       style={{
         position: 'fixed',
         top: 0,
-        left: '68px',
+        left: `${dockWidth}px`,
+        transition: 'left 200ms ease',
         right: 0,
         height: '48px',
         backgroundColor: 'var(--surface)',
