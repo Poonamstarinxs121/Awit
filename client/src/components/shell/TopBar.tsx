@@ -4,11 +4,14 @@ import { NotificationBell } from '../NotificationBell';
 import { Badge } from '../ui/Badge';
 import { apiPost, apiGet } from '../../api/client';
 import { useQuery } from '@tanstack/react-query';
+import { Menu } from 'lucide-react';
+import { useIsMobile } from './Dock';
 
 export function TopBar({ dockWidth = 68 }: { dockWidth?: number }) {
   const { user } = useAuth();
   const [globalPaused, setGlobalPaused] = useState(false);
   const [pauseLoading, setPauseLoading] = useState(false);
+  const isMobile = useIsMobile();
 
   useQuery({
     queryKey: ['pause-status'],
@@ -36,12 +39,16 @@ export function TopBar({ dockWidth = 68 }: { dockWidth?: number }) {
 
   const initials = user?.email?.slice(0, 2).toUpperCase() || 'SJ';
 
+  const toggleMobileDock = () => {
+    window.dispatchEvent(new Event('toggle-mobile-dock'));
+  };
+
   return (
     <div
       style={{
         position: 'fixed',
         top: 0,
-        left: `${dockWidth}px`,
+        left: isMobile ? '0px' : `${dockWidth}px`,
         transition: 'left 200ms ease',
         right: 0,
         height: '48px',
@@ -50,22 +57,44 @@ export function TopBar({ dockWidth = 68 }: { dockWidth?: number }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 20px',
+        padding: isMobile ? '0 12px' : '0 20px',
         zIndex: 45,
       }}
     >
       <div className="flex items-center gap-3">
-        <div
-          style={{
-            backgroundColor: 'var(--accent-soft)',
-            borderRadius: '4px',
-            padding: '2px 8px',
-          }}
-        >
-          <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--accent)' }}>
-            MISSION CONTROL
-          </span>
-        </div>
+        {isMobile && (
+          <button
+            onClick={toggleMobileDock}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-secondary)',
+              padding: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Menu size={20} />
+          </button>
+        )}
+        {!isMobile && (
+          <div
+            style={{
+              backgroundColor: 'var(--accent-soft)',
+              borderRadius: '4px',
+              padding: '2px 8px',
+            }}
+          >
+            <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--accent)' }}>
+              MISSION CONTROL
+            </span>
+          </div>
+        )}
+        {isMobile && (
+          <span style={{ fontSize: '14px' }}>🦑</span>
+        )}
         {globalPaused && (
           <div style={{
             backgroundColor: 'rgba(255, 214, 10, 0.15)',
@@ -74,53 +103,55 @@ export function TopBar({ dockWidth = 68 }: { dockWidth?: number }) {
             padding: '2px 8px',
           }}>
             <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--warning)' }}>
-              ALL AGENTS PAUSED
+              {isMobile ? 'PAUSED' : 'ALL AGENTS PAUSED'}
             </span>
           </div>
         )}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3" style={{ gap: isMobile ? '8px' : '12px' }}>
         {user && (
           <>
-            <button
-              onClick={togglePause}
-              disabled={pauseLoading}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '5px 12px',
-                borderRadius: '6px',
-                fontSize: '11px',
-                fontWeight: 600,
-                border: '1px solid',
-                cursor: pauseLoading ? 'not-allowed' : 'pointer',
-                opacity: pauseLoading ? 0.6 : 1,
-                backgroundColor: globalPaused ? 'rgba(50, 215, 75, 0.1)' : 'rgba(255, 214, 10, 0.1)',
-                borderColor: globalPaused ? 'rgba(50, 215, 75, 0.3)' : 'rgba(255, 214, 10, 0.3)',
-                color: globalPaused ? 'var(--positive)' : 'var(--warning)',
-                transition: 'all 150ms ease',
-              }}
-            >
-              {globalPaused ? (
-                <>
-                  <svg width="10" height="10" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M6.3 2.84A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.27l9.344-5.891a1.5 1.5 0 000-2.538L6.3 2.841z" />
-                  </svg>
-                  Resume
-                </>
-              ) : (
-                <>
-                  <svg width="10" height="10" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M5.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75A.75.75 0 007.25 3h-1.5zM12.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75h-1.5z" />
-                  </svg>
-                  Pause All
-                </>
-              )}
-            </button>
+            {!isMobile && (
+              <button
+                onClick={togglePause}
+                disabled={pauseLoading}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  border: '1px solid',
+                  cursor: pauseLoading ? 'not-allowed' : 'pointer',
+                  opacity: pauseLoading ? 0.6 : 1,
+                  backgroundColor: globalPaused ? 'rgba(50, 215, 75, 0.1)' : 'rgba(255, 214, 10, 0.1)',
+                  borderColor: globalPaused ? 'rgba(50, 215, 75, 0.3)' : 'rgba(255, 214, 10, 0.3)',
+                  color: globalPaused ? 'var(--positive)' : 'var(--warning)',
+                  transition: 'all 150ms ease',
+                }}
+              >
+                {globalPaused ? (
+                  <>
+                    <svg width="10" height="10" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M6.3 2.84A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.27l9.344-5.891a1.5 1.5 0 000-2.538L6.3 2.841z" />
+                    </svg>
+                    Resume
+                  </>
+                ) : (
+                  <>
+                    <svg width="10" height="10" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M5.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75A.75.75 0 007.25 3h-1.5zM12.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75h-1.5z" />
+                    </svg>
+                    Pause All
+                  </>
+                )}
+              </button>
+            )}
 
-            {user.role && (
+            {!isMobile && user.role && (
               <Badge variant="info">{user.role}</Badge>
             )}
 
@@ -146,7 +177,7 @@ export function TopBar({ dockWidth = 68 }: { dockWidth?: number }) {
               {initials}
             </div>
 
-            {user.tenantName && (
+            {!isMobile && user.tenantName && (
               <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                 {user.tenantName}
               </span>

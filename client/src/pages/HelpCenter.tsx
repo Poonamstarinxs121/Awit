@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Mail } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Mail, ChevronDown, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface HelpTopic {
@@ -130,62 +130,102 @@ const SECTIONS = [
 export function HelpCenter() {
   const navigate = useNavigate();
   const [activeTopicId, setActiveTopicId] = useState(HELP_TOPICS[0].id);
+  const [isMobile, setIsMobile] = useState(false);
+  const [topicListOpen, setTopicListOpen] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(e.matches);
+    handler(mq);
+    mq.addEventListener('change', handler as (e: MediaQueryListEvent) => void);
+    return () => mq.removeEventListener('change', handler as (e: MediaQueryListEvent) => void);
+  }, []);
 
   const activeTopic = HELP_TOPICS.find((t) => t.id === activeTopicId) || HELP_TOPICS[0];
   const activeIndex = HELP_TOPICS.findIndex((t) => t.id === activeTopicId);
 
-  return (
-    <div className="flex h-[calc(100vh-8rem)] gap-6">
-      <aside className="w-[260px] shrink-0 bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-y-auto">
-        <div className="px-4 py-4 border-b border-[var(--border)]">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">📖</span>
-            <div>
-              <h2 className="text-sm font-bold text-text-primary">Help Center</h2>
-              <p className="text-[10px] text-text-muted">Everything you need to know</p>
+  const selectTopic = (id: string) => {
+    setActiveTopicId(id);
+    setTopicListOpen(false);
+  };
+
+  const sidebarContent = (
+    <>
+      <nav className="p-3 space-y-4">
+        {SECTIONS.map((section) => (
+          <div key={section.key}>
+            <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-text-muted">
+              {section.label}
+            </p>
+            <div className="space-y-0.5 mt-1">
+              {HELP_TOPICS.filter((t) => t.section === section.key).map((topic) => (
+                <button
+                  key={topic.id}
+                  onClick={() => selectTopic(topic.id)}
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-sm transition-colors ${
+                    activeTopicId === topic.id
+                      ? 'bg-brand-accent/10 text-brand-accent font-medium'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-[var(--surface-elevated)]'
+                  }`}
+                >
+                  <span className="text-sm">{topic.emoji}</span>
+                  <span className="truncate">{topic.title}</span>
+                </button>
+              ))}
             </div>
           </div>
-        </div>
+        ))}
+      </nav>
 
-        <nav className="p-3 space-y-4">
-          {SECTIONS.map((section) => (
-            <div key={section.key}>
-              <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                {section.label}
-              </p>
-              <div className="space-y-0.5 mt-1">
-                {HELP_TOPICS.filter((t) => t.section === section.key).map((topic) => (
-                  <button
-                    key={topic.id}
-                    onClick={() => setActiveTopicId(topic.id)}
-                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-sm transition-colors ${
-                      activeTopicId === topic.id
-                        ? 'bg-brand-accent/10 text-brand-accent font-medium'
-                        : 'text-text-secondary hover:text-text-primary hover:bg-[var(--surface-elevated)]'
-                    }`}
-                  >
-                    <span className="text-sm">{topic.emoji}</span>
-                    <span className="truncate">{topic.title}</span>
-                  </button>
-                ))}
+      <div className="px-4 py-3 border-t border-[var(--border)]">
+        <a
+          href="mailto:support@squidjob.com"
+          className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
+        >
+          <Mail size={14} />
+          Email Support
+        </a>
+      </div>
+    </>
+  );
+
+  return (
+    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', height: isMobile ? 'auto' : 'calc(100vh - 8rem)', gap: isMobile ? '0' : '24px' }}>
+      {isMobile ? (
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl mb-3">
+          <button
+            onClick={() => setTopicListOpen(!topicListOpen)}
+            className="w-full flex items-center justify-between px-4 py-3"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-lg">{activeTopic.emoji}</span>
+              <span className="text-sm font-bold text-text-primary">{activeTopic.title}</span>
+            </div>
+            <ChevronDown size={16} className="text-text-muted" style={{ transform: topicListOpen ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }} />
+          </button>
+          {topicListOpen && (
+            <div style={{ maxHeight: '50vh', overflowY: 'auto', borderTop: '1px solid var(--border)' }}>
+              {sidebarContent}
+            </div>
+          )}
+        </div>
+      ) : (
+        <aside className="w-[260px] shrink-0 bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-y-auto">
+          <div className="px-4 py-4 border-b border-[var(--border)]">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">📖</span>
+              <div>
+                <h2 className="text-sm font-bold text-text-primary">Help Center</h2>
+                <p className="text-[10px] text-text-muted">Everything you need to know</p>
               </div>
             </div>
-          ))}
-        </nav>
+          </div>
+          {sidebarContent}
+        </aside>
+      )}
 
-        <div className="px-4 py-3 border-t border-[var(--border)]">
-          <a
-            href="mailto:support@squidjob.com"
-            className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
-          >
-            <Mail size={14} />
-            Email Support
-          </a>
-        </div>
-      </aside>
-
-      <div className="flex-1 bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-y-auto">
-        <div className="sticky top-0 bg-[var(--card)] border-b border-[var(--border)] px-6 py-3 flex items-center justify-between z-10">
+      <div className="flex-1 bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-y-auto" style={{ minHeight: isMobile ? 'calc(100vh - 14rem)' : undefined }}>
+        <div className="sticky top-0 bg-[var(--card)] border-b border-[var(--border)] px-4 sm:px-6 py-3 flex items-center justify-between z-10">
           <div className="flex items-center gap-3">
             <span className="text-2xl">{activeTopic.emoji}</span>
             <h1 className="text-lg font-bold text-text-primary">{activeTopic.title}</h1>
@@ -196,14 +236,15 @@ export function HelpCenter() {
         </div>
 
         <div
-          className="px-8 py-6 prose prose-sm max-w-none help-content"
+          className="px-4 sm:px-8 py-6 prose prose-sm max-w-none help-content"
+          style={{ overflowX: 'auto' }}
           dangerouslySetInnerHTML={{ __html: activeTopic.content }}
         />
 
-        <div className="px-8 py-4 border-t border-[var(--border)] flex items-center justify-between">
+        <div className="px-4 sm:px-8 py-4 border-t border-[var(--border)] flex items-center justify-between">
           <button
             onClick={() => {
-              if (activeIndex > 0) setActiveTopicId(HELP_TOPICS[activeIndex - 1].id);
+              if (activeIndex > 0) selectTopic(HELP_TOPICS[activeIndex - 1].id);
             }}
             disabled={activeIndex === 0}
             className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
@@ -212,7 +253,7 @@ export function HelpCenter() {
           </button>
           <button
             onClick={() => {
-              if (activeIndex < HELP_TOPICS.length - 1) setActiveTopicId(HELP_TOPICS[activeIndex + 1].id);
+              if (activeIndex < HELP_TOPICS.length - 1) selectTopic(HELP_TOPICS[activeIndex + 1].id);
             }}
             disabled={activeIndex === HELP_TOPICS.length - 1}
             className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"

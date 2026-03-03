@@ -35,7 +35,7 @@ export function AnalyticsPage() {
         <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Activity patterns and performance metrics</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
+      <div className="mobile-grid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
         <StatsCard title="Total Events" value={(data?.total || 0).toLocaleString()} icon={<BarChart3 size={18} />} iconColor="var(--info)" />
         <StatsCard title="Today" value={(data?.today || 0).toLocaleString()} icon={<TrendingUp size={18} />} iconColor="var(--accent)" />
         <StatsCard title="Avg / Day" value={avgPerDay} icon={<Clock size={18} />} iconColor="var(--positive)" />
@@ -46,7 +46,7 @@ export function AnalyticsPage() {
         <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading analytics...</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="mobile-grid-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
               <SectionHeader title="Activity Over Time (30 days)" />
               <div style={{ padding: '20px' }}>
@@ -61,7 +61,7 @@ export function AnalyticsPage() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px' }}>
+          <div className="mobile-grid-1" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px' }}>
             <div style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
               <SectionHeader title="Hourly Activity Heatmap" subtitle="Activity density by hour of day and day of week" />
               <div style={{ padding: '20px' }}>

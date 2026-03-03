@@ -191,7 +191,7 @@ export function Machines() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
+      <div className="mobile-stack mobile-gap-sm" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
         <div>
           <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.3px', margin: '0 0 4px' }}>
             Machines
@@ -215,7 +215,7 @@ export function Machines() {
       </div>
 
       {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+      <div className="mobile-grid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
         {[
           { label: 'Total Machines', value: machines.length, color: 'var(--text-primary)', icon: Server },
           { label: 'Online', value: onlineCount, color: '#30D158', icon: CheckCircle },
@@ -301,6 +301,8 @@ export function Machines() {
               backgroundColor: 'var(--card)', border: '1px solid var(--border)',
               borderRadius: '14px', overflow: 'hidden',
             }}>
+            <div style={{ overflowX: 'auto' }}>
+              <div style={{ minWidth: '700px' }}>
               {/* Table header */}
               <div style={{
                 display: 'grid', gridTemplateColumns: '40px 1fr 160px 120px 100px 120px 140px',
@@ -411,6 +413,8 @@ export function Machines() {
                   </div>
                 );
               })}
+              </div>
+            </div>
             </div>
           )}
         </div>

@@ -157,7 +157,7 @@ export function CostsPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+      <div className="mobile-stack mobile-gap-sm" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
         <div>
           <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.5px', marginBottom: '4px' }}>
             Costs & Analytics
@@ -187,7 +187,7 @@ export function CostsPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
+      <div className="mobile-grid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
         <StatCard label="Today" value={`$${totals.todayCost.toFixed(2)}`} sub={`vs $${totals.yesterdayCost.toFixed(2)} yesterday`} trend={totals.todayPctChange} />
         <StatCard label="This Month" value={`$${totals.monthCost.toFixed(2)}`} sub={`vs $${totals.lastMonthCost.toFixed(2)} last month`} trend={totals.monthPctChange} />
         <StatCard label="Projected (EOM)" value={`$${totals.projectedCost.toFixed(2)}`} sub="Based on current pace" />
@@ -198,7 +198,7 @@ export function CostsPage() {
         <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading cost data...</div>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+          <div className="mobile-grid-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
             <ChartCard title="Daily Cost Trend">
               {dailyData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={220}>
@@ -229,7 +229,7 @@ export function CostsPage() {
             </ChartCard>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+          <div className="mobile-grid-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
             <ChartCard title="Cost by Model">
               {modelData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={220}>
@@ -265,7 +265,8 @@ export function CostsPage() {
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
               <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Model Pricing (per 1M tokens)</h3>
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '500px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)' }}>
                   {['Model', 'Input', 'Output', 'Cache Read', 'Cache Write'].map(h => (
@@ -288,6 +289,7 @@ export function CostsPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
 
           <div style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
@@ -295,7 +297,8 @@ export function CostsPage() {
               <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Detailed Breakdown by Agent</h3>
             </div>
             {agentUsage.length > 0 ? (
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '500px' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border)' }}>
                     {['Agent', 'Tokens', 'Cost', '% of Total'].map(h => (
@@ -333,6 +336,7 @@ export function CostsPage() {
                   })}
                 </tbody>
               </table>
+              </div>
             ) : (
               <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
                 No agent usage data available yet.

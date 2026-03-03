@@ -7,7 +7,8 @@ SquidJob is a multi-tenant SaaS platform designed to orchestrate independent AI 
 - Dark macOS-inspired shell — Phase 7 tenacitOS migration
 - Background (#0C0C0C), accent red (#FF3B30), dark cards (#1A1A1A), dark borders (#2A2A2A)
 - Inter (body) + JetBrains Mono (mono) + Sora (headings) fonts
-- Shell: Collapsible Dock (68px collapsed / 220px expanded, left) + 48px TopBar + 32px StatusBar (bottom)
+- Shell: Collapsible Dock (68px collapsed / 240px expanded, left) + 48px TopBar + 32px StatusBar (bottom)
+- Mobile responsive: 768px breakpoint, Dock becomes overlay with hamburger toggle, StatusBar hidden on mobile
 - Monorepo structure with separate server/, client/, node/, and extension/ directories
 
 ## System Architecture

@@ -188,7 +188,7 @@ export function FleetAnalyticsPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+      <div className="mobile-stack mobile-gap-sm" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
         <div>
           <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.5px', marginBottom: '4px' }}>Fleet Analytics</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Aggregated cost and usage across all nodes</p>
@@ -196,7 +196,7 @@ export function FleetAnalyticsPage() {
         {RangeSelector}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
+      <div className="mobile-grid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
         <StatsCard title="Fleet Total Cost" value={formatCost(data?.total_cost || 0)} icon={<DollarSign size={18} />} iconColor="var(--accent)" />
         <StatsCard title="Hub Cost" value={formatCost(data?.hub_cost || 0)} icon={<Server size={18} />} iconColor="var(--info)" />
         <StatsCard title="Node Cost" value={formatCost(data?.node_cost || 0)} icon={<Cpu size={18} />} iconColor="var(--positive)" />
@@ -207,7 +207,7 @@ export function FleetAnalyticsPage() {
         <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading fleet analytics...</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="mobile-grid-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
               <SectionHeader title="Cost by Node" />
               <div style={{ padding: '20px' }}>
@@ -260,7 +260,8 @@ export function FleetAnalyticsPage() {
               {(!data?.by_agent || data.by_agent.length === 0) ? (
                 <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>No agent cost data</div>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '500px' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--border)' }}>
                       <th style={{ padding: '10px 20px', textAlign: 'left', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Agent</th>
@@ -296,6 +297,7 @@ export function FleetAnalyticsPage() {
                     })}
                   </tbody>
                 </table>
+                </div>
               )}
             </div>
           </div>

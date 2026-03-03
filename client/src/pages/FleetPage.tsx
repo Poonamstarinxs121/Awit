@@ -171,7 +171,7 @@ export function FleetPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative' }}>
 
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
+      <div className="mobile-stack" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
         <div>
           <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.3px', margin: '0 0 4px' }}>
             Fleet
@@ -180,7 +180,7 @@ export function FleetPage() {
             Manage connected OpenClaw nodes across your infrastructure
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
           <button
             onClick={() => navigate('/fleet-office')}
             style={{
@@ -206,7 +206,7 @@ export function FleetPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+      <div className="mobile-grid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
         {statCards.map(stat => (
           <div key={stat.label} style={{
             backgroundColor: 'var(--card)', border: '1px solid var(--border)',
@@ -255,7 +255,7 @@ export function FleetPage() {
           </button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+        <div className="mobile-grid-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
           {nodes.map(node => {
             const dot = STATUS_DOT[node.status] || STATUS_DOT.offline;
             const cpu = node.system_info?.cpu_percent ?? 0;
@@ -361,7 +361,7 @@ export function FleetPage() {
               zIndex: 100,
             }}
           />
-          <div style={{
+          <div className="mobile-panel" style={{
             position: 'fixed', top: 0, right: 0, bottom: 0, width: '400px',
             backgroundColor: 'var(--surface)', borderLeft: '1px solid var(--border)',
             zIndex: 101, overflowY: 'auto', display: 'flex', flexDirection: 'column',
@@ -398,7 +398,7 @@ export function FleetPage() {
             <div
               onClick={e => e.stopPropagation()}
               style={{
-                width: '460px', backgroundColor: 'var(--card)', border: '1px solid var(--border)',
+                width: '460px', maxWidth: 'calc(100vw - 32px)', backgroundColor: 'var(--card)', border: '1px solid var(--border)',
                 borderRadius: '16px', boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
                 overflow: 'hidden',
               }}

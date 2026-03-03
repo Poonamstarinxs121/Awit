@@ -94,7 +94,7 @@ export function Agents() {
       )}
 
       {!isLoading && !error && agents.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
+        <div className="phone-grid-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
           {agents.map((agent, index) => {
             const dotColor = statusDot[agent.status] || 'var(--text-muted)';
             const label = statusLabel[agent.status] || agent.status;

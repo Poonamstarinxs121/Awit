@@ -211,7 +211,7 @@ export function SearchPage() {
         <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Search across memory nodes, activity, and fleet</p>
       </div>
 
-      <div style={{ display: 'flex', gap: '0px', borderBottom: '1px solid var(--border)', marginBottom: '20px' }}>
+      <div className="mobile-scroll-x" style={{ display: 'flex', gap: '0px', borderBottom: '1px solid var(--border)', marginBottom: '20px' }}>
         <button onClick={() => setActiveTab('memory')} style={tabStyle('memory')}>
           <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Brain size={14} /> Memory

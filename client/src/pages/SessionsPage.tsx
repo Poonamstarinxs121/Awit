@@ -58,7 +58,7 @@ export function SessionsPage() {
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
+      <div className="mobile-grid-1 phone-grid-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
         <StatsCard title="Active Agents" value={activeCount} icon={<Bot size={18} />} iconColor="var(--positive)" />
         <StatsCard title="Total Messages" value={totalMessages.toLocaleString()} icon={<Hash size={18} />} iconColor="var(--info)" />
         <StatsCard title="Total Tokens" value={totalTokens > 1000 ? `${(totalTokens / 1000).toFixed(1)}K` : totalTokens} icon={<TrendingUp size={18} />} iconColor="var(--type-command)" />
@@ -110,7 +110,7 @@ export function SessionsPage() {
                   {session.lastActive && ` · active ${formatDistanceToNow(new Date(session.lastActive), { addSuffix: true })}`}
                 </div>
               </div>
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-6 mobile-hide">
                 {[
                   { label: 'Messages', value: session.messageCount.toLocaleString(), color: 'var(--info)' },
                   { label: 'Today', value: session.messagesToday.toLocaleString(), color: 'var(--positive)' },

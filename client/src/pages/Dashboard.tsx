@@ -95,14 +95,14 @@ export function Dashboard() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
+      <div className="mobile-grid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
         <StatsCard title="Total Agents" value={agents.length} icon={<Bot size={18} />} iconColor="var(--accent)" />
         <StatsCard title="Today's Events" value={stats.today} icon={<Zap size={18} />} iconColor="var(--info)" />
         <StatsCard title="Successful" value={stats.success} icon={<CheckCircle size={18} />} iconColor="var(--positive)" />
         <StatsCard title="Pending Approvals" value={pendingApprovals} icon={<ShieldCheck size={18} />} iconColor="var(--warning)" />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '16px' }}>
+      <div className="mobile-grid-1" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '16px' }}>
         <div style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
           <SectionHeader title="Recent Activity" rightAction={<Link to="/activity" style={{ color: 'var(--accent)', textDecoration: 'none', fontSize: '12px' }}>View all →</Link>} />
           <ActivityFeed limit={8} />

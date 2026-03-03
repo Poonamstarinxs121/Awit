@@ -172,7 +172,7 @@ function BoardSidebar({
   }
 
   return (
-    <div style={{
+    <div className="mobile-hide" style={{
       width: '200px',
       flexShrink: 0,
       borderRight: '1px solid var(--border)',

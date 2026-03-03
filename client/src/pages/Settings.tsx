@@ -98,7 +98,7 @@ const tabs: { key: SettingsTab; label: string; icon: typeof SettingsIcon }[] = [
 
 function SectionCard({ title, icon: Icon, children, subtitle }: { title: string; icon: typeof Key; children: React.ReactNode; subtitle?: string }) {
   return (
-    <div style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+    <div style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', maxWidth: '100%' }}>
       <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(255,59,48,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <Icon size={16} style={{ color: 'var(--accent)' }} />
@@ -108,7 +108,7 @@ function SectionCard({ title, icon: Icon, children, subtitle }: { title: string;
           {subtitle && <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{subtitle}</p>}
         </div>
       </div>
-      <div style={{ padding: '20px' }}>{children}</div>
+      <div style={{ padding: '20px', overflow: 'hidden', maxWidth: '100%' }}>{children}</div>
     </div>
   );
 }
@@ -474,7 +474,7 @@ export function Settings() {
           <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No usage data yet. Usage tracking begins when agents process tasks.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+            <div className="mobile-grid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
               {[
                 { label: 'Total Tokens', value: totals.totalTokens.toLocaleString(), color: '#60A5FA' },
                 { label: 'API Calls', value: totals.totalCalls.toLocaleString(), color: '#A78BFA' },
@@ -599,7 +599,7 @@ export function Settings() {
           <div style={{ display: 'flex', justifyContent: 'center', padding: '16px' }}><Spinner /></div>
         ) : telegramConfig ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', backgroundColor: 'var(--surface-elevated)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+            <div className="mobile-stack" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', backgroundColor: 'var(--surface-elevated)', borderRadius: '10px', border: '1px solid var(--border)', flexWrap: 'wrap', gap: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <MessageCircle size={16} style={{ color: '#3b82f6' }} />
@@ -640,8 +640,8 @@ export function Settings() {
                   ))}
                 </div>
               )}
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-                <div style={{ flex: 1 }}>
+              <div className="mobile-stack" style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: '120px' }}>
                   <InputField label="Chat ID" value={newChatId} onChange={setNewChatId} placeholder="e.g. 123456789" />
                 </div>
                 <div style={{ width: '120px' }}>
@@ -677,7 +677,7 @@ export function Settings() {
           <div style={{ display: 'flex', justifyContent: 'center', padding: '16px' }}><Spinner /></div>
         ) : whatsappConfig ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', backgroundColor: 'var(--surface-elevated)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+            <div className="mobile-stack" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', backgroundColor: 'var(--surface-elevated)', borderRadius: '10px', border: '1px solid var(--border)', flexWrap: 'wrap', gap: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'rgba(34,197,94,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <MessageCircle size={16} style={{ color: '#22c55e' }} />
@@ -697,8 +697,8 @@ export function Settings() {
                 {window.location.origin}/v1/whatsapp/webhook
               </code>
             </div>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-              <div style={{ flex: 1 }}>
+            <div className="mobile-stack" style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: '120px' }}>
                 <InputField label="Send test to" value={waTestTo} onChange={setWaTestTo} placeholder="+1234567890" />
               </div>
               <ActionButton onClick={() => testWhatsAppMutation.mutate({ to: waTestTo })} disabled={!waTestTo || testWhatsAppMutation.isPending}>
@@ -757,7 +757,7 @@ export function Settings() {
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '160px', overflowY: 'auto' }}>
                         {deliveries.map((d) => (
-                          <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', padding: '6px 8px', backgroundColor: 'var(--bg)', borderRadius: '6px' }}>
+                          <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', padding: '6px 8px', backgroundColor: 'var(--bg)', borderRadius: '6px', flexWrap: 'wrap', gap: '4px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: d.success ? '#32D74B' : '#FF453A' }} />
                               <span style={{ color: 'var(--text-secondary)' }}>{d.event}</span>
@@ -821,7 +821,7 @@ export function Settings() {
                       <Key size={13} style={{ color: 'var(--text-muted)' }} />
                       <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{token.name}</span>
                     </div>
-                    <div style={{ display: 'flex', gap: '12px', marginTop: '4px', paddingLeft: '21px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                    <div style={{ display: 'flex', gap: '12px', marginTop: '4px', paddingLeft: '21px', fontSize: '11px', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
                       <span>Created {new Date(token.created_at).toLocaleDateString()}</span>
                       {token.last_used_at && <span>Last used {new Date(token.last_used_at).toLocaleDateString()}</span>}
                       {token.expires_at && (
@@ -1053,7 +1053,7 @@ export function Settings() {
         <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Manage your workspace, integrations, and security</p>
       </div>
 
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', padding: '4px', backgroundColor: 'var(--surface-elevated)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+      <div className="mobile-scroll-x" style={{ display: 'flex', gap: '4px', marginBottom: '20px', padding: '4px', backgroundColor: 'var(--surface-elevated)', borderRadius: '10px', border: '1px solid var(--border)' }}>
         {tabs.map((tab) => {
           const TabIcon = tab.icon;
           const isActive = activeTab === tab.key;
@@ -1061,6 +1061,7 @@ export function Settings() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
+              className="settings-tab-btn"
               style={{
                 flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                 padding: '10px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
@@ -1068,6 +1069,7 @@ export function Settings() {
                 backgroundColor: isActive ? 'var(--card)' : 'transparent',
                 color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
                 boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
+                whiteSpace: 'nowrap', flexShrink: 0,
               }}
             >
               <TabIcon size={14} />
