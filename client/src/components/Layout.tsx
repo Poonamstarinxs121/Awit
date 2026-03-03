@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Dock, getDockWidth } from './shell/Dock';
-import { AppSidebar, APP_SIDEBAR_W } from './shell/AppSidebar';
 import { TopBar } from './shell/TopBar';
 import { StatusBar } from './shell/StatusBar';
 import { GlobalLoader } from './ui/GlobalLoader';
@@ -17,18 +16,15 @@ export function Layout() {
     return () => window.removeEventListener('dock-resize', handleResize);
   }, []);
 
-  const totalLeft = dockWidth + APP_SIDEBAR_W;
-
   return (
     <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh', position: 'relative' }}>
       <GlobalLoader />
       <Dock />
-      <AppSidebar dockWidth={dockWidth} />
-      <TopBar dockWidth={totalLeft} />
+      <TopBar dockWidth={dockWidth} />
 
       <main
         style={{
-          marginLeft: `${totalLeft}px`,
+          marginLeft: `${dockWidth}px`,
           marginTop: '48px',
           marginBottom: '32px',
           minHeight: 'calc(100vh - 48px - 32px)',
@@ -41,7 +37,7 @@ export function Layout() {
         <Outlet />
       </main>
 
-      <StatusBar dockWidth={totalLeft} />
+      <StatusBar dockWidth={dockWidth} />
     </div>
   );
 }
