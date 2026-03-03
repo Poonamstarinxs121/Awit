@@ -36,6 +36,7 @@ import { WorkflowsPage } from './pages/WorkflowsPage';
 import { SearchPage } from './pages/SearchPage';
 import { ActionsPage } from './pages/ActionsPage';
 import { AboutPage } from './pages/AboutPage';
+import { Organisation } from './pages/Organisation';
 import { useAuth } from './hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 
@@ -108,6 +109,7 @@ export default function App() {
               <Route path="/actions" element={<ActionsPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/memory" element={<MemoryGraph />} />
+              <Route path="/organisation" element={<Organisation />} />
             </Route>
           </Routes>
           </BrowserRouter>

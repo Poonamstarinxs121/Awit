@@ -5,7 +5,7 @@ import {
   Clock, DollarSign, Settings, History, Search,
   BarChart3, Calendar, Terminal, FileText, Zap,
   Server, ShieldCheck, HelpCircle, CreditCard, Columns3,
-  LogOut, Palette, ChevronRight,
+  LogOut, Palette, ChevronRight, Building2,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiGet } from '../../api/client';
@@ -58,6 +58,7 @@ const dockSections = [
   {
     label: 'System',
     items: [
+      { href: '/organisation', label: 'Org', icon: Building2 },
       { href: '/settings', label: 'Settings', icon: Settings },
       { href: '/subscription', label: 'Billing', icon: CreditCard },
       { href: '/help', label: 'Help', icon: HelpCircle },

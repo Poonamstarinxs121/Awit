@@ -59,16 +59,15 @@ SquidJob is built as a monorepo with distinct `server/` and `client/` directorie
 
 ## Routing
 - `/` — Public landing page (unauthenticated) or redirect to `/dashboard` (authenticated)
-- `/dashboard` — Main dashboard (protected, inside Layout shell)
 - `/login`, `/register` — Auth pages (public, dark theme)
 - `/subscription` — Plan management (protected, standalone dark page)
 - Protected routes inside Layout shell:
-  - `/dashboard`, `/boards`, `/kanban` (unified Board), `/agents`, `/agents/new`, `/agents/:id`
+  - `/dashboard`, `/boards`, `/kanban` (unified Board with inner sidebar+toolbar), `/agents`, `/agents/new`, `/agents/:id`
   - `/standups`, `/settings`, `/documents`, `/machines`, `/approvals`
-  - `/activity` (enhanced LogsPage with terminal UI), `/system`, `/sessions`
+  - `/activity` (LogsPage — terminal UI + filter chips), `/system`, `/sessions`
   - `/costs`, `/analytics`, `/calendar`, `/terminal`
   - `/automation` (merged Cron+Webhooks), `/search`, `/actions`, `/about`
-  - `/memory` (MemoryGraph), `/help`
+  - `/memory` (MemoryGraph), `/help`, `/organisation`
 
 ## Dock Navigation (Left, 68px)
 - **Core**: Dashboard, System, Agents, Sessions, Activity
@@ -76,33 +75,26 @@ SquidJob is built as a monorepo with distinct `server/` and `client/` directorie
 - **Automation**: Automation (cron+webhooks), Calendar
 - **Infrastructure**: Machines, Terminal
 - **Workspace**: Boards, Docs, Standups, Approvals
-- **System**: Settings, Billing, Help
+- **System**: Org, Settings, Billing, Help
 
-## Recent Changes (Phase 12 — Settings, Billing, Dock, StatusBar, Theming)
-- **Settings Page**: Complete UI/UX redesign with tabbed layout (General, Integrations, Security, Notifications). Each section uses icon-header cards with subtitles. Provider cards show colored icons. Toggle switches replaced with consistent ToggleSwitch component. Usage stats use colored value cards. All modals use consistent InputField/ActionButton components.
-- **Billing Page**: Added billing schedule timeline, payment details panel, and stat summary cards (Plan, Status, Next Billing, Usage Cost). New `/v1/billing/history` API endpoint returns billing events and summary. Two-column layout: Billing Schedule (left) + Payment Details (right). StatusBadge component for event statuses.
-- **Backend**: Added `GET /v1/billing/history` endpoint in `server/src/routes/billing.ts` — returns billing events from subscription data + usage cost summary.
-- **Dock User Menu**: Added user avatar/initials icon at bottom of Dock with popup menu showing name, email, role, tenant. Menu has Theme picker and Settings shortcut, plus Sign Out. Accessible from any page.
-- **Theme System**: `ThemeContext.tsx` with 4 themes: Dark (default, #0C0C0C), Midnight Blue (#0B1120), Nord (#2E3440), Warm Light (#FAF8F5). Themes apply CSS variables to :root. Persisted in localStorage. Theme picker shows color preview swatches.
-- **StatusBar Upgrade**: Added machine health metrics (CPU%, RAM%, DSK% with mini progress bars + color coding), SVC count (online/total machines), Uptime timer, connection status glow dot. Metrics sourced from `/v1/machines` endpoint.
+## Recent Changes (Phase 13 — Board Redesign + Organisation Page + Consolidation Completion)
+- **Board.tsx Redesign**: Added structured left inner sidebar (200px) with Personal/Organisation workspace switcher dropdown, NAVIGATION/BOARDS/SKILLS/ADMINISTRATION nav sections, agents list with status dots. Toolbar with Board/List view toggle, +Add, Play/Pause, Filter, Copy, Edit, Settings, Chat icons. Improved task cards with priority color strips + assignee initials.
+- **Organisation Page** (`/organisation`): New page with 4 stat cards, org details + subscription info, team members list, API providers status, permissions/roles grid. Added to Dock System section and `/organisation` route.
+- **Phase 11 Consolidation Complete**: All 9 orphaned pages removed (Activity, CronPage, ReportsPage, FilesPage, SkillsPage, GitPage, Kanban, SquadChat, duplicate memory route). Final page count: ~32 pages.
+- **Standups Enhancement**: Delivery channel badges (email/slack/telegram) shown with distinct colored pill badges (blue/red/blue).
+- **Documents Enhancement**: Added informational banner explaining task file attachments are in Board task detail panels.
 
-## Previous Changes (Phase 11 — App-Wide Consolidation Audit)
-- **9 pages removed** — eliminated all redundancy and duplicate features
-- **LogsPage → Activity** (`/activity`): Kept tenacitOS terminal UI (JetBrains Mono, syntax highlighting, auto-scroll, export). Merged Activity.tsx filter chips (Task Created, Agent Message, Heartbeat, Cron, SSH, Approval, etc.) + relative time display. Deleted Activity.tsx.
-- **WorkflowsPage → Automation** (`/automation`): Kept tenacitOS polished tabbed dashboard with stats cards + webhooks tab. Merged CronPage's full CRUD (create/delete jobs, agent selector). Fixed broken field mappings (`schedule`/`is_active`). Deleted CronPage.tsx.
-- **Standups** (`/standups`): Already had `delivered_to` channel display. Deleted ReportsPage.tsx (duplicate data source).
-- **Documents** (`/documents`): Full CRUD with categories already complete. Deleted FilesPage.tsx (read-only stub).
-- **Removed stubs**: SkillsPage (redundant with Agents), GitPage (empty placeholder)
-- **Removed orphans**: Kanban.tsx, SquadChat.tsx (replaced by Board.tsx + BoardChat.tsx in Phase 10)
-- **MemoryGraph**: Consolidated from dual routes (`/memory-graph` + `/memory`) to single `/memory`
-- **Dock reorganized**: Removed 7 dead entries (Logs, Cron, Reports, Files, Git, Skills, duplicate Memory), clean 6-section layout
+## Previous Changes (Phase 12 — Settings, Billing, Dock, StatusBar, Theming)
+- **Settings Page**: Complete UI/UX redesign with tabbed layout (General, Integrations, Security, Notifications).
+- **Billing Page**: Billing schedule timeline, payment details panel, stat cards. New `/v1/billing/history` endpoint.
+- **Dock User Menu**: Single-letter initials circle at bottom; popup with name/email/role/tenant, theme picker, Sign Out.
+- **Theme System**: 4 themes (Dark, Midnight Blue, Nord, Warm Light). Persisted in localStorage.
+- **StatusBar Upgrade**: Machine health metrics (CPU%/RAM/DSK%), SVC count, Uptime timer, connection glow dot.
+## Previous Changes (Phase 11 — App-Wide Consolidation)
+- LogsPage → `/activity` (terminal UI + filter chips). WorkflowsPage → `/automation` (merged cron CRUD). Standups kept `delivered_to`. Documents kept full CRUD. Removed 9 redundant/orphaned pages. Dock reorganized into 6 clean sections. Memory route consolidated to `/memory` only.
 
 ## Previous Changes (Phase 10 — Unified Board + Chat)
-- **Unified Board Page**: Merged Squad Chat and Kanban into single `Board.tsx` with split layout — Kanban columns left + Board Chat panel right + Agents sidebar
-- **Board Chat Panel**: `client/src/components/board/BoardChat.tsx` — persistent chat in right panel with @mention autocomplete for agents, keyboard navigation, 5s polling
-- **@mention Agent Routing**: Backend POST `/v1/squad-chat/messages` now parses @AgentName mentions, routes to named agent (or lead agent as fallback), posts agent responses back to chat
+- Merged Squad Chat + Kanban into `Board.tsx`. `BoardChat.tsx` with @mention agent routing. Backend routes @AgentName mentions to named agent or lead agent fallback.
 
 ## Previous Changes (Phase 9 — Landing + Subscription)
-- **Public Landing Page**: `LandingPage.tsx` at `/` for unauthenticated users; purple (#7C3AED) + brown + offwhite + yellow palette
-- **Subscription Page Redesign**: Dark-themed with plan cards and upgrade/downgrade buttons
-- **Dark Theme Cleanup**: All light-theme class remnants replaced with CSS var equivalents
+- Public `LandingPage.tsx` at `/`. Dark-themed Subscription page. Theme cleanup across all pages.

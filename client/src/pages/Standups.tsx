@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, ChevronDown, ChevronRight, CheckCircle, Clock, AlertTriangle, Send } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronRight, CheckCircle, Clock, AlertTriangle, Mail, MessageSquare, Send } from 'lucide-react';
 import { apiGet } from '../api/client';
 import { Spinner } from '../components/ui/Spinner';
 import type { Standup } from '../types';
@@ -36,9 +36,27 @@ function StandupCard({ standup }: { standup: Standup }) {
         <p className="text-text-secondary text-sm leading-relaxed">{standup.summary}</p>
 
         {standup.delivered_to && standup.delivered_to.length > 0 && (
-          <div className="flex items-center gap-2 mt-3">
-            <Send size={14} className="text-text-muted" />
-            <span className="text-xs text-text-muted">Delivered to: {standup.delivered_to.join(', ')}</span>
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
+            <Send size={13} className="text-text-muted flex-shrink-0" />
+            <span className="text-xs text-text-muted mr-1">Delivered to:</span>
+            {standup.delivered_to.map((channel: string) => {
+              const channelLower = channel.toLowerCase();
+              const isEmail = channelLower.includes('email');
+              const isTelegram = channelLower.includes('telegram');
+              const isSlack = channelLower.includes('slack');
+              const bg = isEmail ? 'rgba(59,130,246,0.12)' : isTelegram ? 'rgba(10,132,255,0.12)' : isSlack ? 'rgba(74,21,75,0.15)' : 'rgba(100,100,100,0.12)';
+              const color = isEmail ? '#60A5FA' : isTelegram ? '#0A84FF' : isSlack ? '#E01E5A' : 'var(--text-muted)';
+              const ChannelIcon = isEmail ? Mail : MessageSquare;
+              return (
+                <span
+                  key={channel}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '999px', backgroundColor: bg, color, fontSize: '11px', fontWeight: 600, border: `1px solid ${color}30` }}
+                >
+                  <ChannelIcon size={10} />
+                  {channel}
+                </span>
+              );
+            })}
           </div>
         )}
 
@@ -109,7 +127,8 @@ export function Standups() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-text-primary">Daily Standups</h1>
+        <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.5px', marginBottom: '4px' }}>Daily Standups</h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Automated agent activity summaries delivered to your channels</p>
       </div>
 
       {isLoading && (

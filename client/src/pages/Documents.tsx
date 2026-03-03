@@ -326,8 +326,8 @@ export function Documents() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Documents</h1>
-          <p className="text-text-secondary mt-1">Your squad's shared knowledge base</p>
+          <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.5px', marginBottom: '4px' }}>Documents</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Your squad's shared knowledge base</p>
         </div>
         <button
           onClick={openCreate}
@@ -336,6 +336,15 @@ export function Documents() {
           <Plus size={16} />
           New Document
         </button>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', backgroundColor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '8px' }}>
+        <FileText size={14} style={{ color: '#60A5FA', flexShrink: 0 }} />
+        <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+          <span style={{ fontWeight: 600, color: '#60A5FA' }}>Tip:</span> Task file attachments (deliverables uploaded by agents) are accessible via the task detail panel on the{' '}
+          <a href="/kanban" style={{ color: '#60A5FA', textDecoration: 'underline' }}>Board</a>.
+          Use this page to store shared knowledge base documents, protocols, and notes.
+        </p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
