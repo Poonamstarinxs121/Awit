@@ -78,7 +78,12 @@ SquidJob is built as a monorepo with distinct `server/` and `client/` directorie
 - **Workspace**: Boards, Docs, Standups, Approvals
 - **System**: Settings, Billing, Help
 
-## Recent Changes (Phase 11 — App-Wide Consolidation Audit)
+## Recent Changes (Phase 12 — Settings & Billing UI/UX Overhaul)
+- **Settings Page**: Complete UI/UX redesign with tabbed layout (General, Integrations, Security, Notifications). Each section uses icon-header cards with subtitles. Provider cards show colored icons. Toggle switches replaced with consistent ToggleSwitch component. Usage stats use colored value cards. All modals use consistent InputField/ActionButton components.
+- **Billing Page**: Added billing schedule timeline, payment details panel, and stat summary cards (Plan, Status, Next Billing, Usage Cost). New `/v1/billing/history` API endpoint returns billing events and summary. Two-column layout: Billing Schedule (left) + Payment Details (right). StatusBadge component for event statuses.
+- **Backend**: Added `GET /v1/billing/history` endpoint in `server/src/routes/billing.ts` — returns billing events from subscription data + usage cost summary.
+
+## Previous Changes (Phase 11 — App-Wide Consolidation Audit)
 - **9 pages removed** — eliminated all redundancy and duplicate features
 - **LogsPage → Activity** (`/activity`): Kept tenacitOS terminal UI (JetBrains Mono, syntax highlighting, auto-scroll, export). Merged Activity.tsx filter chips (Task Created, Agent Message, Heartbeat, Cron, SSH, Approval, etc.) + relative time display. Deleted Activity.tsx.
 - **WorkflowsPage → Automation** (`/automation`): Kept tenacitOS polished tabbed dashboard with stats cards + webhooks tab. Merged CronPage's full CRUD (create/delete jobs, agent selector). Fixed broken field mappings (`schedule`/`is_active`). Deleted CronPage.tsx.

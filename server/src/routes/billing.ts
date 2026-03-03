@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { authMiddleware } from '../middleware/auth.js';
+import { pool } from '../db/index.js';
 import {
   createCheckoutSession,
   createBillingPortalSession,
@@ -13,6 +14,71 @@ const router = Router();
 
 router.get('/plans', (_req: Request, res: Response) => {
   res.json({ plans: PLANS });
+});
+
+router.get('/history', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const sub = await getSubscription(tenantId);
+    const events: any[] = [];
+
+    if (sub) {
+      const planConfig = PLANS[sub.plan as keyof typeof PLANS];
+      const price = planConfig?.price ?? 'Custom';
+
+      if (sub.status === 'active' && sub.current_period_end) {
+        events.push({
+          id: 'next-renewal',
+          type: 'upcoming',
+          description: `${planConfig?.name ?? sub.plan} plan renewal`,
+          amount: price,
+          date: sub.current_period_end,
+          status: 'scheduled',
+        });
+      }
+
+      events.push({
+        id: 'sub-created',
+        type: 'subscription',
+        description: `Subscribed to ${planConfig?.name ?? sub.plan} plan`,
+        amount: price,
+        date: sub.created_at,
+        status: sub.status === 'active' ? 'paid' : sub.status,
+      });
+
+      if (sub.updated_at && sub.updated_at !== sub.created_at) {
+        events.push({
+          id: 'sub-updated',
+          type: 'update',
+          description: `Subscription ${sub.status === 'canceled' ? 'canceled' : 'updated'}`,
+          amount: price,
+          date: sub.updated_at,
+          status: sub.status,
+        });
+      }
+    }
+
+    const usageResult = await pool.query(
+      `SELECT SUM(estimated_cost::numeric) as total_cost, COUNT(*) as days
+       FROM usage_records WHERE tenant_id = $1`,
+      [tenantId]
+    );
+    const totalUsageCost = Number(usageResult.rows[0]?.total_cost ?? 0);
+
+    res.json({
+      events,
+      summary: {
+        current_plan: sub?.plan ?? 'starter',
+        status: sub?.status ?? 'active',
+        next_billing_date: sub?.current_period_end ?? null,
+        total_usage_cost: totalUsageCost,
+        stripe_connected: !!sub?.stripe_customer_id,
+      },
+    });
+  } catch (error) {
+    console.error('Billing history error:', error);
+    res.status(500).json({ error: 'Failed to get billing history' });
+  }
 });
 
 router.get('/subscription', authMiddleware, async (req: Request, res: Response) => {

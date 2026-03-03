@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Key, Trash2, Plus, LogOut, ChevronDown, ChevronUp, Webhook, Eye, ToggleLeft, ToggleRight, Send, MessageCircle, Unlink, Mail, Hash, Save, Tag, Copy, Check, AlertCircle } from 'lucide-react';
+import {
+  Key, Trash2, Plus, LogOut, ChevronDown, ChevronUp, Webhook, Eye, ToggleLeft, ToggleRight,
+  Send, MessageCircle, Unlink, Mail, Hash, Save, Tag, Copy, Check, AlertCircle,
+  Settings as SettingsIcon, Shield, Zap, Bell, Globe, User, Building2, CreditCard, Lock
+} from 'lucide-react';
 import { apiGet, apiPost, apiDelete, apiPatch, apiPut } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { Spinner } from '../components/ui/Spinner';
 import type { UsageRecord } from '../types';
@@ -46,40 +46,152 @@ interface WebhookDelivery {
   created_at: string;
 }
 
+interface TagItem {
+  id: string;
+  name: string;
+  color: string;
+  usage_count: number;
+}
+
+interface ApiToken {
+  id: string;
+  name: string;
+  last_used_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+}
+
+interface DeliveryConfig {
+  email_enabled: boolean;
+  email_recipients: string[];
+  slack_webhook_url: string | null;
+  slack_enabled: boolean;
+  telegram_enabled: boolean;
+}
+
 const WEBHOOK_EVENTS = [
-  'task.created',
-  'task.completed',
-  'task.updated',
-  'standup.generated',
-  'agent.error',
-  'agent.heartbeat',
+  'task.created', 'task.completed', 'task.updated',
+  'standup.generated', 'agent.error', 'agent.heartbeat',
 ];
 
-const planVariant: Record<string, 'info' | 'warning' | 'active'> = {
-  starter: 'info',
-  professional: 'warning',
-  enterprise: 'active',
+const TAG_COLORS = ['#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626', '#db2777', '#0891b2', '#65a30d'];
+
+const PROVIDER_ICONS: Record<string, { label: string; color: string }> = {
+  openai: { label: 'OpenAI', color: '#10a37f' },
+  anthropic: { label: 'Anthropic', color: '#d97757' },
+  google: { label: 'Google Gemini', color: '#4285f4' },
+  mistral: { label: 'Mistral', color: '#ff7000' },
+  groq: { label: 'Groq', color: '#f55036' },
+  ollama: { label: 'Ollama', color: '#ffffff' },
 };
 
-const AGENT_COLORS = [
-  'bg-teal-500',
-  'bg-blue-500',
-  'bg-purple-500',
-  'bg-[var(--surface-elevated)]0',
-  'bg-rose-500',
-  'bg-emerald-500',
-  'bg-indigo-500',
-  'bg-orange-500',
+type SettingsTab = 'general' | 'integrations' | 'security' | 'notifications';
+
+const tabs: { key: SettingsTab; label: string; icon: typeof SettingsIcon }[] = [
+  { key: 'general', label: 'General', icon: SettingsIcon },
+  { key: 'integrations', label: 'Integrations', icon: Globe },
+  { key: 'security', label: 'Security', icon: Shield },
+  { key: 'notifications', label: 'Notifications', icon: Bell },
 ];
 
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+function SectionCard({ title, icon: Icon, children, subtitle }: { title: string; icon: typeof Key; children: React.ReactNode; subtitle?: string }) {
+  return (
+    <div style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(255,59,48,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Icon size={16} style={{ color: 'var(--accent)' }} />
+        </div>
+        <div>
+          <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>{title}</h3>
+          {subtitle && <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{subtitle}</p>}
+        </div>
+      </div>
+      <div style={{ padding: '20px' }}>{children}</div>
+    </div>
+  );
+}
+
+function StatusDot({ active }: { active: boolean }) {
+  return (
+    <span style={{
+      width: '8px', height: '8px', borderRadius: '50%', display: 'inline-block',
+      backgroundColor: active ? '#32D74B' : 'var(--text-muted)',
+      boxShadow: active ? '0 0 6px rgba(50,215,75,0.4)' : 'none',
+    }} />
+  );
+}
+
+function SmallBadge({ children, color }: { children: React.ReactNode; color: string }) {
+  return (
+    <span style={{
+      padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 600,
+      backgroundColor: `${color}15`, border: `1px solid ${color}30`, color,
+    }}>
+      {children}
+    </span>
+  );
+}
+
+function ActionButton({ children, onClick, disabled, variant = 'secondary', fullWidth }: {
+  children: React.ReactNode; onClick?: () => void; disabled?: boolean;
+  variant?: 'primary' | 'secondary' | 'danger'; fullWidth?: boolean;
+}) {
+  const styles: Record<string, React.CSSProperties> = {
+    primary: { backgroundColor: 'var(--accent)', color: '#fff', border: 'none' },
+    secondary: { backgroundColor: 'var(--surface-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border)' },
+    danger: { backgroundColor: 'rgba(255,59,48,0.1)', color: '#FF453A', border: '1px solid rgba(255,59,48,0.2)' },
+  };
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        ...styles[variant],
+        padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
+        cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1,
+        display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 150ms',
+        width: fullWidth ? '100%' : undefined, justifyContent: fullWidth ? 'center' : undefined,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function InputField({ label, value, onChange, placeholder, type = 'text' }: {
+  label?: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
+}) {
+  return (
+    <div>
+      {label && <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px' }}>{label}</label>}
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={{
+          width: '100%', padding: '9px 12px', backgroundColor: 'var(--surface-elevated)',
+          border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)',
+          fontSize: '13px', outline: 'none', fontFamily: 'var(--font-body)',
+        }}
+      />
+    </div>
+  );
+}
+
+function ToggleSwitch({ active, onToggle, disabled }: { active: boolean; onToggle: () => void; disabled?: boolean }) {
+  return (
+    <button onClick={onToggle} disabled={disabled} style={{ cursor: disabled ? 'not-allowed' : 'pointer', background: 'none', border: 'none', padding: 0 }}>
+      {active ? <ToggleRight size={24} style={{ color: '#32D74B' }} /> : <ToggleLeft size={24} style={{ color: 'var(--text-muted)' }} />}
+    </button>
+  );
 }
 
 export function Settings() {
   const { user, logout } = useAuth();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<SettingsTab>('general');
+
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [newProvider, setNewProvider] = useState('openai');
   const [newApiKey, setNewApiKey] = useState('');
@@ -105,11 +217,9 @@ export function Settings() {
   const [waNumber, setWaNumber] = useState('');
   const [waError, setWaError] = useState('');
   const [waTestTo, setWaTestTo] = useState('');
-
   const [showNewTagModal, setShowNewTagModal] = useState(false);
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState('#2563eb');
-
   const [showNewTokenModal, setShowNewTokenModal] = useState(false);
   const [newTokenName, setNewTokenName] = useState('');
   const [newTokenExpiry, setNewTokenExpiry] = useState('');
@@ -142,16 +252,39 @@ export function Settings() {
     enabled: !!viewDeliveriesId,
   });
 
+  const { data: telegramConfigData, isLoading: loadingTelegramConfig } = useQuery({
+    queryKey: ['telegram-config'],
+    queryFn: () => apiGet<{ config: any }>('/v1/telegram/config'),
+  });
+
+  const { data: telegramChatsData, isLoading: loadingTelegramChats } = useQuery({
+    queryKey: ['telegram-chats'],
+    queryFn: () => apiGet<any[]>('/v1/telegram/chats'),
+  });
+
+  const { data: whatsappConfigData, isLoading: loadingWhatsApp } = useQuery({
+    queryKey: ['whatsapp-config'],
+    queryFn: () => apiGet<{ config: any }>('/v1/whatsapp/config'),
+  });
+
+  const { data: deliveryConfigData, isLoading: loadingDeliveryConfig } = useQuery({
+    queryKey: ['delivery-config'],
+    queryFn: () => apiGet<DeliveryConfig>('/v1/standups/delivery-config'),
+  });
+
+  const { data: tagsData, isLoading: loadingTags } = useQuery({
+    queryKey: ['tags'],
+    queryFn: () => apiGet<{ tags: TagItem[] }>('/v1/tags'),
+  });
+
+  const { data: apiTokensData, isLoading: loadingApiTokens } = useQuery({
+    queryKey: ['api-tokens'],
+    queryFn: () => apiGet<{ tokens: ApiToken[] }>('/v1/api-tokens'),
+  });
+
   const createWebhookMutation = useMutation({
     mutationFn: (data: { url: string; events: string[]; secret?: string }) => apiPost('/v1/webhooks', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['webhooks'] });
-      setShowWebhookModal(false);
-      setWebhookUrl('');
-      setWebhookSecret('');
-      setWebhookEvents([]);
-      setWebhookError('');
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['webhooks'] }); setShowWebhookModal(false); setWebhookUrl(''); setWebhookSecret(''); setWebhookEvents([]); setWebhookError(''); },
     onError: (err: Error) => setWebhookError(err.message),
   });
 
@@ -165,85 +298,45 @@ export function Settings() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['webhooks'] }),
   });
 
-  const { data: telegramConfigData, isLoading: loadingTelegramConfig } = useQuery({
-    queryKey: ['telegram-config'],
-    queryFn: () => apiGet<{ config: any }>('/v1/telegram/config'),
-  });
-
-  const { data: telegramChatsData, isLoading: loadingTelegramChats } = useQuery({
-    queryKey: ['telegram-chats'],
-    queryFn: () => apiGet<any[]>('/v1/telegram/chats'),
-  });
-
   const connectTelegramMutation = useMutation({
     mutationFn: (data: { bot_token: string }) => apiPost<{ bot_username: string }>('/v1/telegram/connect', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['telegram-config'] });
-      setShowTelegramModal(false);
-      setTelegramBotToken('');
-      setTelegramError('');
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['telegram-config'] }); setShowTelegramModal(false); setTelegramBotToken(''); setTelegramError(''); },
     onError: (err: Error) => setTelegramError(err.message),
   });
 
   const disconnectTelegramMutation = useMutation({
     mutationFn: () => apiDelete('/v1/telegram/disconnect'),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['telegram-config'] });
-      queryClient.invalidateQueries({ queryKey: ['telegram-chats'] });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['telegram-config'] }); queryClient.invalidateQueries({ queryKey: ['telegram-chats'] }); },
   });
 
   const linkChatMutation = useMutation({
     mutationFn: (data: { chat_id: string; chat_type: string }) => apiPost('/v1/telegram/chats', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['telegram-chats'] });
-      setNewChatId('');
-      setNewChatType('private');
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['telegram-chats'] }); setNewChatId(''); setNewChatType('private'); },
   });
 
   const sendTestMutation = useMutation({
     mutationFn: (data: { chat_id: string }) => apiPost<{ success: boolean }>('/v1/telegram/test', data),
   });
 
-  interface DeliveryConfig {
-    email_enabled: boolean;
-    email_recipients: string[];
-    slack_webhook_url: string | null;
-    slack_enabled: boolean;
-    telegram_enabled: boolean;
-  }
-
-  const { data: deliveryConfigData, isLoading: loadingDeliveryConfig } = useQuery({
-    queryKey: ['delivery-config'],
-    queryFn: () => apiGet<DeliveryConfig>('/v1/standups/delivery-config'),
+  const connectMutation = useMutation({
+    mutationFn: (data: { provider: string; api_key: string }) => apiPost('/v1/config/providers', data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['providers'] }); setShowConnectModal(false); setNewApiKey(''); setConnectError(''); },
+    onError: (err: Error) => setConnectError(err.message),
   });
 
-  const deliveryConfig = deliveryConfigData;
+  const disconnectMutation = useMutation({
+    mutationFn: (id: string) => apiDelete(`/v1/config/providers/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['providers'] }),
+  });
 
   const saveDeliveryMutation = useMutation({
     mutationFn: (data: Partial<DeliveryConfig>) => apiPut<DeliveryConfig>('/v1/standups/delivery-config', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['delivery-config'] });
-      setDeliverySaveSuccess(true);
-      setTimeout(() => setDeliverySaveSuccess(false), 3000);
-    },
-  });
-
-  const { data: whatsappConfigData, isLoading: loadingWhatsApp } = useQuery({
-    queryKey: ['whatsapp-config'],
-    queryFn: () => apiGet<{ config: any }>('/v1/whatsapp/config'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['delivery-config'] }); setDeliverySaveSuccess(true); setTimeout(() => setDeliverySaveSuccess(false), 3000); },
   });
 
   const connectWhatsAppMutation = useMutation({
-    mutationFn: (data: { account_sid: string; auth_token: string; whatsapp_number: string }) =>
-      apiPost('/v1/whatsapp/connect', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['whatsapp-config'] });
-      setShowWhatsAppModal(false);
-      setWaAccountSid(''); setWaAuthToken(''); setWaNumber(''); setWaError('');
-    },
+    mutationFn: (data: { account_sid: string; auth_token: string; whatsapp_number: string }) => apiPost('/v1/whatsapp/connect', data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['whatsapp-config'] }); setShowWhatsAppModal(false); setWaAccountSid(''); setWaAuthToken(''); setWaNumber(''); setWaError(''); },
     onError: (err: Error) => setWaError(err.message),
   });
 
@@ -256,44 +349,46 @@ export function Settings() {
     mutationFn: (data: { to: string }) => apiPost('/v1/whatsapp/test', data),
   });
 
-  const whatsappConfig = whatsappConfigData?.config;
-
-  const telegramConfig = telegramConfigData?.config;
-  const telegramChats = telegramChatsData ?? [];
-
-  const webhooks = webhooksData ?? [];
-  const deliveries = deliveriesData ?? [];
-
-  const connectMutation = useMutation({
-    mutationFn: (data: { provider: string; api_key: string }) => apiPost('/v1/config/providers', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['providers'] });
-      setShowConnectModal(false);
-      setNewApiKey('');
-      setConnectError('');
-    },
-    onError: (err: Error) => setConnectError(err.message),
+  const createTagMutation = useMutation({
+    mutationFn: (data: { name: string; color: string }) => apiPost('/v1/tags', data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tags'] }); setShowNewTagModal(false); setNewTagName(''); setNewTagColor('#2563eb'); },
   });
 
-  const disconnectMutation = useMutation({
-    mutationFn: (id: string) => apiDelete(`/v1/config/providers/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['providers'] }),
+  const deleteTagMutation = useMutation({
+    mutationFn: (id: string) => apiDelete(`/v1/tags/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tags'] }),
   });
+
+  const createTokenMutation = useMutation({
+    mutationFn: (data: { name: string; expires_in_days?: number }) => apiPost<{ token: ApiToken; raw_token: string }>('/v1/api-tokens', data),
+    onSuccess: (data) => { queryClient.invalidateQueries({ queryKey: ['api-tokens'] }); setShowNewTokenModal(false); setNewTokenName(''); setNewTokenExpiry(''); setRevealedToken(data.raw_token); },
+  });
+
+  const deleteTokenMutation = useMutation({
+    mutationFn: (id: string) => apiDelete(`/v1/api-tokens/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['api-tokens'] }),
+  });
+
+  const copyToken = (token: string) => {
+    navigator.clipboard.writeText(token).then(() => { setCopiedToken(true); setTimeout(() => setCopiedToken(false), 2000); });
+  };
 
   const providers = providersData?.providers ?? [];
   const usage = usageData?.usage ?? [];
   const agentUsage = agentUsageData?.usage ?? [];
+  const webhooks = webhooksData ?? [];
+  const deliveries = deliveriesData ?? [];
+  const telegramConfig = telegramConfigData?.config;
+  const telegramChats = telegramChatsData ?? [];
+  const whatsappConfig = whatsappConfigData?.config;
+  const deliveryConfig = deliveryConfigData;
+  const tags = tagsData?.tags ?? [];
+  const apiTokens = apiTokensData?.tokens ?? [];
 
   const dailyData = useMemo(() => {
     return [...usage]
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .map((row) => ({
-        date: row.date,
-        cost: Number(row.estimated_cost),
-        tokens_in: row.tokens_in,
-        tokens_out: row.tokens_out,
-        api_calls: row.api_calls,
-      }));
+      .map((row) => ({ date: row.date, cost: Number(row.estimated_cost), tokens_in: row.tokens_in, tokens_out: row.tokens_out, api_calls: row.api_calls }));
   }, [usage]);
 
   const maxCost = useMemo(() => Math.max(...dailyData.map((d) => d.cost), 0.0001), [dailyData]);
@@ -308,207 +403,122 @@ export function Settings() {
 
   const maxAgentCost = useMemo(() => Math.max(...agentUsage.map((a) => Number(a.estimated_cost)), 0.0001), [agentUsage]);
 
-  interface TagItem {
-    id: string;
-    name: string;
-    color: string;
-    usage_count: number;
+  const AGENT_COLORS = ['#14b8a6', '#3b82f6', '#8b5cf6', '#f97316', '#ef4444', '#10b981', '#6366f1', '#f59e0b'];
+
+  function formatDate(dateStr: string) {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 
-  interface ApiToken {
-    id: string;
-    name: string;
-    last_used_at: string | null;
-    expires_at: string | null;
-    created_at: string;
-  }
-
-  const { data: tagsData, isLoading: loadingTags } = useQuery({
-    queryKey: ['tags'],
-    queryFn: () => apiGet<{ tags: TagItem[] }>('/v1/tags'),
-  });
-
-  const { data: apiTokensData, isLoading: loadingApiTokens } = useQuery({
-    queryKey: ['api-tokens'],
-    queryFn: () => apiGet<{ tokens: ApiToken[] }>('/v1/api-tokens'),
-  });
-
-  const tags = tagsData?.tags ?? [];
-  const apiTokens = apiTokensData?.tokens ?? [];
-
-  const createTagMutation = useMutation({
-    mutationFn: (data: { name: string; color: string }) => apiPost('/v1/tags', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tags'] });
-      setShowNewTagModal(false);
-      setNewTagName('');
-      setNewTagColor('#2563eb');
-    },
-  });
-
-  const deleteTagMutation = useMutation({
-    mutationFn: (id: string) => apiDelete(`/v1/tags/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tags'] }),
-  });
-
-  const createTokenMutation = useMutation({
-    mutationFn: (data: { name: string; expires_in_days?: number }) => apiPost<{ token: ApiToken; raw_token: string }>('/v1/api-tokens', data),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['api-tokens'] });
-      setShowNewTokenModal(false);
-      setNewTokenName('');
-      setNewTokenExpiry('');
-      setRevealedToken(data.raw_token);
-    },
-  });
-
-  const deleteTokenMutation = useMutation({
-    mutationFn: (id: string) => apiDelete(`/v1/api-tokens/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['api-tokens'] }),
-  });
-
-  const copyToken = (token: string) => {
-    navigator.clipboard.writeText(token).then(() => {
-      setCopiedToken(true);
-      setTimeout(() => setCopiedToken(false), 2000);
-    });
-  };
-
-  const TAG_COLORS = ['#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626', '#db2777', '#0891b2', '#65a30d'];
-
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-text-primary">Settings</h1>
-
-      <Card title="Tenant Info">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-text-secondary text-sm">Company</span>
-            <span className="text-text-primary">{user?.tenantName || 'Your Company'}</span>
+  const renderGeneral = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <SectionCard title="Workspace" icon={Building2} subtitle="Your organization details">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', backgroundColor: 'var(--surface-elevated)', borderRadius: '8px' }}>
+            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Company</span>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{user?.tenantName || 'Your Company'}</span>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-text-secondary text-sm">Plan</span>
-            <Badge variant={planVariant['starter'] || 'info'}>Starter</Badge>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', backgroundColor: 'var(--surface-elevated)', borderRadius: '8px' }}>
+            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Plan</span>
+            <SmallBadge color="#0A84FF">Starter</SmallBadge>
           </div>
         </div>
-      </Card>
+      </SectionCard>
 
-      <Card title="API Providers (BYOK)">
+      <SectionCard title="API Providers (BYOK)" icon={Key} subtitle="Connect your own LLM API keys">
         {loadingProviders ? (
-          <div className="flex justify-center py-4"><Spinner /></div>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '16px' }}><Spinner /></div>
         ) : (
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {providers.length === 0 && (
-              <p className="text-text-muted text-sm">No providers connected yet.</p>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', padding: '8px 0' }}>No providers connected. Add your API keys to start using AI agents.</p>
             )}
-            {providers.map((p) => (
-              <div key={p.id} className="flex items-center justify-between bg-[var(--card)] rounded-lg p-4 border border-[var(--border)] shadow-sm">
-                <div className="flex items-center gap-3">
-                  <Key size={18} className="text-text-secondary" />
-                  <div>
-                    <p className="text-text-primary font-medium capitalize">{p.provider}</p>
-                    <p className="text-xs text-text-muted">
-                      {p.status === 'active' ? 'Connected' : 'Inactive'}
-                      {(p.connected_at || p.created_at) && ` · ${new Date(p.connected_at || p.created_at!).toLocaleDateString()}`}
-                    </p>
+            {providers.map((p) => {
+              const pInfo = PROVIDER_ICONS[p.provider] || { label: p.provider, color: 'var(--text-secondary)' };
+              return (
+                <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', backgroundColor: 'var(--surface-elevated)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: `${pInfo.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Key size={16} style={{ color: pInfo.color }} />
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{pInfo.label}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                        <StatusDot active={p.status === 'active'} />
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          {p.status === 'active' ? 'Connected' : 'Inactive'}
+                          {(p.connected_at || p.created_at) && ` · ${new Date(p.connected_at || p.created_at!).toLocaleDateString()}`}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={p.status === 'active' ? 'active' : 'idle'}>{p.status}</Badge>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => disconnectMutation.mutate(p.id)}
-                    disabled={disconnectMutation.isPending}
-                  >
+                  <ActionButton variant="danger" onClick={() => disconnectMutation.mutate(p.id)} disabled={disconnectMutation.isPending}>
                     <Trash2 size={14} />
-                  </Button>
+                  </ActionButton>
                 </div>
-              </div>
-            ))}
-            <Button onClick={() => setShowConnectModal(true)} variant="secondary" size="sm">
-              <Plus size={16} className="mr-1.5" /> Connect Provider
-            </Button>
+              );
+            })}
+            <ActionButton onClick={() => setShowConnectModal(true)}>
+              <Plus size={14} /> Connect Provider
+            </ActionButton>
           </div>
         )}
-      </Card>
+      </SectionCard>
 
-      <Card title="Usage Overview">
+      <SectionCard title="Usage Overview" icon={Zap} subtitle="Token usage and cost tracking">
         {loadingUsage ? (
-          <div className="flex justify-center py-4"><Spinner /></div>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '16px' }}><Spinner /></div>
         ) : usage.length === 0 ? (
-          <p className="text-text-muted text-sm">No usage data yet</p>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No usage data yet. Usage tracking begins when agents process tasks.</p>
         ) : (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
-                <p className="text-text-secondary text-xs uppercase tracking-wider">Total Tokens</p>
-                <p className="text-text-primary text-xl font-bold mt-1">{totals.totalTokens.toLocaleString()}</p>
-              </div>
-              <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
-                <p className="text-text-secondary text-xs uppercase tracking-wider">API Calls</p>
-                <p className="text-text-primary text-xl font-bold mt-1">{totals.totalCalls.toLocaleString()}</p>
-              </div>
-              <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
-                <p className="text-text-secondary text-xs uppercase tracking-wider">Total Cost</p>
-                <p className="text-text-primary text-xl font-bold mt-1">${totals.totalCost.toFixed(2)}</p>
-              </div>
-              <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
-                <p className="text-text-secondary text-xs uppercase tracking-wider">Avg Daily Cost</p>
-                <p className="text-text-primary text-xl font-bold mt-1">${totals.avgDailyCost.toFixed(2)}</p>
-              </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+              {[
+                { label: 'Total Tokens', value: totals.totalTokens.toLocaleString(), color: '#60A5FA' },
+                { label: 'API Calls', value: totals.totalCalls.toLocaleString(), color: '#A78BFA' },
+                { label: 'Total Cost', value: `$${totals.totalCost.toFixed(2)}`, color: '#34D399' },
+                { label: 'Avg Daily', value: `$${totals.avgDailyCost.toFixed(2)}`, color: '#FBBF24' },
+              ].map((s) => (
+                <div key={s.label} style={{ padding: '14px', backgroundColor: 'var(--surface-elevated)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                  <p style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>{s.label}</p>
+                  <p style={{ fontSize: '18px', fontWeight: 700, color: s.color, marginTop: '4px' }}>{s.value}</p>
+                </div>
+              ))}
             </div>
 
             <div>
-              <h4 className="text-text-primary text-sm font-medium mb-3">Daily Cost (Last 30 Days)</h4>
-              <div className="flex items-end gap-1 h-48">
+              <h4 style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '10px' }}>Daily Cost (Last 30 Days)</h4>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '120px' }}>
                 {dailyData.map((day, i) => (
                   <div
                     key={day.date}
-                    className="flex-1 bg-teal-500 rounded-t hover:bg-teal-400 transition-colors relative group cursor-pointer"
-                    style={{ height: `${(day.cost / maxCost) * 100}%`, minHeight: '2px' }}
-                  >
-                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block bg-[var(--card)] text-text-primary text-xs p-2 rounded whitespace-nowrap z-10 shadow-lg border border-[var(--border)]">
-                      <p className="font-medium">{formatDate(day.date)}</p>
-                      <p>Cost: ${day.cost.toFixed(4)}</p>
-                      <p>Tokens: {(day.tokens_in + day.tokens_out).toLocaleString()}</p>
-                      <p>Calls: {day.api_calls.toLocaleString()}</p>
-                    </div>
-                    {i % 5 === 0 && (
-                      <span className="absolute top-full mt-1 left-1/2 -translate-x-1/2 text-text-muted text-[10px] whitespace-nowrap">
-                        {formatDate(day.date)}
-                      </span>
-                    )}
-                  </div>
+                    style={{ flex: 1, backgroundColor: '#14b8a6', borderRadius: '2px 2px 0 0', height: `${Math.max((day.cost / maxCost) * 100, 1)}%`, transition: 'height 300ms', cursor: 'pointer', position: 'relative' }}
+                    className="group"
+                    title={`${formatDate(day.date)}: $${day.cost.toFixed(4)} · ${(day.tokens_in + day.tokens_out).toLocaleString()} tokens`}
+                  />
                 ))}
               </div>
-              <div className="h-5" />
             </div>
 
-            {loadingAgentUsage ? (
-              <div className="flex justify-center py-4"><Spinner /></div>
-            ) : agentUsage.length > 0 && (
+            {!loadingAgentUsage && agentUsage.length > 0 && (
               <div>
-                <h4 className="text-text-primary text-sm font-medium mb-3">Per-Agent Breakdown</h4>
-                <div className="space-y-3">
+                <h4 style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '10px' }}>Per-Agent Breakdown</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {agentUsage.map((agent, i) => {
                     const color = AGENT_COLORS[i % AGENT_COLORS.length];
                     const barWidth = (Number(agent.estimated_cost) / maxAgentCost) * 100;
                     return (
-                      <div key={agent.agent_id} className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-text-primary font-medium text-sm">{agent.agent_name || 'Unknown Agent'}</span>
-                          <span className="text-teal-400 text-sm font-medium">${Number(agent.estimated_cost).toFixed(4)}</span>
+                      <div key={agent.agent_id} style={{ padding: '10px 14px', backgroundColor: 'var(--surface-elevated)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{agent.agent_name || 'Unknown Agent'}</span>
+                          <span style={{ fontSize: '13px', fontWeight: 600, color }}>${Number(agent.estimated_cost).toFixed(4)}</span>
                         </div>
-                        <div className="w-full bg-border-default rounded-full h-2.5 mb-2">
-                          <div
-                            className={`${color} h-2.5 rounded-full transition-all`}
-                            style={{ width: `${Math.max(barWidth, 1)}%` }}
-                          />
+                        <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--border)', borderRadius: '3px' }}>
+                          <div style={{ width: `${Math.max(barWidth, 1)}%`, height: '6px', borderRadius: '3px', backgroundColor: color, transition: 'width 300ms' }} />
                         </div>
-                        <div className="flex gap-4 text-xs text-text-secondary">
+                        <div style={{ display: 'flex', gap: '16px', marginTop: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
                           <span>Tokens: {(agent.tokens_in + agent.tokens_out).toLocaleString()}</span>
-                          <span>API Calls: {agent.api_calls.toLocaleString()}</span>
+                          <span>Calls: {agent.api_calls.toLocaleString()}</span>
                         </div>
                       </div>
                     );
@@ -517,279 +527,240 @@ export function Settings() {
               </div>
             )}
 
-            <div>
-              <button
-                onClick={() => setShowRawData(!showRawData)}
-                className="flex items-center gap-2 text-text-secondary hover:text-text-primary text-sm transition-colors"
-              >
-                {showRawData ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                Raw Data
-              </button>
-              {showRawData && (
-                <div className="overflow-x-auto mt-3">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-text-secondary text-left border-b border-[var(--border)]">
-                        <th className="pb-2 font-medium">Date</th>
-                        <th className="pb-2 font-medium">Tokens In</th>
-                        <th className="pb-2 font-medium">Tokens Out</th>
-                        <th className="pb-2 font-medium">API Calls</th>
-                        <th className="pb-2 font-medium">Est. Cost</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {usage.map((row) => (
-                        <tr key={row.id} className="border-b border-[var(--border)] text-text-secondary">
-                          <td className="py-2">{new Date(row.date).toLocaleDateString()}</td>
-                          <td className="py-2">{row.tokens_in.toLocaleString()}</td>
-                          <td className="py-2">{row.tokens_out.toLocaleString()}</td>
-                          <td className="py-2">{row.api_calls.toLocaleString()}</td>
-                          <td className="py-2">${Number(row.estimated_cost).toFixed(4)}</td>
-                        </tr>
+            <button
+              onClick={() => setShowRawData(!showRawData)}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            >
+              {showRawData ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              Raw Data
+            </button>
+            {showRawData && (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                      {['Date', 'Tokens In', 'Tokens Out', 'API Calls', 'Est. Cost'].map(h => (
+                        <th key={h} style={{ padding: '8px', textAlign: 'left', color: 'var(--text-muted)', fontWeight: 500 }}>{h}</th>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {usage.map((row) => (
+                      <tr key={row.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '8px', color: 'var(--text-secondary)' }}>{new Date(row.date).toLocaleDateString()}</td>
+                        <td style={{ padding: '8px', color: 'var(--text-secondary)' }}>{row.tokens_in.toLocaleString()}</td>
+                        <td style={{ padding: '8px', color: 'var(--text-secondary)' }}>{row.tokens_out.toLocaleString()}</td>
+                        <td style={{ padding: '8px', color: 'var(--text-secondary)' }}>{row.api_calls.toLocaleString()}</td>
+                        <td style={{ padding: '8px', color: 'var(--text-secondary)' }}>${Number(row.estimated_cost).toFixed(4)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
-      </Card>
+      </SectionCard>
 
-      <Card title="Telegram Integration">
+      <SectionCard title="Tags" icon={Tag} subtitle="Categorize and filter your tasks">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {loadingTags ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '16px' }}><Spinner /></div>
+          ) : tags.length === 0 ? (
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No tags yet. Create your first tag to organize tasks.</p>
+          ) : (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {tags.map((tag) => (
+                <div key={tag.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', borderRadius: '8px', backgroundColor: `${tag.color}15`, border: `1px solid ${tag.color}30` }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: tag.color }} />
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: tag.color }}>{tag.name}</span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{tag.usage_count}</span>
+                  <button onClick={() => deleteTagMutation.mutate(tag.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: 'var(--text-muted)' }}>
+                    <Trash2 size={11} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <ActionButton onClick={() => setShowNewTagModal(true)}>
+            <Tag size={13} /> New Tag
+          </ActionButton>
+        </div>
+      </SectionCard>
+    </div>
+  );
+
+  const renderIntegrations = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <SectionCard title="Telegram" icon={MessageCircle} subtitle="Receive notifications and send commands via Telegram">
         {loadingTelegramConfig ? (
-          <div className="flex justify-center py-4"><Spinner /></div>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '16px' }}><Spinner /></div>
         ) : telegramConfig ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
-              <div className="flex items-center gap-3">
-                <MessageCircle size={18} className="text-blue-400" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', backgroundColor: 'var(--surface-elevated)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <MessageCircle size={16} style={{ color: '#3b82f6' }} />
+                </div>
                 <div>
-                  <p className="text-text-primary font-medium">@{telegramConfig.bot_username}</p>
-                  <p className="text-xs text-text-muted">
-                    {telegramConfig.is_active ? 'Connected' : 'Inactive'}
-                    {telegramConfig.created_at && ` · ${new Date(telegramConfig.created_at).toLocaleDateString()}`}
-                  </p>
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>@{telegramConfig.bot_username}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                    <StatusDot active={telegramConfig.is_active} />
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                      {telegramConfig.is_active ? 'Connected' : 'Inactive'}
+                      {telegramConfig.created_at && ` · ${new Date(telegramConfig.created_at).toLocaleDateString()}`}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant={telegramConfig.is_active ? 'active' : 'idle'}>
-                  {telegramConfig.is_active ? 'Active' : 'Inactive'}
-                </Badge>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={() => disconnectTelegramMutation.mutate()}
-                  disabled={disconnectTelegramMutation.isPending}
-                >
-                  <Unlink size={14} className="mr-1" /> Disconnect
-                </Button>
-              </div>
+              <ActionButton variant="danger" onClick={() => disconnectTelegramMutation.mutate()} disabled={disconnectTelegramMutation.isPending}>
+                <Unlink size={13} /> Disconnect
+              </ActionButton>
             </div>
 
-            <div className="border-t border-[var(--border)] pt-4">
-              <h4 className="text-text-primary text-sm font-medium mb-3">Linked Chats</h4>
-              {loadingTelegramChats ? (
-                <Spinner size="sm" />
-              ) : telegramChats.length === 0 ? (
-                <p className="text-text-muted text-sm">No chats linked yet.</p>
+            <div>
+              <h4 style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>Linked Chats</h4>
+              {loadingTelegramChats ? <Spinner /> : telegramChats.length === 0 ? (
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>No chats linked yet.</p>
               ) : (
-                <div className="space-y-2 mb-4">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
                   {telegramChats.map((chat: any) => (
-                    <div key={chat.id} className="flex items-center justify-between bg-[var(--surface-elevated)] rounded-lg px-4 py-2.5">
-                      <div className="flex items-center gap-2">
-                        <MessageCircle size={14} className="text-text-secondary" />
-                        <span className="text-text-primary text-sm font-mono">{chat.chat_id}</span>
-                        <Badge variant="info">{chat.chat_type}</Badge>
+                    <div key={chat.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', backgroundColor: 'var(--surface-elevated)', borderRadius: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <MessageCircle size={12} style={{ color: 'var(--text-muted)' }} />
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-primary)' }}>{chat.chat_id}</span>
+                        <SmallBadge color="#3b82f6">{chat.chat_type}</SmallBadge>
                       </div>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => sendTestMutation.mutate({ chat_id: chat.chat_id })}
-                        disabled={sendTestMutation.isPending}
-                      >
-                        <Send size={12} className="mr-1" /> Test
-                      </Button>
+                      <ActionButton onClick={() => sendTestMutation.mutate({ chat_id: chat.chat_id })} disabled={sendTestMutation.isPending}>
+                        <Send size={11} /> Test
+                      </ActionButton>
                     </div>
                   ))}
                 </div>
               )}
-              <div className="flex items-end gap-2">
-                <div className="flex-1">
-                  <Input
-                    label="Chat ID"
-                    value={newChatId}
-                    onChange={(e) => setNewChatId(e.target.value)}
-                    placeholder="e.g. 123456789 or -100123456789"
-                  />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                <div style={{ flex: 1 }}>
+                  <InputField label="Chat ID" value={newChatId} onChange={setNewChatId} placeholder="e.g. 123456789" />
                 </div>
-                <div className="w-32">
-                  <label className="block text-sm font-medium text-text-secondary mb-1.5">Type</label>
+                <div style={{ width: '120px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px' }}>Type</label>
                   <select
                     value={newChatType}
                     onChange={(e) => setNewChatType(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+                    style={{ width: '100%', padding: '9px 12px', backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', outline: 'none' }}
                   >
                     <option value="private">Private</option>
                     <option value="group">Group</option>
                     <option value="channel">Channel</option>
                   </select>
                 </div>
-                <Button
-                  onClick={() => linkChatMutation.mutate({ chat_id: newChatId, chat_type: newChatType })}
-                  disabled={!newChatId || linkChatMutation.isPending}
-                  size="sm"
-                  className="mb-0.5"
-                >
-                  <Plus size={14} className="mr-1" /> Link
-                </Button>
+                <ActionButton onClick={() => linkChatMutation.mutate({ chat_id: newChatId, chat_type: newChatType })} disabled={!newChatId || linkChatMutation.isPending}>
+                  <Plus size={13} /> Link
+                </ActionButton>
               </div>
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
-            <p className="text-text-muted text-sm">Connect a Telegram bot to receive notifications and send commands.</p>
-            <Button onClick={() => setShowTelegramModal(true)} variant="secondary" size="sm">
-              <MessageCircle size={16} className="mr-1.5" /> Connect Telegram Bot
-            </Button>
+          <div>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '12px' }}>Connect a Telegram bot to receive notifications and send commands.</p>
+            <ActionButton onClick={() => setShowTelegramModal(true)}>
+              <MessageCircle size={14} /> Connect Telegram Bot
+            </ActionButton>
           </div>
         )}
-      </Card>
+      </SectionCard>
 
-      <Card title="WhatsApp Integration (Twilio)">
+      <SectionCard title="WhatsApp (Twilio)" icon={MessageCircle} subtitle="Send and receive commands via WhatsApp">
         {loadingWhatsApp ? (
-          <div className="flex justify-center py-4"><Spinner /></div>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '16px' }}><Spinner /></div>
         ) : whatsappConfig ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
-              <div className="flex items-center gap-3">
-                <MessageCircle size={18} className="text-green-500" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', backgroundColor: 'var(--surface-elevated)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'rgba(34,197,94,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <MessageCircle size={16} style={{ color: '#22c55e' }} />
+                </div>
                 <div>
-                  <p className="text-text-primary font-medium">{whatsappConfig.whatsapp_number}</p>
-                  <p className="text-xs text-text-muted">
-                    Account SID: {whatsappConfig.account_sid?.slice(0, 8)}...
-                    {whatsappConfig.created_at && ` · ${new Date(whatsappConfig.created_at).toLocaleDateString()}`}
-                  </p>
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{whatsappConfig.whatsapp_number}</p>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>SID: {whatsappConfig.account_sid?.slice(0, 8)}...</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="active">Connected</Badge>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={() => disconnectWhatsAppMutation.mutate()}
-                  disabled={disconnectWhatsAppMutation.isPending}
-                >
-                  <Unlink size={14} className="mr-1" /> Disconnect
-                </Button>
-              </div>
+              <ActionButton variant="danger" onClick={() => disconnectWhatsAppMutation.mutate()} disabled={disconnectWhatsAppMutation.isPending}>
+                <Unlink size={13} /> Disconnect
+              </ActionButton>
             </div>
-            <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)] space-y-3">
-              <p className="text-text-secondary text-xs font-medium uppercase tracking-wide">Webhook URL (paste into Twilio)</p>
-              <code className="block text-text-primary text-xs bg-[var(--card)] border border-[var(--border)] rounded px-3 py-2 break-all">
+            <div style={{ padding: '12px 14px', backgroundColor: 'var(--surface-elevated)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, marginBottom: '6px' }}>Webhook URL</p>
+              <code style={{ display: 'block', fontSize: '11px', color: 'var(--text-primary)', backgroundColor: 'var(--bg)', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border)', wordBreak: 'break-all', fontFamily: 'var(--font-mono)' }}>
                 {window.location.origin}/v1/whatsapp/webhook
               </code>
-              <div className="flex items-end gap-2">
-                <div className="flex-1">
-                  <Input
-                    label="Test: Send to number"
-                    value={waTestTo}
-                    onChange={(e) => setWaTestTo(e.target.value)}
-                    placeholder="+1234567890 or whatsapp:+1234567890"
-                  />
-                </div>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => testWhatsAppMutation.mutate({ to: waTestTo })}
-                  disabled={!waTestTo || testWhatsAppMutation.isPending}
-                  className="mb-0.5"
-                >
-                  <Send size={12} className="mr-1" /> Send Test
-                </Button>
-              </div>
-              {testWhatsAppMutation.isSuccess && <p className="text-green-600 text-xs">Test message sent!</p>}
             </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+              <div style={{ flex: 1 }}>
+                <InputField label="Send test to" value={waTestTo} onChange={setWaTestTo} placeholder="+1234567890" />
+              </div>
+              <ActionButton onClick={() => testWhatsAppMutation.mutate({ to: waTestTo })} disabled={!waTestTo || testWhatsAppMutation.isPending}>
+                <Send size={12} /> Send Test
+              </ActionButton>
+            </div>
+            {testWhatsAppMutation.isSuccess && <p style={{ fontSize: '12px', color: '#32D74B' }}>Test message sent!</p>}
           </div>
         ) : (
-          <div className="space-y-3">
-            <p className="text-text-muted text-sm">Connect Twilio WhatsApp to send and receive commands via WhatsApp. Use the sandbox for testing — no business verification needed.</p>
-            <Button onClick={() => setShowWhatsAppModal(true)} variant="secondary" size="sm">
-              <MessageCircle size={16} className="mr-1.5" /> Connect WhatsApp (Twilio)
-            </Button>
+          <div>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '12px' }}>Connect Twilio WhatsApp to send and receive commands. Use the sandbox for testing.</p>
+            <ActionButton onClick={() => setShowWhatsAppModal(true)}>
+              <MessageCircle size={14} /> Connect WhatsApp
+            </ActionButton>
           </div>
         )}
-      </Card>
+      </SectionCard>
 
-      <Card title="Webhooks">
+      <SectionCard title="Webhooks" icon={Webhook} subtitle="Receive event notifications via HTTP">
         {loadingWebhooks ? (
-          <div className="flex justify-center py-4"><Spinner /></div>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '16px' }}><Spinner /></div>
         ) : (
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {webhooks.length === 0 && (
-              <p className="text-text-muted text-sm">No webhooks registered yet.</p>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No webhooks registered yet.</p>
             )}
             {webhooks.map((wh) => (
-              <div key={wh.id} className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)] space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <Webhook size={18} className="text-text-secondary shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-text-primary font-medium text-sm truncate">{wh.url}</p>
-                      <p className="text-xs text-text-muted">
-                        Created {new Date(wh.created_at).toLocaleDateString()}
-                      </p>
+              <div key={wh.id} style={{ padding: '12px 14px', backgroundColor: 'var(--surface-elevated)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                    <Webhook size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{wh.url}</p>
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Created {new Date(wh.created_at).toLocaleDateString()}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Badge variant={wh.is_active ? 'active' : 'idle'}>
-                      {wh.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                    <button
-                      onClick={() => toggleWebhookMutation.mutate({ id: wh.id, is_active: !wh.is_active })}
-                      className="text-text-secondary hover:text-text-primary transition-colors"
-                      title={wh.is_active ? 'Disable' : 'Enable'}
-                    >
-                      {wh.is_active ? <ToggleRight size={20} className="text-teal-500" /> : <ToggleLeft size={20} />}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                    <StatusDot active={wh.is_active} />
+                    <ToggleSwitch active={wh.is_active} onToggle={() => toggleWebhookMutation.mutate({ id: wh.id, is_active: !wh.is_active })} />
+                    <button onClick={() => setViewDeliveriesId(viewDeliveriesId === wh.id ? null : wh.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--text-muted)' }}>
+                      <Eye size={14} />
                     </button>
-                    <button
-                      onClick={() => setViewDeliveriesId(viewDeliveriesId === wh.id ? null : wh.id)}
-                      className="text-text-secondary hover:text-text-primary transition-colors"
-                      title="View deliveries"
-                    >
-                      <Eye size={16} />
-                    </button>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => deleteWebhookMutation.mutate(wh.id)}
-                      disabled={deleteWebhookMutation.isPending}
-                    >
+                    <button onClick={() => deleteWebhookMutation.mutate(wh.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--text-muted)' }}>
                       <Trash2 size={14} />
-                    </Button>
+                    </button>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {wh.events.map((ev) => (
-                    <Badge key={ev} variant="info">{ev}</Badge>
-                  ))}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                  {wh.events.map((ev) => <SmallBadge key={ev} color="#3b82f6">{ev}</SmallBadge>)}
                 </div>
                 {viewDeliveriesId === wh.id && (
-                  <div className="mt-3 border-t border-[var(--border)] pt-3">
-                    <h5 className="text-text-primary text-xs font-medium mb-2">Recent Deliveries</h5>
-                    {loadingDeliveries ? (
-                      <Spinner size="sm" />
-                    ) : deliveries.length === 0 ? (
-                      <p className="text-text-muted text-xs">No deliveries yet.</p>
+                  <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
+                    <h5 style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>Recent Deliveries</h5>
+                    {loadingDeliveries ? <Spinner /> : deliveries.length === 0 ? (
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>No deliveries yet.</p>
                     ) : (
-                      <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '160px', overflowY: 'auto' }}>
                         {deliveries.map((d) => (
-                          <div key={d.id} className="flex items-center justify-between text-xs bg-[var(--surface-elevated)] rounded px-3 py-1.5">
-                            <div className="flex items-center gap-2">
-                              <span className={`w-2 h-2 rounded-full ${d.success ? 'bg-green-500' : 'bg-[rgba(255,59,48,0.1)]0'}`} />
-                              <span className="text-text-secondary">{d.event}</span>
+                          <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', padding: '6px 8px', backgroundColor: 'var(--bg)', borderRadius: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: d.success ? '#32D74B' : '#FF453A' }} />
+                              <span style={{ color: 'var(--text-secondary)' }}>{d.event}</span>
                             </div>
-                            <div className="flex items-center gap-3 text-text-muted">
+                            <div style={{ display: 'flex', gap: '10px', color: 'var(--text-muted)' }}>
                               <span>{d.response_status ?? '—'}</span>
                               <span>x{d.attempts}</span>
                               <span>{new Date(d.created_at).toLocaleString()}</span>
@@ -802,496 +773,358 @@ export function Settings() {
                 )}
               </div>
             ))}
-            <Button onClick={() => setShowWebhookModal(true)} variant="secondary" size="sm">
-              <Plus size={16} className="mr-1.5" /> Add Webhook
-            </Button>
+            <ActionButton onClick={() => setShowWebhookModal(true)}>
+              <Plus size={14} /> Add Webhook
+            </ActionButton>
           </div>
         )}
-      </Card>
+      </SectionCard>
+    </div>
+  );
 
-      <Card title="Standup Delivery">
-        {loadingDeliveryConfig ? (
-          <div className="flex justify-center py-4"><Spinner /></div>
-        ) : (
-          <div className="space-y-5">
-            <p className="text-text-secondary text-sm">Configure where daily standups are delivered when generated.</p>
-
-            <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)] space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Mail size={18} className="text-text-secondary" />
-                  <span className="text-text-primary font-medium text-sm">Email (via Resend)</span>
-                </div>
-                <button
-                  onClick={() => saveDeliveryMutation.mutate({ email_enabled: !deliveryConfig?.email_enabled })}
-                  className="text-text-secondary hover:text-text-primary transition-colors"
-                >
-                  {deliveryConfig?.email_enabled ? <ToggleRight size={24} className="text-teal-500" /> : <ToggleLeft size={24} />}
-                </button>
-              </div>
-              {deliveryConfig?.email_enabled && (
-                <div className="space-y-2 pl-7">
-                  <Input
-                    label="Recipients (comma-separated)"
-                    value={deliveryEmailRecipients || (deliveryConfig?.email_recipients?.join(', ') ?? '')}
-                    onChange={(e) => setDeliveryEmailRecipients(e.target.value)}
-                    placeholder="team@example.com, lead@example.com"
-                  />
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => {
-                      const recipients = deliveryEmailRecipients.split(',').map(e => e.trim()).filter(Boolean);
-                      saveDeliveryMutation.mutate({ email_recipients: recipients });
-                    }}
-                    disabled={saveDeliveryMutation.isPending}
-                  >
-                    <Save size={12} className="mr-1" /> Save Recipients
-                  </Button>
-                  <p className="text-text-muted text-xs">Requires a Resend API key stored in tenant settings.</p>
-                </div>
-              )}
-            </div>
-
-            <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)] space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Hash size={18} className="text-text-secondary" />
-                  <span className="text-text-primary font-medium text-sm">Slack Webhook</span>
-                </div>
-                <button
-                  onClick={() => saveDeliveryMutation.mutate({ slack_enabled: !deliveryConfig?.slack_enabled })}
-                  className="text-text-secondary hover:text-text-primary transition-colors"
-                >
-                  {deliveryConfig?.slack_enabled ? <ToggleRight size={24} className="text-teal-500" /> : <ToggleLeft size={24} />}
-                </button>
-              </div>
-              {deliveryConfig?.slack_enabled && (
-                <div className="space-y-2 pl-7">
-                  <Input
-                    label="Webhook URL"
-                    value={deliverySlackWebhook || (deliveryConfig?.slack_webhook_url ?? '')}
-                    onChange={(e) => setDeliverySlackWebhook(e.target.value)}
-                    placeholder="https://hooks.slack.com/services/..."
-                  />
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => saveDeliveryMutation.mutate({ slack_webhook_url: deliverySlackWebhook })}
-                    disabled={!deliverySlackWebhook || saveDeliveryMutation.isPending}
-                  >
-                    <Save size={12} className="mr-1" /> Save Webhook URL
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MessageCircle size={18} className="text-text-secondary" />
-                  <span className="text-text-primary font-medium text-sm">Telegram</span>
-                  {!telegramConfig && <span className="text-text-muted text-xs">(Connect bot first)</span>}
-                </div>
-                <button
-                  onClick={() => saveDeliveryMutation.mutate({ telegram_enabled: !deliveryConfig?.telegram_enabled })}
-                  className="text-text-secondary hover:text-text-primary transition-colors"
-                  disabled={!telegramConfig}
-                >
-                  {deliveryConfig?.telegram_enabled ? <ToggleRight size={24} className="text-teal-500" /> : <ToggleLeft size={24} />}
-                </button>
-              </div>
-              {deliveryConfig?.telegram_enabled && (
-                <p className="text-text-muted text-xs mt-2 pl-7">Standups will be sent to all linked Telegram chats.</p>
-              )}
-            </div>
-
-            {deliverySaveSuccess && (
-              <p className="text-teal-400 text-sm">Delivery settings saved successfully!</p>
-            )}
-          </div>
-        )}
-      </Card>
-
-      <Card title="Tags">
-        <div className="space-y-4">
-          <p className="text-text-secondary text-sm">Create coloured tags to categorize and filter your tasks.</p>
-          {loadingTags ? (
-            <div className="flex justify-center py-4"><Spinner /></div>
-          ) : tags.length === 0 ? (
-            <p className="text-text-muted text-sm">No tags yet. Create your first tag.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <div
-                  key={tag.id}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg border"
-                  style={{ backgroundColor: tag.color + '15', borderColor: tag.color + '40' }}
-                >
-                  <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: tag.color }}
-                  />
-                  <span className="text-sm font-medium" style={{ color: tag.color }}>{tag.name}</span>
-                  <span className="text-xs text-text-muted">{tag.usage_count}</span>
-                  <button
-                    onClick={() => deleteTagMutation.mutate(tag.id)}
-                    className="text-text-muted hover:text-red-500 transition-colors ml-1"
-                    title="Delete tag"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          <Button variant="secondary" size="sm" onClick={() => setShowNewTagModal(true)}>
-            <Tag size={14} className="mr-1.5" /> New Tag
-          </Button>
-        </div>
-      </Card>
-
-      <Card title="API Tokens">
-        <div className="space-y-4">
-          <p className="text-text-secondary text-sm">Personal API tokens let automation clients call the SquidJob API on your behalf.</p>
-
+  const renderSecurity = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <SectionCard title="API Tokens" icon={Lock} subtitle="Personal API tokens for automation clients">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {revealedToken && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
-              <div className="flex items-center gap-2">
-                <AlertCircle size={16} className="text-green-600 shrink-0" />
-                <p className="text-sm font-medium text-green-700">Token created — copy it now, it won't be shown again.</p>
+            <div style={{ padding: '14px', borderRadius: '10px', backgroundColor: 'rgba(50,215,75,0.08)', border: '1px solid rgba(50,215,75,0.25)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <AlertCircle size={14} style={{ color: '#32D74B' }} />
+                <p style={{ fontSize: '12px', fontWeight: 600, color: '#32D74B' }}>Token created — copy it now, it won't be shown again.</p>
               </div>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 text-xs bg-[var(--card)] border border-green-200 rounded px-3 py-2 font-mono text-text-primary break-all">
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <code style={{ flex: 1, fontSize: '11px', padding: '8px 10px', backgroundColor: 'var(--bg)', borderRadius: '6px', border: '1px solid var(--border)', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>
                   {revealedToken}
                 </code>
-                <button
-                  onClick={() => copyToken(revealedToken)}
-                  className="shrink-0 p-2 rounded-lg border border-green-200 bg-[var(--card)] hover:bg-green-50 text-green-700 transition-colors"
-                  title="Copy token"
-                >
+                <button onClick={() => copyToken(revealedToken)} style={{ padding: '8px', borderRadius: '6px', backgroundColor: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', color: '#32D74B' }}>
                   {copiedToken ? <Check size={14} /> : <Copy size={14} />}
                 </button>
               </div>
-              <button
-                onClick={() => setRevealedToken(null)}
-                className="text-xs text-green-600 hover:underline"
-              >
+              <button onClick={() => setRevealedToken(null)} style={{ fontSize: '11px', color: '#32D74B', background: 'none', border: 'none', cursor: 'pointer', marginTop: '8px', padding: 0 }}>
                 I've saved my token, dismiss
               </button>
             </div>
           )}
 
           {loadingApiTokens ? (
-            <div className="flex justify-center py-4"><Spinner /></div>
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '16px' }}><Spinner /></div>
           ) : apiTokens.length === 0 ? (
-            <p className="text-text-muted text-sm">No tokens yet.</p>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No tokens yet. Create a token to use the API.</p>
           ) : (
-            <div className="space-y-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {apiTokens.map((token) => (
-                <div key={token.id} className="flex items-center justify-between p-3 bg-[var(--surface-elevated)] rounded-lg border border-[var(--border)]">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <Key size={14} className="text-text-muted shrink-0" />
-                      <span className="text-sm font-medium text-text-primary">{token.name}</span>
+                <div key={token.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', backgroundColor: 'var(--surface-elevated)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Key size={13} style={{ color: 'var(--text-muted)' }} />
+                      <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{token.name}</span>
                     </div>
-                    <div className="flex items-center gap-3 mt-0.5 pl-5">
-                      <span className="text-xs text-text-muted">
-                        Created {new Date(token.created_at).toLocaleDateString()}
-                      </span>
-                      {token.last_used_at && (
-                        <span className="text-xs text-text-muted">
-                          Last used {new Date(token.last_used_at).toLocaleDateString()}
-                        </span>
-                      )}
+                    <div style={{ display: 'flex', gap: '12px', marginTop: '4px', paddingLeft: '21px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                      <span>Created {new Date(token.created_at).toLocaleDateString()}</span>
+                      {token.last_used_at && <span>Last used {new Date(token.last_used_at).toLocaleDateString()}</span>}
                       {token.expires_at && (
-                        <span className={`text-xs ${new Date(token.expires_at) < new Date() ? 'text-red-500' : 'text-text-muted'}`}>
+                        <span style={{ color: new Date(token.expires_at) < new Date() ? '#FF453A' : 'var(--text-muted)' }}>
                           Expires {new Date(token.expires_at).toLocaleDateString()}
                         </span>
                       )}
                     </div>
                   </div>
-                  <button
-                    onClick={() => deleteTokenMutation.mutate(token.id)}
-                    className="p-1.5 rounded text-text-muted hover:text-red-500 hover:bg-[rgba(255,59,48,0.1)] transition-colors"
-                    title="Revoke token"
-                  >
+                  <button onClick={() => deleteTokenMutation.mutate(token.id)} style={{ padding: '6px', borderRadius: '6px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
                     <Trash2 size={14} />
                   </button>
                 </div>
               ))}
             </div>
           )}
-          <Button variant="secondary" size="sm" onClick={() => setShowNewTokenModal(true)}>
-            <Plus size={14} className="mr-1.5" /> New Token
-          </Button>
+          <ActionButton onClick={() => setShowNewTokenModal(true)}>
+            <Plus size={14} /> New Token
+          </ActionButton>
         </div>
-      </Card>
+      </SectionCard>
 
-      <Card title="Account">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-text-secondary text-sm">Email</span>
-            <span className="text-text-primary">{user?.email || '—'}</span>
+      <SectionCard title="Account" icon={User} subtitle="Your account details">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', backgroundColor: 'var(--surface-elevated)', borderRadius: '8px' }}>
+            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Email</span>
+            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{user?.email || '—'}</span>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-text-secondary text-sm">Role</span>
-            <Badge variant="info">{user?.role || '—'}</Badge>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', backgroundColor: 'var(--surface-elevated)', borderRadius: '8px' }}>
+            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Role</span>
+            <SmallBadge color="#A78BFA">{user?.role || '—'}</SmallBadge>
           </div>
-          <div className="pt-2">
-            <Button variant="danger" size="sm" onClick={logout}>
-              <LogOut size={16} className="mr-1.5" /> Logout
-            </Button>
+          <div style={{ paddingTop: '8px' }}>
+            <ActionButton variant="danger" onClick={logout}>
+              <LogOut size={14} /> Sign Out
+            </ActionButton>
           </div>
         </div>
-      </Card>
+      </SectionCard>
+    </div>
+  );
 
-      <Modal open={showWebhookModal} onClose={() => { setShowWebhookModal(false); setWebhookError(''); }} title="Add Webhook">
-        <div className="space-y-4">
-          <Input
-            label="Webhook URL"
-            value={webhookUrl}
-            onChange={(e) => setWebhookUrl(e.target.value)}
-            placeholder="https://example.com/webhook"
-          />
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-text-secondary">Events</label>
-            <div className="grid grid-cols-2 gap-2">
-              {WEBHOOK_EVENTS.map((ev) => (
-                <label key={ev} className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={webhookEvents.includes(ev)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setWebhookEvents([...webhookEvents, ev]);
-                      } else {
-                        setWebhookEvents(webhookEvents.filter((x) => x !== ev));
-                      }
-                    }}
-                    className="rounded border-[var(--border)] bg-[var(--surface-elevated)] text-teal-500 focus:ring-teal-500"
+  const renderNotifications = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <SectionCard title="Standup Delivery" icon={Mail} subtitle="Configure where daily standups are delivered">
+        {loadingDeliveryConfig ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '16px' }}><Spinner /></div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ padding: '14px', backgroundColor: 'var(--surface-elevated)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: deliveryConfig?.email_enabled ? '12px' : '0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(96,165,250,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Mail size={14} style={{ color: '#60A5FA' }} />
+                  </div>
+                  <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>Email (via Resend)</span>
+                </div>
+                <ToggleSwitch active={!!deliveryConfig?.email_enabled} onToggle={() => saveDeliveryMutation.mutate({ email_enabled: !deliveryConfig?.email_enabled })} />
+              </div>
+              {deliveryConfig?.email_enabled && (
+                <div style={{ paddingLeft: '42px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <InputField
+                    label="Recipients (comma-separated)"
+                    value={deliveryEmailRecipients || (deliveryConfig?.email_recipients?.join(', ') ?? '')}
+                    onChange={setDeliveryEmailRecipients}
+                    placeholder="team@example.com, lead@example.com"
                   />
-                  {ev}
-                </label>
-              ))}
+                  <ActionButton onClick={() => {
+                    const recipients = deliveryEmailRecipients.split(',').map(e => e.trim()).filter(Boolean);
+                    saveDeliveryMutation.mutate({ email_recipients: recipients });
+                  }} disabled={saveDeliveryMutation.isPending}>
+                    <Save size={12} /> Save Recipients
+                  </ActionButton>
+                </div>
+              )}
             </div>
+
+            <div style={{ padding: '14px', backgroundColor: 'var(--surface-elevated)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: deliveryConfig?.slack_enabled ? '12px' : '0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(251,191,36,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Hash size={14} style={{ color: '#FBBF24' }} />
+                  </div>
+                  <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>Slack Webhook</span>
+                </div>
+                <ToggleSwitch active={!!deliveryConfig?.slack_enabled} onToggle={() => saveDeliveryMutation.mutate({ slack_enabled: !deliveryConfig?.slack_enabled })} />
+              </div>
+              {deliveryConfig?.slack_enabled && (
+                <div style={{ paddingLeft: '42px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <InputField
+                    label="Webhook URL"
+                    value={deliverySlackWebhook || (deliveryConfig?.slack_webhook_url ?? '')}
+                    onChange={setDeliverySlackWebhook}
+                    placeholder="https://hooks.slack.com/services/..."
+                  />
+                  <ActionButton onClick={() => saveDeliveryMutation.mutate({ slack_webhook_url: deliverySlackWebhook })} disabled={!deliverySlackWebhook || saveDeliveryMutation.isPending}>
+                    <Save size={12} /> Save Webhook
+                  </ActionButton>
+                </div>
+              )}
+            </div>
+
+            <div style={{ padding: '14px', backgroundColor: 'var(--surface-elevated)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <MessageCircle size={14} style={{ color: '#3b82f6' }} />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>Telegram</span>
+                    {!telegramConfig && <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '8px' }}>(Connect bot first)</span>}
+                  </div>
+                </div>
+                <ToggleSwitch active={!!deliveryConfig?.telegram_enabled} onToggle={() => saveDeliveryMutation.mutate({ telegram_enabled: !deliveryConfig?.telegram_enabled })} disabled={!telegramConfig} />
+              </div>
+              {deliveryConfig?.telegram_enabled && (
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', paddingLeft: '42px' }}>Standups will be sent to all linked Telegram chats.</p>
+              )}
+            </div>
+
+            {deliverySaveSuccess && (
+              <p style={{ fontSize: '12px', color: '#32D74B', fontWeight: 500 }}>Delivery settings saved successfully!</p>
+            )}
           </div>
-          <Input
-            label="Secret (optional)"
-            type="password"
-            value={webhookSecret}
-            onChange={(e) => setWebhookSecret(e.target.value)}
-            placeholder="Used to sign payloads"
-          />
-          {webhookError && <p className="text-sm text-red-400">{webhookError}</p>}
-          <Button
-            onClick={() => createWebhookMutation.mutate({
-              url: webhookUrl,
-              events: webhookEvents,
-              secret: webhookSecret || undefined,
-            })}
-            disabled={!webhookUrl || webhookEvents.length === 0 || createWebhookMutation.isPending}
-            className="w-full"
-          >
-            {createWebhookMutation.isPending ? <Spinner size="sm" className="mr-2" /> : null}
-            Create Webhook
-          </Button>
-        </div>
-      </Modal>
+        )}
+      </SectionCard>
+    </div>
+  );
 
-      <Modal open={showWhatsAppModal} onClose={() => { setShowWhatsAppModal(false); setWaError(''); }} title="Connect WhatsApp (Twilio)">
-        <div className="space-y-4">
-          <p className="text-text-secondary text-sm">
-            Create a <a href="https://www.twilio.com/try-twilio" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Twilio account</a>, enable the WhatsApp sandbox, and paste your credentials below.
-          </p>
-          <Input
-            label="Account SID"
-            value={waAccountSid}
-            onChange={(e) => setWaAccountSid(e.target.value)}
-            placeholder="ACxxxxxxxxxxxxx"
-          />
-          <Input
-            label="Auth Token"
-            type="password"
-            value={waAuthToken}
-            onChange={(e) => setWaAuthToken(e.target.value)}
-            placeholder="Your Twilio auth token"
-          />
-          <Input
-            label="WhatsApp Number"
-            value={waNumber}
-            onChange={(e) => setWaNumber(e.target.value)}
-            placeholder="+14155238886 (sandbox number)"
-          />
-          {waError && <p className="text-sm text-red-400">{waError}</p>}
-          <Button
-            onClick={() => connectWhatsAppMutation.mutate({ account_sid: waAccountSid, auth_token: waAuthToken, whatsapp_number: waNumber })}
-            disabled={!waAccountSid || !waAuthToken || !waNumber || connectWhatsAppMutation.isPending}
-            className="w-full"
-          >
-            {connectWhatsAppMutation.isPending ? <Spinner size="sm" className="mr-2" /> : null}
-            Connect WhatsApp
-          </Button>
-        </div>
-      </Modal>
+  return (
+    <div>
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.5px', marginBottom: '4px' }}>Settings</h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Manage your workspace, integrations, and security</p>
+      </div>
 
-      <Modal open={showTelegramModal} onClose={() => { setShowTelegramModal(false); setTelegramError(''); }} title="Connect Telegram Bot">
-        <div className="space-y-4">
-          <p className="text-text-secondary text-sm">
-            Create a bot via <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">@BotFather</a> on Telegram, then paste the bot token below.
-          </p>
-          <Input
-            label="Bot Token"
-            type="password"
-            value={telegramBotToken}
-            onChange={(e) => setTelegramBotToken(e.target.value)}
-            placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
-          />
-          {telegramError && <p className="text-sm text-red-400">{telegramError}</p>}
-          <Button
-            onClick={() => connectTelegramMutation.mutate({ bot_token: telegramBotToken })}
-            disabled={!telegramBotToken || connectTelegramMutation.isPending}
-            className="w-full"
-          >
-            {connectTelegramMutation.isPending ? <Spinner size="sm" className="mr-2" /> : null}
-            Connect Bot
-          </Button>
-        </div>
-      </Modal>
-
-      <Modal open={showConnectModal} onClose={() => { setShowConnectModal(false); setConnectError(''); setNewApiKey(''); }} title="Connect Provider">
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-text-secondary">Provider</label>
-            <select
-              value={newProvider}
-              onChange={(e) => { setNewProvider(e.target.value); setNewApiKey(e.target.value === 'ollama' ? 'http://localhost:11434' : ''); }}
-              className="w-full px-4 py-2.5 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', padding: '4px', backgroundColor: 'var(--surface-elevated)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+        {tabs.map((tab) => {
+          const TabIcon = tab.icon;
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                padding: '10px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
+                cursor: 'pointer', border: 'none', transition: 'all 150ms',
+                backgroundColor: isActive ? 'var(--card)' : 'transparent',
+                color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
+                boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
+              }}
             >
-              <option value="openai">OpenAI</option>
-              <option value="anthropic">Anthropic</option>
-              <option value="google">Google (Gemini)</option>
-              <option value="mistral">Mistral</option>
-              <option value="groq">Groq</option>
-              <option value="ollama">Ollama (Local LLM)</option>
-            </select>
-          </div>
-          {newProvider === 'ollama' ? (
-            <div className="space-y-2">
-              <Input
-                label="Ollama Host URL"
-                value={newApiKey}
-                onChange={(e) => setNewApiKey(e.target.value)}
-                placeholder="http://localhost:11434"
-              />
-              <p className="text-xs text-text-muted">Ollama must be running on your machine. Install with: <code className="bg-[var(--surface-elevated)] px-1 rounded">brew install ollama</code></p>
-            </div>
-          ) : (
-            <Input
-              label="API Key"
-              type="password"
-              value={newApiKey}
-              onChange={(e) => setNewApiKey(e.target.value)}
-              placeholder="sk-..."
-            />
-          )}
-          {connectError && <p className="text-sm text-red-400">{connectError}</p>}
-          <Button
-            onClick={() => connectMutation.mutate({ provider: newProvider, api_key: newApiKey })}
-            disabled={!newApiKey || connectMutation.isPending}
-            className="w-full"
-          >
-            {connectMutation.isPending ? <Spinner size="sm" className="mr-2" /> : null}
-            Connect
-          </Button>
-        </div>
-      </Modal>
+              <TabIcon size={14} />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
 
-      <Modal open={showNewTagModal} onClose={() => { setShowNewTagModal(false); setNewTagName(''); setNewTagColor('#2563eb'); }} title="New Tag">
-        <div className="space-y-4">
-          <Input
-            label="Tag name"
-            value={newTagName}
-            onChange={(e) => setNewTagName(e.target.value)}
-            placeholder="e.g. bug, frontend, urgent"
-          />
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-text-primary">Colour</label>
-            <div className="flex flex-wrap gap-2">
-              {TAG_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setNewTagColor(c)}
-                  className={`w-7 h-7 rounded-full border-2 transition-all ${newTagColor === c ? 'border-gray-800 scale-110' : 'border-transparent hover:scale-105'}`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-              <input
-                type="color"
-                value={newTagColor}
-                onChange={(e) => setNewTagColor(e.target.value)}
-                className="w-7 h-7 rounded-full cursor-pointer border-0 bg-transparent"
-                title="Custom colour"
-              />
-            </div>
-            <div className="flex items-center gap-2 mt-1">
-              <span
-                className="inline-flex items-center rounded border text-xs px-2 py-0.5 font-medium"
-                style={{ backgroundColor: newTagColor + '20', color: newTagColor, borderColor: newTagColor + '40' }}
+      {activeTab === 'general' && renderGeneral()}
+      {activeTab === 'integrations' && renderIntegrations()}
+      {activeTab === 'security' && renderSecurity()}
+      {activeTab === 'notifications' && renderNotifications()}
+
+      {showConnectModal && (
+        <Modal title="Connect Provider" onClose={() => { setShowConnectModal(false); setConnectError(''); }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px' }}>Provider</label>
+              <select
+                value={newProvider}
+                onChange={(e) => setNewProvider(e.target.value)}
+                style={{ width: '100%', padding: '9px 12px', backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', outline: 'none' }}
               >
-                {newTagName || 'Preview'}
-              </span>
+                {Object.entries(PROVIDER_ICONS).map(([key, info]) => (
+                  <option key={key} value={key}>{info.label}</option>
+                ))}
+              </select>
             </div>
+            <InputField label="API Key" value={newApiKey} onChange={setNewApiKey} placeholder="sk-..." type="password" />
+            {connectError && <p style={{ fontSize: '12px', color: '#FF453A' }}>{connectError}</p>}
+            <ActionButton variant="primary" fullWidth onClick={() => connectMutation.mutate({ provider: newProvider, api_key: newApiKey })} disabled={!newApiKey || connectMutation.isPending}>
+              {connectMutation.isPending ? <Spinner /> : <Key size={14} />} Connect
+            </ActionButton>
           </div>
-          <Button
-            onClick={() => createTagMutation.mutate({ name: newTagName, color: newTagColor })}
-            disabled={!newTagName.trim() || createTagMutation.isPending}
-            className="w-full"
-          >
-            {createTagMutation.isPending ? <Spinner size="sm" className="mr-2" /> : null}
-            Create Tag
-          </Button>
-        </div>
-      </Modal>
+        </Modal>
+      )}
 
-      <Modal open={showNewTokenModal} onClose={() => { setShowNewTokenModal(false); setNewTokenName(''); setNewTokenExpiry(''); }} title="New API Token">
-        <div className="space-y-4">
-          <p className="text-text-secondary text-sm">
-            Give this token a descriptive name so you know what it's used for. Once created, the token will be shown once — copy it immediately.
-          </p>
-          <Input
-            label="Token name"
-            value={newTokenName}
-            onChange={(e) => setNewTokenName(e.target.value)}
-            placeholder="e.g. CI/CD pipeline, Zapier automation"
-          />
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-text-primary">Expiry (optional)</label>
-            <select
-              value={newTokenExpiry}
-              onChange={(e) => setNewTokenExpiry(e.target.value)}
-              className="w-full px-4 py-2.5 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent"
-            >
-              <option value="">Never expires</option>
-              <option value="30">30 days</option>
-              <option value="90">90 days</option>
-              <option value="365">1 year</option>
-            </select>
+      {showWebhookModal && (
+        <Modal title="Add Webhook" onClose={() => { setShowWebhookModal(false); setWebhookError(''); }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <InputField label="URL" value={webhookUrl} onChange={setWebhookUrl} placeholder="https://your-server.com/webhook" />
+            <InputField label="Secret (optional)" value={webhookSecret} onChange={setWebhookSecret} placeholder="Optional signing secret" />
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px' }}>Events</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {WEBHOOK_EVENTS.map((ev) => {
+                  const selected = webhookEvents.includes(ev);
+                  return (
+                    <button
+                      key={ev}
+                      onClick={() => setWebhookEvents(selected ? webhookEvents.filter(e => e !== ev) : [...webhookEvents, ev])}
+                      style={{
+                        padding: '5px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 500, cursor: 'pointer',
+                        border: '1px solid', transition: 'all 150ms',
+                        backgroundColor: selected ? 'rgba(59,130,246,0.1)' : 'var(--surface-elevated)',
+                        borderColor: selected ? 'rgba(59,130,246,0.3)' : 'var(--border)',
+                        color: selected ? '#60A5FA' : 'var(--text-muted)',
+                      }}
+                    >
+                      {ev}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {webhookError && <p style={{ fontSize: '12px', color: '#FF453A' }}>{webhookError}</p>}
+            <ActionButton variant="primary" fullWidth onClick={() => createWebhookMutation.mutate({ url: webhookUrl, events: webhookEvents, secret: webhookSecret || undefined })} disabled={!webhookUrl || webhookEvents.length === 0 || createWebhookMutation.isPending}>
+              {createWebhookMutation.isPending ? <Spinner /> : <Webhook size={14} />} Create Webhook
+            </ActionButton>
           </div>
-          <Button
-            onClick={() => createTokenMutation.mutate({
-              name: newTokenName,
-              ...(newTokenExpiry ? { expires_in_days: parseInt(newTokenExpiry) } : {}),
-            })}
-            disabled={!newTokenName.trim() || createTokenMutation.isPending}
-            className="w-full"
-          >
-            {createTokenMutation.isPending ? <Spinner size="sm" className="mr-2" /> : null}
-            Create Token
-          </Button>
-        </div>
-      </Modal>
+        </Modal>
+      )}
+
+      {showTelegramModal && (
+        <Modal title="Connect Telegram Bot" onClose={() => { setShowTelegramModal(false); setTelegramError(''); }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              1. Message @BotFather on Telegram{'\n'}
+              2. Create a new bot with /newbot{'\n'}
+              3. Paste the bot token below
+            </p>
+            <InputField label="Bot Token" value={telegramBotToken} onChange={setTelegramBotToken} placeholder="123456:ABC-DEF..." />
+            {telegramError && <p style={{ fontSize: '12px', color: '#FF453A' }}>{telegramError}</p>}
+            <ActionButton variant="primary" fullWidth onClick={() => connectTelegramMutation.mutate({ bot_token: telegramBotToken })} disabled={!telegramBotToken || connectTelegramMutation.isPending}>
+              {connectTelegramMutation.isPending ? <Spinner /> : <MessageCircle size={14} />} Connect
+            </ActionButton>
+          </div>
+        </Modal>
+      )}
+
+      {showWhatsAppModal && (
+        <Modal title="Connect WhatsApp (Twilio)" onClose={() => { setShowWhatsAppModal(false); setWaError(''); }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <InputField label="Account SID" value={waAccountSid} onChange={setWaAccountSid} placeholder="ACxxxxxxxx" />
+            <InputField label="Auth Token" value={waAuthToken} onChange={setWaAuthToken} placeholder="Your Twilio auth token" type="password" />
+            <InputField label="WhatsApp Number" value={waNumber} onChange={setWaNumber} placeholder="+14155238886" />
+            {waError && <p style={{ fontSize: '12px', color: '#FF453A' }}>{waError}</p>}
+            <ActionButton variant="primary" fullWidth onClick={() => connectWhatsAppMutation.mutate({ account_sid: waAccountSid, auth_token: waAuthToken, whatsapp_number: waNumber })} disabled={!waAccountSid || !waAuthToken || !waNumber || connectWhatsAppMutation.isPending}>
+              {connectWhatsAppMutation.isPending ? <Spinner /> : <MessageCircle size={14} />} Connect
+            </ActionButton>
+          </div>
+        </Modal>
+      )}
+
+      {showNewTagModal && (
+        <Modal title="New Tag" onClose={() => setShowNewTagModal(false)}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <InputField label="Name" value={newTagName} onChange={setNewTagName} placeholder="e.g. urgent, design, backend" />
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px' }}>Color</label>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {TAG_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setNewTagColor(c)}
+                    style={{
+                      width: '28px', height: '28px', borderRadius: '8px', backgroundColor: c, border: newTagColor === c ? '2px solid var(--text-primary)' : '2px solid transparent',
+                      cursor: 'pointer', transition: 'border-color 150ms',
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+            <ActionButton variant="primary" fullWidth onClick={() => createTagMutation.mutate({ name: newTagName, color: newTagColor })} disabled={!newTagName || createTagMutation.isPending}>
+              <Tag size={14} /> Create Tag
+            </ActionButton>
+          </div>
+        </Modal>
+      )}
+
+      {showNewTokenModal && (
+        <Modal title="New API Token" onClose={() => setShowNewTokenModal(false)}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <InputField label="Name" value={newTokenName} onChange={setNewTokenName} placeholder="e.g. CI/CD, Automation Script" />
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px' }}>Expires in (days, optional)</label>
+              <input
+                type="number"
+                value={newTokenExpiry}
+                onChange={(e) => setNewTokenExpiry(e.target.value)}
+                placeholder="e.g. 90 (leave blank for no expiry)"
+                style={{ width: '100%', padding: '9px 12px', backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', outline: 'none' }}
+              />
+            </div>
+            <ActionButton variant="primary" fullWidth onClick={() => {
+              const expiryDays = newTokenExpiry ? parseInt(newTokenExpiry, 10) : undefined;
+              createTokenMutation.mutate({ name: newTokenName, expires_in_days: expiryDays });
+            }} disabled={!newTokenName || createTokenMutation.isPending}>
+              <Key size={14} /> Create Token
+            </ActionButton>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
