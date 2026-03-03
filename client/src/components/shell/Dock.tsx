@@ -5,7 +5,7 @@ import {
   Clock, DollarSign, Settings, History, Search,
   BarChart3, Calendar, Terminal, FileText, Zap,
   Server, ShieldCheck, HelpCircle, CreditCard, Columns3,
-  LogOut, Palette, ChevronRight, User,
+  LogOut, Palette, ChevronRight,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiGet } from '../../api/client';
@@ -94,9 +94,9 @@ export function Dock() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const initials = user?.name
-    ? user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
-    : user?.email?.slice(0, 2).toUpperCase() || 'SJ';
+  const initial = user?.name
+    ? user.name.charAt(0).toUpperCase()
+    : user?.email?.charAt(0).toUpperCase() || 'U';
 
   return (
     <aside
@@ -223,61 +223,75 @@ export function Dock() {
         ))}
       </div>
 
-      <div style={{ width: '100%', borderTop: '1px solid var(--border)', padding: '8px 0', position: 'relative' }} ref={menuRef}>
+      <div style={{ width: '100%', position: 'relative', padding: '6px 0 10px' }} ref={menuRef}>
         <button
           onClick={() => { setShowUserMenu(!showUserMenu); setShowThemePicker(false); }}
           style={{
             width: '100%',
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '3px',
-            padding: '8px 0',
+            padding: 0,
             background: 'none',
             border: 'none',
             cursor: 'pointer',
           }}
         >
           <div style={{
-            width: '32px',
-            height: '32px',
+            width: '36px',
+            height: '36px',
             borderRadius: '50%',
-            backgroundColor: 'var(--accent-soft)',
-            border: '2px solid var(--accent)',
+            backgroundColor: '#333',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '11px',
-            fontWeight: 700,
-            color: 'var(--accent)',
-            transition: 'transform 150ms',
+            fontSize: '15px',
+            fontWeight: 600,
+            fontFamily: 'var(--font-heading)',
+            color: '#fff',
+            transition: 'opacity 150ms',
+            userSelect: 'none',
           }}>
-            {initials}
+            {initial}
           </div>
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: '8px', fontWeight: 500, color: 'var(--text-muted)', maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {user?.name?.split(' ')[0] || 'Account'}
-          </span>
         </button>
 
         {showUserMenu && (
           <div style={{
             position: 'absolute',
-            bottom: '100%',
+            bottom: '8px',
             left: '72px',
-            marginBottom: '-50px',
-            width: '220px',
+            width: '240px',
             backgroundColor: 'var(--card)',
             border: '1px solid var(--border)',
             borderRadius: '12px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
             overflow: 'hidden',
             zIndex: 200,
           }}>
             <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
-              <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{user?.name || 'User'}</p>
-              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{user?.email}</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  backgroundColor: '#333',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#fff',
+                  flexShrink: 0,
+                }}>
+                  {initial}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.name || 'User'}</p>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
                 <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 600, backgroundColor: 'var(--accent-soft)', color: 'var(--accent)' }}>{user?.role}</span>
                 {user?.tenantName && <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{user.tenantName}</span>}
               </div>
@@ -317,7 +331,7 @@ export function Dock() {
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
                 <Settings size={15} />
-                <span>Settings</span>
+                <span>Preferences</span>
               </button>
             </div>
 
@@ -343,14 +357,13 @@ export function Dock() {
         {showThemePicker && (
           <div style={{
             position: 'absolute',
-            bottom: '100%',
-            left: '296px',
-            marginBottom: '-50px',
+            bottom: '8px',
+            left: '316px',
             width: '200px',
             backgroundColor: 'var(--card)',
             border: '1px solid var(--border)',
             borderRadius: '12px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
             overflow: 'hidden',
             zIndex: 201,
             padding: '6px',

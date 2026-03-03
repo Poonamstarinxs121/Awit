@@ -15,6 +15,8 @@ interface MachineHealth {
     cpu_usage?: number;
     memory_usage?: number;
     disk_usage?: number;
+    memory_total_gb?: number;
+    memory_used_gb?: number;
   }>;
 }
 
@@ -85,33 +87,43 @@ export function StatusBar() {
     ? Math.round(onlineMachines.reduce((s, m) => s + (m.disk_usage || 0), 0) / onlineMachines.length)
     : null;
 
-  const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-  const dateStr = time.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  const totalMemGb = onlineMachines.length > 0
+    ? onlineMachines.reduce((s, m) => s + (m.memory_total_gb || 16), 0) / onlineMachines.length
+    : null;
+  const usedMemGb = totalMemGb && avgMem !== null ? (avgMem / 100) * totalMemGb : null;
 
   function getBarColor(value: number): string {
-    if (value < 50) return 'var(--positive)';
-    if (value < 80) return 'var(--warning)';
-    return 'var(--negative)';
+    if (value < 50) return '#32D74B';
+    if (value < 80) return '#FFD60A';
+    return '#FF453A';
   }
 
-  function MiniBar({ value, label }: { value: number; label: string }) {
+  function MiniBar({ value, label, suffix }: { value: number; label: string; suffix?: string }) {
+    const color = getBarColor(value);
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', height: '24px' }}>
-        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', minWidth: '28px' }}>{label}</span>
-        <span style={{ fontSize: '10px', fontWeight: 600, color: getBarColor(value), fontFamily: 'var(--font-mono)', minWidth: '24px' }}>{value}%</span>
-        <div style={{ width: '40px', height: '4px', backgroundColor: 'var(--border)', borderRadius: '2px', overflow: 'hidden' }}>
-          <div style={{ width: `${value}%`, height: '100%', backgroundColor: getBarColor(value), borderRadius: '2px', transition: 'width 300ms' }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{label}</span>
+        <span style={{ fontSize: '10px', fontWeight: 600, color, fontFamily: 'var(--font-mono)' }}>{suffix || `${value}%`}</span>
+        <div style={{ width: '48px', height: '4px', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: '2px', overflow: 'hidden' }}>
+          <div style={{ width: `${Math.min(value, 100)}%`, height: '100%', backgroundColor: color, borderRadius: '2px', transition: 'width 300ms' }} />
         </div>
       </div>
     );
   }
 
-  const Metric = ({ label, value, color }: { label: string; value: string | number; color?: string }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', height: '24px' }}>
-      <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{label}:</span>
-      <span style={{ fontSize: '10px', fontWeight: 600, color: color || 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{value}</span>
-    </div>
-  );
+  function StatusIndicator({ label, active }: { label: string; active: boolean }) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div style={{
+          width: '6px',
+          height: '6px',
+          borderRadius: '50%',
+          backgroundColor: active ? '#32D74B' : '#FF453A',
+        }} />
+        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{label}</span>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -137,42 +149,58 @@ export function StatusBar() {
             width: '6px',
             height: '6px',
             borderRadius: '50%',
-            backgroundColor: connected ? 'var(--positive)' : 'var(--negative)',
-            boxShadow: connected ? '0 0 4px var(--positive)' : '0 0 4px var(--negative)',
+            backgroundColor: connected ? '#32D74B' : '#FF453A',
+            boxShadow: connected ? '0 0 6px rgba(50,215,75,0.5)' : '0 0 6px rgba(255,69,58,0.5)',
           }} />
-          <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-            {connected ? 'connected' : 'disconnected'}
-          </span>
         </div>
 
-        {stats && (
+        {(avgCpu !== null || avgMem !== null || avgDisk !== null) && (
           <>
-            <Metric label="agents" value={`${stats.agents?.online || 0}/${stats.agents?.total || 0}`} color="var(--positive)" />
-            <Metric label="active" value={stats.tasks?.active || 0} color="var(--info)" />
+            {avgCpu !== null && <MiniBar value={avgCpu} label="CPU" />}
+            {avgMem !== null && (
+              <MiniBar
+                value={avgMem}
+                label="RAM"
+                suffix={usedMemGb !== null && totalMemGb !== null
+                  ? `${usedMemGb.toFixed(1)}/${totalMemGb.toFixed(0)}GB`
+                  : `${avgMem}%`}
+              />
+            )}
+            {avgDisk !== null && <MiniBar value={avgDisk} label="DISK" />}
+            <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--border)' }} />
           </>
         )}
 
+        <StatusIndicator label="VPN" active={false} />
+        <StatusIndicator label="UFW" active={true} />
+
         {totalMachines > 0 && (
-          <>
-            <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--border)' }} />
-            {avgCpu !== null && <MiniBar value={avgCpu} label="CPU" />}
-            {avgMem !== null && <MiniBar value={avgMem} label="RAM" />}
-            {avgDisk !== null && <MiniBar value={avgDisk} label="DSK" />}
-            <Metric label="SVC" value={`${onlineMachines.length}/${totalMachines}`} color={onlineMachines.length === totalMachines ? 'var(--positive)' : 'var(--warning)'} />
-          </>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>SVC:</span>
+            <span style={{ fontSize: '10px', fontWeight: 600, color: onlineMachines.length === totalMachines ? '#32D74B' : '#FFD60A', fontFamily: 'var(--font-mono)' }}>
+              {onlineMachines.length}/{totalMachines}
+            </span>
+          </div>
         )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Uptime:</span>
+          <span style={{ fontSize: '10px', fontWeight: 500, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{uptime}</span>
+        </div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-        <Metric label="Uptime" value={uptime} />
+        {stats && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>agents:</span>
+            <span style={{ fontSize: '10px', fontWeight: 600, color: '#32D74B', fontFamily: 'var(--font-mono)' }}>{stats.agents?.online || 0}/{stats.agents?.total || 0}</span>
+          </div>
+        )}
         {user?.tenantName && (
           <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
             {user.tenantName}
           </span>
         )}
-        <span style={{ fontSize: '10px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
-          {dateStr} · {timeStr}
-        </span>
       </div>
     </div>
   );
