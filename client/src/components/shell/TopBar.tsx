@@ -55,18 +55,6 @@ export function TopBar({ dockWidth = 68 }: { dockWidth?: number }) {
       }}
     >
       <div className="flex items-center gap-3">
-        <span style={{ fontSize: '18px' }}>🦑</span>
-        <span
-          style={{
-            fontFamily: 'var(--font-heading)',
-            fontSize: '15px',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            letterSpacing: '-0.5px',
-          }}
-        >
-          SquidJob
-        </span>
         <div
           style={{
             backgroundColor: 'var(--accent-soft)',
