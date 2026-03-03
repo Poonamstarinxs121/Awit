@@ -78,7 +78,7 @@ export function Subscription() {
 
   return (
     <div className="min-h-screen bg-brand-bg">
-      <nav className="w-full border-b border-border-default bg-white/80 backdrop-blur-sm">
+      <nav className="w-full border-b border-[var(--border)] bg-[var(--card)]/80 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-brand-accent flex items-center justify-center">
@@ -115,7 +115,7 @@ export function Subscription() {
         {loadingSub ? (
           <div className="flex justify-center py-8"><Spinner size="lg" /></div>
         ) : subscription ? (
-          <div className="bg-white border border-border-default rounded-xl p-6 shadow-sm">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-text-secondary">Current Plan</p>
@@ -129,7 +129,7 @@ export function Subscription() {
               <div className="flex items-center gap-3">
                 <span className={`px-3 py-1 rounded-full text-sm font-medium border ${
                   subscription.status === 'active' ? 'bg-green-50 text-green-700 border-green-200' :
-                  subscription.status === 'canceled' ? 'bg-red-50 text-red-700 border-red-200' :
+                  subscription.status === 'canceled' ? 'bg-[rgba(255,59,48,0.1)] text-[var(--negative)] border-[rgba(255,59,48,0.3)]' :
                   'bg-yellow-50 text-yellow-700 border-yellow-200'
                 }`}>
                   {subscription.status}
@@ -138,7 +138,7 @@ export function Subscription() {
                   <button
                     onClick={handlePortal}
                     disabled={portalLoading}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-60"
+                    className="flex items-center gap-2 px-4 py-2 bg-[var(--card)] hover:bg-[var(--surface-hover)] text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-60"
                   >
                     {portalLoading ? <Spinner size="sm" /> : <ExternalLink size={14} />}
                     Manage Billing
@@ -164,8 +164,8 @@ export function Subscription() {
                 return (
                   <div
                     key={planKey}
-                    className={`bg-white rounded-xl border p-6 space-y-5 transition-shadow ${
-                      isCurrent ? 'border-brand-accent shadow-md ring-1 ring-brand-accent/20' : 'border-border-default hover:shadow-md'
+                    className={`bg-[var(--card)] rounded-xl border p-6 space-y-5 transition-shadow ${
+                      isCurrent ? 'border-brand-accent shadow-md ring-1 ring-brand-accent/20' : 'border-[var(--border)] hover:shadow-md'
                     }`}
                   >
                     <div className="space-y-2">
@@ -173,12 +173,12 @@ export function Subscription() {
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                           planKey === 'starter' ? 'bg-blue-50' :
                           planKey === 'professional' ? 'bg-purple-50' :
-                          'bg-gray-100'
+                          'bg-[var(--surface-elevated)]'
                         }`}>
                           <Icon size={20} className={
                             planKey === 'starter' ? 'text-brand-accent' :
                             planKey === 'professional' ? 'text-purple-600' :
-                            'text-gray-600'
+                            'text-[var(--text-secondary)]'
                           } />
                         </div>
                         {isCurrent && (
@@ -203,14 +203,14 @@ export function Subscription() {
                     {isEnterprise ? (
                       <a
                         href="mailto:hello@squidjob.com?subject=Enterprise Plan Inquiry"
-                        className="block w-full text-center px-4 py-2.5 rounded-lg border border-border-default text-text-primary hover:bg-surface-light transition-colors text-sm font-medium"
+                        className="block w-full text-center px-4 py-2.5 rounded-lg border border-[var(--border)] text-text-primary hover:bg-[var(--surface-elevated)] transition-colors text-sm font-medium"
                       >
                         Contact Sales
                       </a>
                     ) : isCurrent ? (
                       <button
                         disabled
-                        className="w-full px-4 py-2.5 rounded-lg bg-surface-light text-text-muted text-sm font-medium cursor-default border border-border-default"
+                        className="w-full px-4 py-2.5 rounded-lg bg-[var(--surface-elevated)] text-text-muted text-sm font-medium cursor-default border border-[var(--border)]"
                       >
                         Current Plan
                       </button>
@@ -239,7 +239,7 @@ export function Subscription() {
           </div>
         )}
 
-        <div className="bg-surface-light border border-border-default rounded-xl p-6 space-y-2">
+        <div className="bg-[var(--surface-elevated)] border border-[var(--border)] rounded-xl p-6 space-y-2">
           <h3 className="font-semibold text-text-primary">Bring Your Own Keys</h3>
           <p className="text-sm text-text-secondary">
             Your AI agents run on your own LLM API keys — OpenAI, Anthropic, Gemini, Groq, Mistral, or local Ollama. SquidJob charges for the platform, not for AI token usage. Configure your keys in{' '}

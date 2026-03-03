@@ -25,6 +25,22 @@ import { Machines } from './pages/Machines';
 import { Approvals } from './pages/Approvals';
 import { BoardGroups } from './pages/BoardGroups';
 import { Activity } from './pages/Activity';
+import { SystemMonitor } from './pages/SystemMonitor';
+import { SessionsPage } from './pages/SessionsPage';
+import { CostsPage } from './pages/CostsPage';
+import { AnalyticsPage } from './pages/AnalyticsPage';
+import { CalendarPage } from './pages/CalendarPage';
+import { LogsPage } from './pages/LogsPage';
+import { TerminalPage } from './pages/TerminalPage';
+import { FilesPage } from './pages/FilesPage';
+import { SkillsPage } from './pages/SkillsPage';
+import { WorkflowsPage } from './pages/WorkflowsPage';
+import { SearchPage } from './pages/SearchPage';
+import { ReportsPage } from './pages/ReportsPage';
+import { GitPage } from './pages/GitPage';
+import { ActionsPage } from './pages/ActionsPage';
+import { AboutPage } from './pages/AboutPage';
+import { CronPage } from './pages/CronPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -70,6 +86,23 @@ export default function App() {
               <Route path="/activity" element={<Activity />} />
               <Route path="/approvals" element={<Approvals />} />
               <Route path="/help" element={<HelpCenter />} />
+              <Route path="/system" element={<SystemMonitor />} />
+              <Route path="/sessions" element={<SessionsPage />} />
+              <Route path="/costs" element={<CostsPage />} />
+              <Route path="/analytics" element={<AnalyticsPage />} />
+              <Route path="/calendar" element={<CalendarPage />} />
+              <Route path="/logs" element={<LogsPage />} />
+              <Route path="/terminal" element={<TerminalPage />} />
+              <Route path="/files" element={<FilesPage />} />
+              <Route path="/skills" element={<SkillsPage />} />
+              <Route path="/workflows" element={<WorkflowsPage />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/reports" element={<ReportsPage />} />
+              <Route path="/git" element={<GitPage />} />
+              <Route path="/actions" element={<ActionsPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/cron" element={<CronPage />} />
+              <Route path="/memory" element={<MemoryGraph />} />
             </Route>
           </Routes>
         </BrowserRouter>

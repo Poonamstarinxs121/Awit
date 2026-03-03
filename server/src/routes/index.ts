@@ -25,12 +25,24 @@ import tagsRoutes from './tags.js';
 import apiTokensRoutes from './apiTokens.js';
 import billingRoutes from './billing.js';
 import adminRoutes from './admin.js';
+import systemRoutes from './system.js';
+import analyticsRoutes from './analytics.js';
+import sessionsRoutes from './sessions.js';
+import weatherRoutes from './weather.js';
+import healthRoutes from './health.js';
 
 const router = Router();
 
 router.use('/auth', authRoutes);
 
 router.use('/v1/whatsapp', whatsappWebhookRouter);
+
+router.use('/health', healthRoutes);
+router.use('/v1/health', healthRoutes);
+router.use('/v1/weather', authMiddleware, tenantMiddleware, weatherRoutes);
+router.use('/v1/system', authMiddleware, tenantMiddleware, systemRoutes);
+router.use('/v1/sessions', authMiddleware, tenantMiddleware, sessionsRoutes);
+router.use('/v1/analytics', authMiddleware, tenantMiddleware, analyticsRoutes);
 
 router.use('/v1/agents', authMiddleware, tenantMiddleware, agentsRoutes);
 router.use('/v1/tasks', authMiddleware, tenantMiddleware, tasksRoutes);

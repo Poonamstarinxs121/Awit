@@ -67,7 +67,7 @@ function ApprovalCard({ approval, onDecision }: { approval: Approval; onDecision
   const isExpired = approval.status === 'expired';
 
   return (
-    <div className="bg-white border border-border-default rounded-xl p-5 space-y-3 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 space-y-3 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1 flex-1 min-w-0">
           <h3 className="font-semibold text-text-primary font-heading">{approval.title}</h3>
@@ -80,7 +80,7 @@ function ApprovalCard({ approval, onDecision }: { approval: Approval; onDecision
             {ACTION_TYPE_LABELS[approval.action_type] ?? approval.action_type}
           </span>
           {isExpired && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-text-muted text-xs font-medium">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--surface-elevated)] text-text-muted text-xs font-medium">
               Expired
             </span>
           )}
@@ -88,7 +88,7 @@ function ApprovalCard({ approval, onDecision }: { approval: Approval; onDecision
       </div>
 
       {approval.payload && (
-        <div className="bg-slate-50 rounded-lg border border-border-default p-3">
+        <div className="bg-[var(--surface-elevated)] rounded-lg border border-[var(--border)] p-3">
           <pre className="text-xs text-text-secondary overflow-auto max-h-24 whitespace-pre-wrap">
             {JSON.stringify(approval.payload, null, 2)}
           </pre>
@@ -120,7 +120,7 @@ function ApprovalCard({ approval, onDecision }: { approval: Approval; onDecision
             <Button
               size="sm"
               variant="secondary"
-              className="text-danger border-red-200 hover:bg-red-50"
+              className="text-danger border-[rgba(255,59,48,0.3)] hover:bg-[rgba(255,59,48,0.1)]"
               onClick={() => onDecision(approval.id, 'rejected')}
             >
               <XCircle size={14} className="mr-1" />
@@ -186,14 +186,14 @@ export function Approvals() {
         </div>
       </div>
 
-      <div className="flex gap-1 bg-surface-light p-1 rounded-lg w-fit border border-border-default">
+      <div className="flex gap-1 bg-[var(--surface-elevated)] p-1 rounded-lg w-fit border border-[var(--border)]">
         {TABS.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
               activeTab === tab
-                ? 'bg-white text-text-primary shadow-sm border border-border-default'
+                ? 'bg-[var(--card)] text-text-primary shadow-sm border border-[var(--border)]'
                 : 'text-text-secondary hover:text-text-primary'
             }`}
           >
@@ -207,7 +207,7 @@ export function Approvals() {
           <Spinner />
         </div>
       ) : displayApprovals.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-48 text-center bg-white border border-border-default rounded-xl">
+        <div className="flex flex-col items-center justify-center h-48 text-center bg-[var(--card)] border border-[var(--border)] rounded-xl">
           <ShieldCheck size={40} className="text-text-muted mb-3" />
           <p className="font-medium text-text-primary">No {TAB_LABELS[activeTab].toLowerCase()} approvals</p>
           <p className="text-sm text-text-secondary mt-1">

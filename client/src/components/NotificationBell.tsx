@@ -83,8 +83,8 @@ export function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-border-default rounded-lg shadow-xl z-50 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border-default">
+        <div className="absolute right-0 top-full mt-2 w-80 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-xl z-50 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
             <h3 className="text-sm font-semibold text-text-primary">Notifications</h3>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
@@ -115,7 +115,7 @@ export function NotificationBell() {
               notifications.map((notif) => (
                 <div
                   key={notif.id}
-                  className={`px-4 py-3 border-b border-border-default last:border-b-0 hover:bg-surface-light transition-colors ${
+                  className={`px-4 py-3 border-b border-[var(--border)] last:border-b-0 hover:bg-[var(--surface-elevated)] transition-colors ${
                     !notif.is_read ? 'bg-brand-accent/5' : ''
                   }`}
                 >

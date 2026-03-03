@@ -32,7 +32,7 @@ const DOC_TYPES: { key: FilterType; label: string; icon: typeof FileText; color:
   { key: 'research', label: 'Research', icon: Microscope, color: 'text-green-600' },
   { key: 'protocol', label: 'Protocol', icon: ScrollText, color: 'text-amber-600' },
   { key: 'checklist', label: 'Checklist', icon: CheckSquare, color: 'text-teal-600' },
-  { key: 'note', label: 'Note', icon: StickyNote, color: 'text-gray-600' },
+  { key: 'note', label: 'Note', icon: StickyNote, color: 'text-[var(--text-secondary)]' },
 ];
 
 function getDocIcon(type: DocType) {
@@ -199,14 +199,14 @@ export function Documents() {
           <div className="flex items-center gap-2">
             <button
               onClick={openEdit}
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary border border-border-default rounded-lg transition-colors"
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary border border-[var(--border)] rounded-lg transition-colors"
             >
               <Pencil size={14} />
               Edit
             </button>
             <button
               onClick={() => setDeleteConfirm(selectedDoc.id)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 hover:text-red-700 border border-red-200 rounded-lg transition-colors"
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-[var(--negative)] hover:text-[var(--negative)] border border-[rgba(255,59,48,0.3)] rounded-lg transition-colors"
             >
               <Trash2 size={14} />
               Delete
@@ -228,7 +228,7 @@ export function Documents() {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 text-sm text-text-secondary border border-border-default rounded-lg hover:bg-surface-light transition-colors"
+                className="px-4 py-2 text-sm text-text-secondary border border-[var(--border)] rounded-lg hover:bg-[var(--surface-elevated)] transition-colors"
               >
                 Cancel
               </button>
@@ -267,7 +267,7 @@ export function Documents() {
                 type="text"
                 value={formTitle}
                 onChange={(e) => setFormTitle(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                className="w-full px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
               />
             </div>
             <div>
@@ -275,7 +275,7 @@ export function Documents() {
               <select
                 value={formType}
                 onChange={(e) => setFormType(e.target.value as DocType)}
-                className="w-full px-3 py-2 bg-white border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                className="w-full px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
               >
                 {DOC_TYPES.filter(d => d.key !== 'all').map(dt => (
                   <option key={dt.key} value={dt.key}>{dt.label}</option>
@@ -288,7 +288,7 @@ export function Documents() {
                 value={formContent}
                 onChange={(e) => setFormContent(e.target.value)}
                 rows={12}
-                className="w-full px-3 py-2 bg-white border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent resize-y"
+                className="w-full px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent resize-y"
               />
             </div>
             <div>
@@ -298,13 +298,13 @@ export function Documents() {
                 value={formTaskId}
                 onChange={(e) => setFormTaskId(e.target.value)}
                 placeholder="Link to a task by ID"
-                className="w-full px-3 py-2 bg-white border border-border-default rounded-lg text-text-primary placeholder-text-muted text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                className="w-full px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
               />
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button
                 onClick={() => setEditing(false)}
-                className="px-4 py-2 text-sm text-text-secondary border border-border-default rounded-lg hover:bg-surface-light transition-colors"
+                className="px-4 py-2 text-sm text-text-secondary border border-[var(--border)] rounded-lg hover:bg-[var(--surface-elevated)] transition-colors"
               >
                 Cancel
               </button>
@@ -346,7 +346,7 @@ export function Documents() {
             placeholder="Search documents..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-white border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent text-sm"
+            className="w-full pl-9 pr-4 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent text-sm"
           />
         </div>
 
@@ -358,7 +358,7 @@ export function Documents() {
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 filter === dt.key
                   ? 'bg-brand-accent text-white'
-                  : 'bg-surface-light text-text-secondary hover:text-text-primary'
+                  : 'bg-[var(--surface-elevated)] text-text-secondary hover:text-text-primary'
               }`}
             >
               {dt.label}
@@ -368,7 +368,7 @@ export function Documents() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm">
+        <div className="bg-[rgba(255,59,48,0.1)] border border-[rgba(255,59,48,0.3)] rounded-lg px-4 py-3 text-[var(--negative)] text-sm">
           {error}
           <button onClick={() => setError(null)} className="ml-2 underline">Dismiss</button>
         </div>
@@ -403,7 +403,7 @@ export function Documents() {
               <Card key={doc.id}>
                 <button
                   onClick={() => setSelectedDoc(doc)}
-                  className="w-full text-left p-4 hover:bg-surface-light transition-colors rounded-lg"
+                  className="w-full text-left p-4 hover:bg-[var(--surface-elevated)] transition-colors rounded-lg"
                 >
                   <div className="flex items-start gap-3">
                     <Icon size={20} className={`${color} mt-0.5 flex-shrink-0`} />
@@ -440,7 +440,7 @@ export function Documents() {
               value={formTitle}
               onChange={(e) => setFormTitle(e.target.value)}
               placeholder="Document title"
-              className="w-full px-3 py-2 bg-white border border-border-default rounded-lg text-text-primary placeholder-text-muted text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
+              className="w-full px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
             />
           </div>
           <div>
@@ -448,7 +448,7 @@ export function Documents() {
             <select
               value={formType}
               onChange={(e) => setFormType(e.target.value as DocType)}
-              className="w-full px-3 py-2 bg-white border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
+              className="w-full px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
             >
               {DOC_TYPES.filter(d => d.key !== 'all').map(dt => (
                 <option key={dt.key} value={dt.key}>{dt.label}</option>
@@ -462,7 +462,7 @@ export function Documents() {
               onChange={(e) => setFormContent(e.target.value)}
               rows={8}
               placeholder="Write your document content..."
-              className="w-full px-3 py-2 bg-white border border-border-default rounded-lg text-text-primary placeholder-text-muted text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent resize-y"
+              className="w-full px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent resize-y"
             />
           </div>
           <div>
@@ -472,13 +472,13 @@ export function Documents() {
               value={formTaskId}
               onChange={(e) => setFormTaskId(e.target.value)}
               placeholder="Link to a task by ID"
-              className="w-full px-3 py-2 bg-white border border-border-default rounded-lg text-text-primary placeholder-text-muted text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
+              className="w-full px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
             />
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button
               onClick={() => setShowCreate(false)}
-              className="px-4 py-2 text-sm text-text-secondary border border-border-default rounded-lg hover:bg-surface-light transition-colors"
+              className="px-4 py-2 text-sm text-text-secondary border border-[var(--border)] rounded-lg hover:bg-[var(--surface-elevated)] transition-colors"
             >
               Cancel
             </button>

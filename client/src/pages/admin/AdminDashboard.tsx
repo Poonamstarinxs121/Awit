@@ -84,7 +84,7 @@ export function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-brand-bg">
-      <nav className="w-full border-b border-border-default bg-white">
+      <nav className="w-full border-b border-[var(--border)] bg-[var(--card)]">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-brand-accent flex items-center justify-center">
@@ -108,13 +108,13 @@ export function AdminDashboard() {
         {loadingUsage ? (
           <div className="grid grid-cols-4 gap-4">
             {[1,2,3,4].map((i) => (
-              <div key={i} className="bg-white rounded-xl border border-border-default p-5 animate-pulse h-24" />
+              <div key={i} className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-5 animate-pulse h-24" />
             ))}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {statCards.map((stat) => (
-              <div key={stat.label} className="bg-white rounded-xl border border-border-default p-5 shadow-sm">
+              <div key={stat.label} className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-5 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.color}`}>
                     <stat.icon size={18} />
@@ -129,8 +129,8 @@ export function AdminDashboard() {
           </div>
         )}
 
-        <div className="bg-white rounded-xl border border-border-default shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-border-default flex items-center justify-between">
+        <div className="bg-[var(--card)] rounded-xl border border-[var(--border)] shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
             <h2 className="text-base font-semibold text-text-primary">Tenants</h2>
             <span className="text-sm text-text-muted">{tenants.length} total</span>
           </div>
@@ -145,7 +145,7 @@ export function AdminDashboard() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-surface-light">
+                  <tr className="bg-[var(--surface-elevated)]">
                     <th className="text-left px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Tenant</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Plan</th>
                     <th className="text-center px-4 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Users</th>
@@ -158,7 +158,7 @@ export function AdminDashboard() {
                 </thead>
                 <tbody className="divide-y divide-border-default">
                   {tenants.map((tenant) => (
-                    <tr key={tenant.id} className="hover:bg-surface-light transition-colors">
+                    <tr key={tenant.id} className="hover:bg-[var(--surface-elevated)] transition-colors">
                       <td className="px-6 py-4">
                         <div>
                           <p className="text-sm font-medium text-text-primary">{tenant.name}</p>
@@ -171,7 +171,7 @@ export function AdminDashboard() {
                             <select
                               defaultValue={tenant.plan}
                               onChange={(e) => updatePlanMutation.mutate({ id: tenant.id, plan: e.target.value })}
-                              className="text-xs px-2 py-1 border border-border-default rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent"
+                              className="text-xs px-2 py-1 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent"
                               autoFocus
                               onBlur={() => setEditingPlanId(null)}
                             >

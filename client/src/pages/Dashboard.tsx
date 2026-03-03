@@ -1,231 +1,108 @@
-import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '../hooks/useAuth';
-import { Card } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
-import { Users, ListTodo, CheckCircle, Activity } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Bot, Zap, CheckCircle, ShieldCheck, Brain, Server, MessageSquare, Columns3, BarChart3, DollarSign, Settings } from 'lucide-react';
+import { StatsCard } from '../components/ui/StatsCard';
+import { SectionHeader } from '../components/ui/SectionHeader';
+import { ActivityFeed } from '../components/ActivityFeed';
 import { apiGet } from '../api/client';
-import type { Agent, Activity as ActivityType, TaskStatus } from '../types';
 
-function relativeTime(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const diff = Math.max(0, now - then);
-  const seconds = Math.floor(diff / 1000);
-  if (seconds < 60) return 'just now';
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} min ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(dateStr).toLocaleDateString();
-}
+interface Stats { total: number; today: number; success: number; error: number; }
+interface Agent { id: string; name: string; emoji?: string; color?: string; status: string; model?: string; }
 
-function formatAction(action: string): string {
-  return action.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-const statusBadgeVariant: Record<string, 'active' | 'idle' | 'error' | 'default'> = {
-  active: 'active',
-  idle: 'idle',
-  error: 'error',
-  disabled: 'idle',
-};
-
-const TASK_STATUSES: { key: TaskStatus; label: string }[] = [
-  { key: 'inbox', label: 'Inbox' },
-  { key: 'assigned', label: 'Assigned' },
-  { key: 'in_progress', label: 'In Progress' },
-  { key: 'waiting_on_human', label: 'Waiting' },
-  { key: 'blocked', label: 'Blocked' },
-  { key: 'review', label: 'Review' },
-  { key: 'done', label: 'Done' },
-  { key: 'archived', label: 'Archived' },
+const quickLinks = [
+  { to: '/agents', label: 'Agents', icon: Bot, color: 'var(--accent)' },
+  { to: '/boards', label: 'Boards', icon: Columns3, color: 'var(--info)' },
+  { to: '/squad-chat', label: 'Chat', icon: MessageSquare, color: 'var(--positive)' },
+  { to: '/memory-graph', label: 'Memory', icon: Brain, color: 'var(--type-command)' },
+  { to: '/machines', label: 'Machines', icon: Server, color: 'var(--type-file)' },
+  { to: '/approvals', label: 'Approvals', icon: ShieldCheck, color: 'var(--warning)' },
+  { to: '/analytics', label: 'Analytics', icon: BarChart3, color: '#FF9500' },
+  { to: '/costs', label: 'Costs', icon: DollarSign, color: 'var(--positive)' },
+  { to: '/settings', label: 'Settings', icon: Settings, color: 'var(--text-muted)' },
 ];
 
 export function Dashboard() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const [stats, setStats] = useState<Stats>({ total: 0, today: 0, success: 0, error: 0 });
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [pendingApprovals, setPendingApprovals] = useState(0);
 
-  const { data: agentsData } = useQuery({
-    queryKey: ['agents'],
-    queryFn: () => apiGet<{ agents: Agent[] }>('/v1/agents'),
-  });
+  useEffect(() => {
+    Promise.all([
+      apiGet<any>('/v1/activity/stats').catch(() => null),
+      apiGet<{ agents: Agent[] }>('/v1/agents').catch(() => ({ agents: [] })),
+      apiGet<{ pending: number }>('/v1/approvals/count').catch(() => ({ pending: 0 })),
+    ]).then(([actStats, agentsData, approvalData]) => {
+      if (actStats) setStats({ total: actStats.total || 0, today: actStats.today || 0, success: actStats.success || 0, error: actStats.error || 0 });
+      setAgents(agentsData?.agents || []);
+      setPendingApprovals(approvalData?.pending || 0);
+    }).catch(console.error);
+  }, []);
 
-  const { data: taskStatsData } = useQuery({
-    queryKey: ['taskStats'],
-    queryFn: () => apiGet<{ stats: { status: TaskStatus; count: number }[] }>('/v1/tasks/stats'),
-  });
-
-  const { data: activityData } = useQuery({
-    queryKey: ['recentActivity'],
-    queryFn: () => apiGet<{ activities: ActivityType[] }>('/v1/activity?limit=10'),
-  });
-
-  const agents = agentsData?.agents ?? [];
-  const taskStats = taskStatsData?.stats ?? [];
-  const activities = activityData?.activities ?? [];
-
-  const taskCountByStatus = taskStats.reduce<Record<string, number>>((acc, s) => {
-    acc[s.status] = s.count;
-    return acc;
-  }, {});
-
-  const totalAgents = agents.length;
-  const activeTasks = taskStats.filter((s) => s.status !== 'done').reduce((sum, s) => sum + s.count, 0);
-  const completedToday = taskCountByStatus['done'] ?? 0;
-  const totalActivity = activities.length;
-
-  const stats = [
-    { label: 'Total Agents', value: totalAgents, icon: Users, color: 'text-blue-600' },
-    { label: 'Active Tasks', value: activeTasks, icon: ListTodo, color: 'text-amber-600' },
-    { label: 'Completed', value: completedToday, icon: CheckCircle, color: 'text-green-600' },
-    { label: 'Activity', value: totalActivity, icon: Activity, color: 'text-purple-600' },
-  ];
-
-  const today = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const onlineAgents = agents.filter(a => a.status === 'online');
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-text-primary">
-          Welcome back, {user?.name || 'Commander'}
+    <div>
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '28px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-1px', marginBottom: '4px' }}>
+          🦑 Mission Control
         </h1>
-        <p className="text-text-secondary mt-1">
-          {user?.tenantName && <span className="text-text-primary font-medium">{user.tenantName}</span>}
-          {user?.tenantName && <span className="mx-2">·</span>}
-          {today}
+        <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
+          Overview of your SquidJob agent workforce
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <Card key={stat.label}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-text-secondary">{stat.label}</p>
-                <p className="text-3xl font-bold text-text-primary mt-1">{stat.value}</p>
-              </div>
-              <stat.icon size={32} className={`${stat.color} opacity-60`} />
-            </div>
-          </Card>
-        ))}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
+        <StatsCard title="Total Agents" value={agents.length} icon={<Bot size={18} />} iconColor="var(--accent)" />
+        <StatsCard title="Today's Events" value={stats.today} icon={<Zap size={18} />} iconColor="var(--info)" />
+        <StatsCard title="Successful" value={stats.success} icon={<CheckCircle size={18} />} iconColor="var(--positive)" />
+        <StatsCard title="Pending Approvals" value={pendingApprovals} icon={<ShieldCheck size={18} />} iconColor="var(--warning)" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card title="Agent Status">
-          {agents.length === 0 ? (
-            <p className="text-text-muted text-sm">No agents configured</p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {agents.map((agent) => (
-                <button
-                  key={agent.id}
-                  onClick={() => navigate(`/agents/${agent.id}`)}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-surface-light/50 hover:bg-surface-light border border-border-default transition-colors text-left w-full"
-                >
-                  <div className="w-9 h-9 rounded-full bg-brand-accent/20 flex items-center justify-center shrink-0">
-                    <span className="text-brand-accent font-semibold text-sm">
-                      {agent.name.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-text-primary truncate">{agent.name}</p>
-                    <p className="text-xs text-text-secondary truncate">{agent.role}</p>
-                  </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <Badge variant={statusBadgeVariant[agent.status as string] || 'default'}>
-                      {agent.status}
-                    </Badge>
-                    <span className="text-[10px] text-text-muted uppercase">{agent.level}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </Card>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '16px' }}>
+        <div style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+          <SectionHeader title="Recent Activity" rightAction={<Link to="/activity" style={{ color: 'var(--accent)', textDecoration: 'none', fontSize: '12px' }}>View all →</Link>} />
+          <ActivityFeed limit={8} />
+        </div>
 
-        <Card title="Task Pipeline">
-          <div className="space-y-4">
-            <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-              {TASK_STATUSES.map((ts) => (
-                <div
-                  key={ts.key}
-                  className="text-center p-3 rounded-lg bg-surface-light border border-border-default"
-                >
-                  <p className="text-2xl font-bold text-text-primary">{taskCountByStatus[ts.key] ?? 0}</p>
-                  <p className="text-[10px] text-text-secondary uppercase mt-1 leading-tight">{ts.label}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+            <SectionHeader title={`Online Agents (${onlineAgents.length}/${agents.length})`} rightAction={<Link to="/agents" style={{ color: 'var(--accent)', textDecoration: 'none', fontSize: '12px' }}>Manage →</Link>} />
+            <div style={{ padding: '8px 0' }}>
+              {agents.slice(0, 5).map(agent => (
+                <div key={agent.id} className="flex items-center gap-3" style={{ padding: '8px 16px' }}>
+                  <div style={{ width: '28px', height: '28px', borderRadius: '6px', backgroundColor: agent.color ? `${agent.color}22` : 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>
+                    {agent.emoji || '🤖'}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="line-clamp-1" style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>{agent.name}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{agent.model || 'no model'}</div>
+                  </div>
+                  <div style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: agent.status === 'online' ? 'var(--positive)' : 'var(--text-muted)', flexShrink: 0 }} />
                 </div>
               ))}
+              {agents.length === 0 && <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>No agents yet</div>}
             </div>
-            {taskStats.length > 0 && (
-              <div className="flex h-2 rounded-full overflow-hidden bg-surface-light">
-                {TASK_STATUSES.map((ts) => {
-                  const count = taskCountByStatus[ts.key] ?? 0;
-                  const total = taskStats.reduce((s, st) => s + st.count, 0);
-                  if (total === 0 || count === 0) return null;
-                  const colors: Record<string, string> = {
-                    inbox: 'bg-gray-400',
-                    assigned: 'bg-blue-500',
-                    in_progress: 'bg-amber-500',
-                    waiting_on_human: 'bg-pink-500',
-                    blocked: 'bg-red-500',
-                    review: 'bg-purple-500',
-                    done: 'bg-green-500',
-                    archived: 'bg-gray-300',
-                  };
-                  return (
-                    <div
-                      key={ts.key}
-                      className={`${colors[ts.key]} transition-all`}
-                      style={{ width: `${(count / total) * 100}%` }}
-                    />
-                  );
-                })}
-              </div>
-            )}
           </div>
-        </Card>
+
+          <div style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+            <SectionHeader title="Quick Links" />
+            <div style={{ padding: '8px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px' }}>
+              {quickLinks.map(({ to, label, icon: Icon, color }) => (
+                <Link key={to} to={to} style={{ textDecoration: 'none' }}>
+                  <div className="flex flex-col items-center gap-1.5"
+                    style={{ padding: '10px 6px', borderRadius: '8px', cursor: 'pointer', transition: 'background-color 150ms ease' }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--surface-hover)'; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
+                  >
+                    <Icon size={18} style={{ color }} />
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 500 }}>{label}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
-
-      <Card title="Recent Activity">
-        {activities.length === 0 ? (
-          <p className="text-text-muted text-sm">No activity yet</p>
-        ) : (
-          <div className="space-y-0">
-            {activities.map((activity, idx) => (
-              <div
-                key={activity.id}
-                className={`flex items-start gap-3 py-3 ${
-                  idx < activities.length - 1 ? 'border-b border-border-default' : ''
-                }`}
-              >
-                <div className="w-2 h-2 rounded-full bg-brand-accent mt-2 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-text-secondary">
-                    <span className="font-medium text-text-primary">{activity.actor_name || 'System'}</span>
-                    {' '}
-                    <span>{formatAction(activity.action)}</span>
-                    {activity.metadata && (activity.metadata as Record<string, string>).title && (
-                      <>
-                        {' '}
-                        <span className="text-text-primary">"{String((activity.metadata as Record<string, string>).title)}"</span>
-                      </>
-                    )}
-                  </p>
-                  <p className="text-xs text-text-muted mt-0.5">{relativeTime(activity.created_at)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
     </div>
   );
 }

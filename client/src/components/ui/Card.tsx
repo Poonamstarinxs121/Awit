@@ -5,17 +5,39 @@ interface CardProps {
   children: ReactNode;
   className?: string;
   padding?: boolean;
+  style?: React.CSSProperties;
 }
 
-export function Card({ title, children, className = '', padding = true }: CardProps) {
+export function Card({ title, children, className = '', padding = true, style }: CardProps) {
   return (
-    <div className={`bg-white rounded-xl border border-border-default shadow-sm ${className}`}>
+    <div
+      className={`rounded-xl overflow-hidden ${className}`}
+      style={{
+        backgroundColor: 'var(--card)',
+        border: '1px solid var(--border)',
+        boxShadow: 'var(--shadow-sm)',
+        ...style,
+      }}
+    >
       {title && (
-        <div className="px-6 py-4 border-b border-border-default">
-          <h3 className="text-text-primary font-semibold font-heading">{title}</h3>
+        <div
+          className="px-5 py-4 flex items-center gap-3"
+          style={{ borderBottom: '1px solid var(--border)' }}
+        >
+          <div style={{ width: '3px', height: '16px', backgroundColor: 'var(--accent)', borderRadius: '2px' }} />
+          <h3
+            style={{
+              fontFamily: 'var(--font-heading)',
+              fontWeight: 600,
+              fontSize: '14px',
+              color: 'var(--text-primary)',
+            }}
+          >
+            {title}
+          </h3>
         </div>
       )}
-      <div className={padding ? 'p-6' : ''}>{children}</div>
+      <div className={padding ? 'p-5' : ''}>{children}</div>
     </div>
   );
 }

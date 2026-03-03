@@ -65,7 +65,7 @@ const AGENT_COLORS = [
   'bg-teal-500',
   'bg-blue-500',
   'bg-purple-500',
-  'bg-amber-500',
+  'bg-[var(--surface-elevated)]0',
   'bg-rose-500',
   'bg-emerald-500',
   'bg-indigo-500',
@@ -402,7 +402,7 @@ export function Settings() {
               <p className="text-text-muted text-sm">No providers connected yet.</p>
             )}
             {providers.map((p) => (
-              <div key={p.id} className="flex items-center justify-between bg-white rounded-lg p-4 border border-border-default shadow-sm">
+              <div key={p.id} className="flex items-center justify-between bg-[var(--card)] rounded-lg p-4 border border-[var(--border)] shadow-sm">
                 <div className="flex items-center gap-3">
                   <Key size={18} className="text-text-secondary" />
                   <div>
@@ -441,19 +441,19 @@ export function Settings() {
         ) : (
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+              <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
                 <p className="text-text-secondary text-xs uppercase tracking-wider">Total Tokens</p>
                 <p className="text-text-primary text-xl font-bold mt-1">{totals.totalTokens.toLocaleString()}</p>
               </div>
-              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+              <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
                 <p className="text-text-secondary text-xs uppercase tracking-wider">API Calls</p>
                 <p className="text-text-primary text-xl font-bold mt-1">{totals.totalCalls.toLocaleString()}</p>
               </div>
-              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+              <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
                 <p className="text-text-secondary text-xs uppercase tracking-wider">Total Cost</p>
                 <p className="text-text-primary text-xl font-bold mt-1">${totals.totalCost.toFixed(2)}</p>
               </div>
-              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+              <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
                 <p className="text-text-secondary text-xs uppercase tracking-wider">Avg Daily Cost</p>
                 <p className="text-text-primary text-xl font-bold mt-1">${totals.avgDailyCost.toFixed(2)}</p>
               </div>
@@ -468,7 +468,7 @@ export function Settings() {
                     className="flex-1 bg-teal-500 rounded-t hover:bg-teal-400 transition-colors relative group cursor-pointer"
                     style={{ height: `${(day.cost / maxCost) * 100}%`, minHeight: '2px' }}
                   >
-                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block bg-white text-text-primary text-xs p-2 rounded whitespace-nowrap z-10 shadow-lg border border-border-default">
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block bg-[var(--card)] text-text-primary text-xs p-2 rounded whitespace-nowrap z-10 shadow-lg border border-[var(--border)]">
                       <p className="font-medium">{formatDate(day.date)}</p>
                       <p>Cost: ${day.cost.toFixed(4)}</p>
                       <p>Tokens: {(day.tokens_in + day.tokens_out).toLocaleString()}</p>
@@ -495,7 +495,7 @@ export function Settings() {
                     const color = AGENT_COLORS[i % AGENT_COLORS.length];
                     const barWidth = (Number(agent.estimated_cost) / maxAgentCost) * 100;
                     return (
-                      <div key={agent.agent_id} className="bg-surface-light rounded-lg p-4 border border-border-default">
+                      <div key={agent.agent_id} className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-text-primary font-medium text-sm">{agent.agent_name || 'Unknown Agent'}</span>
                           <span className="text-teal-400 text-sm font-medium">${Number(agent.estimated_cost).toFixed(4)}</span>
@@ -529,7 +529,7 @@ export function Settings() {
                 <div className="overflow-x-auto mt-3">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-text-secondary text-left border-b border-border-default">
+                      <tr className="text-text-secondary text-left border-b border-[var(--border)]">
                         <th className="pb-2 font-medium">Date</th>
                         <th className="pb-2 font-medium">Tokens In</th>
                         <th className="pb-2 font-medium">Tokens Out</th>
@@ -539,7 +539,7 @@ export function Settings() {
                     </thead>
                     <tbody>
                       {usage.map((row) => (
-                        <tr key={row.id} className="border-b border-border-default text-text-secondary">
+                        <tr key={row.id} className="border-b border-[var(--border)] text-text-secondary">
                           <td className="py-2">{new Date(row.date).toLocaleDateString()}</td>
                           <td className="py-2">{row.tokens_in.toLocaleString()}</td>
                           <td className="py-2">{row.tokens_out.toLocaleString()}</td>
@@ -561,7 +561,7 @@ export function Settings() {
           <div className="flex justify-center py-4"><Spinner /></div>
         ) : telegramConfig ? (
           <div className="space-y-4">
-            <div className="flex items-center justify-between bg-surface-light rounded-lg p-4 border border-border-default">
+            <div className="flex items-center justify-between bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
               <div className="flex items-center gap-3">
                 <MessageCircle size={18} className="text-blue-400" />
                 <div>
@@ -587,7 +587,7 @@ export function Settings() {
               </div>
             </div>
 
-            <div className="border-t border-border-default pt-4">
+            <div className="border-t border-[var(--border)] pt-4">
               <h4 className="text-text-primary text-sm font-medium mb-3">Linked Chats</h4>
               {loadingTelegramChats ? (
                 <Spinner size="sm" />
@@ -596,7 +596,7 @@ export function Settings() {
               ) : (
                 <div className="space-y-2 mb-4">
                   {telegramChats.map((chat: any) => (
-                    <div key={chat.id} className="flex items-center justify-between bg-surface-light rounded-lg px-4 py-2.5">
+                    <div key={chat.id} className="flex items-center justify-between bg-[var(--surface-elevated)] rounded-lg px-4 py-2.5">
                       <div className="flex items-center gap-2">
                         <MessageCircle size={14} className="text-text-secondary" />
                         <span className="text-text-primary text-sm font-mono">{chat.chat_id}</span>
@@ -628,7 +628,7 @@ export function Settings() {
                   <select
                     value={newChatType}
                     onChange={(e) => setNewChatType(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-white border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+                    className="w-full px-3 py-2.5 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
                   >
                     <option value="private">Private</option>
                     <option value="group">Group</option>
@@ -661,7 +661,7 @@ export function Settings() {
           <div className="flex justify-center py-4"><Spinner /></div>
         ) : whatsappConfig ? (
           <div className="space-y-4">
-            <div className="flex items-center justify-between bg-surface-light rounded-lg p-4 border border-border-default">
+            <div className="flex items-center justify-between bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
               <div className="flex items-center gap-3">
                 <MessageCircle size={18} className="text-green-500" />
                 <div>
@@ -684,9 +684,9 @@ export function Settings() {
                 </Button>
               </div>
             </div>
-            <div className="bg-surface-light rounded-lg p-4 border border-border-default space-y-3">
+            <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)] space-y-3">
               <p className="text-text-secondary text-xs font-medium uppercase tracking-wide">Webhook URL (paste into Twilio)</p>
-              <code className="block text-text-primary text-xs bg-white border border-border-default rounded px-3 py-2 break-all">
+              <code className="block text-text-primary text-xs bg-[var(--card)] border border-[var(--border)] rounded px-3 py-2 break-all">
                 {window.location.origin}/v1/whatsapp/webhook
               </code>
               <div className="flex items-end gap-2">
@@ -730,7 +730,7 @@ export function Settings() {
               <p className="text-text-muted text-sm">No webhooks registered yet.</p>
             )}
             {webhooks.map((wh) => (
-              <div key={wh.id} className="bg-surface-light rounded-lg p-4 border border-border-default space-y-2">
+              <div key={wh.id} className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)] space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0">
                     <Webhook size={18} className="text-text-secondary shrink-0" />
@@ -775,7 +775,7 @@ export function Settings() {
                   ))}
                 </div>
                 {viewDeliveriesId === wh.id && (
-                  <div className="mt-3 border-t border-border-default pt-3">
+                  <div className="mt-3 border-t border-[var(--border)] pt-3">
                     <h5 className="text-text-primary text-xs font-medium mb-2">Recent Deliveries</h5>
                     {loadingDeliveries ? (
                       <Spinner size="sm" />
@@ -784,9 +784,9 @@ export function Settings() {
                     ) : (
                       <div className="space-y-1.5 max-h-48 overflow-y-auto">
                         {deliveries.map((d) => (
-                          <div key={d.id} className="flex items-center justify-between text-xs bg-surface-light rounded px-3 py-1.5">
+                          <div key={d.id} className="flex items-center justify-between text-xs bg-[var(--surface-elevated)] rounded px-3 py-1.5">
                             <div className="flex items-center gap-2">
-                              <span className={`w-2 h-2 rounded-full ${d.success ? 'bg-green-500' : 'bg-red-500'}`} />
+                              <span className={`w-2 h-2 rounded-full ${d.success ? 'bg-green-500' : 'bg-[rgba(255,59,48,0.1)]0'}`} />
                               <span className="text-text-secondary">{d.event}</span>
                             </div>
                             <div className="flex items-center gap-3 text-text-muted">
@@ -816,7 +816,7 @@ export function Settings() {
           <div className="space-y-5">
             <p className="text-text-secondary text-sm">Configure where daily standups are delivered when generated.</p>
 
-            <div className="bg-surface-light rounded-lg p-4 border border-border-default space-y-3">
+            <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)] space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Mail size={18} className="text-text-secondary" />
@@ -853,7 +853,7 @@ export function Settings() {
               )}
             </div>
 
-            <div className="bg-surface-light rounded-lg p-4 border border-border-default space-y-3">
+            <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)] space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Hash size={18} className="text-text-secondary" />
@@ -886,7 +886,7 @@ export function Settings() {
               )}
             </div>
 
-            <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+            <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MessageCircle size={18} className="text-text-secondary" />
@@ -962,12 +962,12 @@ export function Settings() {
                 <p className="text-sm font-medium text-green-700">Token created — copy it now, it won't be shown again.</p>
               </div>
               <div className="flex items-center gap-2">
-                <code className="flex-1 text-xs bg-white border border-green-200 rounded px-3 py-2 font-mono text-text-primary break-all">
+                <code className="flex-1 text-xs bg-[var(--card)] border border-green-200 rounded px-3 py-2 font-mono text-text-primary break-all">
                   {revealedToken}
                 </code>
                 <button
                   onClick={() => copyToken(revealedToken)}
-                  className="shrink-0 p-2 rounded-lg border border-green-200 bg-white hover:bg-green-50 text-green-700 transition-colors"
+                  className="shrink-0 p-2 rounded-lg border border-green-200 bg-[var(--card)] hover:bg-green-50 text-green-700 transition-colors"
                   title="Copy token"
                 >
                   {copiedToken ? <Check size={14} /> : <Copy size={14} />}
@@ -989,7 +989,7 @@ export function Settings() {
           ) : (
             <div className="space-y-2">
               {apiTokens.map((token) => (
-                <div key={token.id} className="flex items-center justify-between p-3 bg-surface-light rounded-lg border border-border-default">
+                <div key={token.id} className="flex items-center justify-between p-3 bg-[var(--surface-elevated)] rounded-lg border border-[var(--border)]">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <Key size={14} className="text-text-muted shrink-0" />
@@ -1013,7 +1013,7 @@ export function Settings() {
                   </div>
                   <button
                     onClick={() => deleteTokenMutation.mutate(token.id)}
-                    className="p-1.5 rounded text-text-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                    className="p-1.5 rounded text-text-muted hover:text-red-500 hover:bg-[rgba(255,59,48,0.1)] transition-colors"
                     title="Revoke token"
                   >
                     <Trash2 size={14} />
@@ -1069,7 +1069,7 @@ export function Settings() {
                         setWebhookEvents(webhookEvents.filter((x) => x !== ev));
                       }
                     }}
-                    className="rounded border-border-default bg-surface-light text-teal-500 focus:ring-teal-500"
+                    className="rounded border-[var(--border)] bg-[var(--surface-elevated)] text-teal-500 focus:ring-teal-500"
                   />
                   {ev}
                 </label>
@@ -1166,7 +1166,7 @@ export function Settings() {
             <select
               value={newProvider}
               onChange={(e) => { setNewProvider(e.target.value); setNewApiKey(e.target.value === 'ollama' ? 'http://localhost:11434' : ''); }}
-              className="w-full px-4 py-2.5 bg-white border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
             >
               <option value="openai">OpenAI</option>
               <option value="anthropic">Anthropic</option>
@@ -1184,7 +1184,7 @@ export function Settings() {
                 onChange={(e) => setNewApiKey(e.target.value)}
                 placeholder="http://localhost:11434"
               />
-              <p className="text-xs text-text-muted">Ollama must be running on your machine. Install with: <code className="bg-surface-light px-1 rounded">brew install ollama</code></p>
+              <p className="text-xs text-text-muted">Ollama must be running on your machine. Install with: <code className="bg-[var(--surface-elevated)] px-1 rounded">brew install ollama</code></p>
             </div>
           ) : (
             <Input
@@ -1271,7 +1271,7 @@ export function Settings() {
             <select
               value={newTokenExpiry}
               onChange={(e) => setNewTokenExpiry(e.target.value)}
-              className="w-full px-4 py-2.5 bg-white border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent"
+              className="w-full px-4 py-2.5 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent"
             >
               <option value="">Never expires</option>
               <option value="30">30 days</option>

@@ -11,16 +11,29 @@ export function Input({ label, error, className = '', id, ...props }: InputProps
   return (
     <div className="space-y-1.5">
       {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-text-primary">
+        <label
+          htmlFor={inputId}
+          style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)', display: 'block' }}
+        >
           {label}
         </label>
       )}
       <input
         id={inputId}
-        className={`w-full px-4 py-2.5 bg-white border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-colors ${error ? 'border-danger' : ''} ${className}`}
+        className={`w-full px-3 py-2.5 rounded-lg text-sm transition-colors focus:outline-none ${className}`}
+        style={{
+          backgroundColor: 'var(--surface-elevated)',
+          border: `1px solid ${error ? 'var(--negative)' : 'var(--border)'}`,
+          color: 'var(--text-primary)',
+          fontFamily: 'var(--font-body)',
+        }}
+        onFocus={(e) => { e.target.style.borderColor = 'var(--accent)'; }}
+        onBlur={(e) => { e.target.style.borderColor = error ? 'var(--negative)' : 'var(--border)'; }}
         {...props}
       />
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && (
+        <p style={{ fontSize: '12px', color: 'var(--negative)' }}>{error}</p>
+      )}
     </div>
   );
 }

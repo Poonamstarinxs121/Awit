@@ -150,7 +150,7 @@ export function MemoryGraph() {
         <div className="flex items-center gap-2">
           <button
             onClick={fetchGraph}
-            className="p-2 bg-white border border-border-default rounded-lg text-text-secondary hover:text-text-primary transition-colors"
+            className="p-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-secondary hover:text-text-primary transition-colors"
             title="Refresh"
           >
             <RefreshCw size={16} />
@@ -159,15 +159,15 @@ export function MemoryGraph() {
       </div>
 
       <div className="grid grid-cols-3 gap-4 max-w-md">
-        <div className="p-3 bg-white border border-border-default rounded-lg text-center">
+        <div className="p-3 bg-[var(--card)] border border-[var(--border)] rounded-lg text-center">
           <p className="text-2xl font-bold text-text-primary">{totalNodes}</p>
           <p className="text-xs text-text-muted mt-1">Nodes</p>
         </div>
-        <div className="p-3 bg-white border border-border-default rounded-lg text-center">
+        <div className="p-3 bg-[var(--card)] border border-[var(--border)] rounded-lg text-center">
           <p className="text-2xl font-bold text-text-primary">{totalEdges}</p>
           <p className="text-xs text-text-muted mt-1">Connections</p>
         </div>
-        <div className="p-3 bg-white border border-border-default rounded-lg text-center">
+        <div className="p-3 bg-[var(--card)] border border-[var(--border)] rounded-lg text-center">
           <p className="text-2xl font-bold text-text-primary">{clusterCount}</p>
           <p className="text-xs text-text-muted mt-1">Clusters</p>
         </div>
@@ -181,7 +181,7 @@ export function MemoryGraph() {
             placeholder="Search memories and documents..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-white border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent text-sm"
+            className="w-full pl-9 pr-4 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent text-sm"
           />
         </div>
         <div className="flex gap-1 flex-wrap">
@@ -190,7 +190,7 @@ export function MemoryGraph() {
             className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
               selectedType === null
                 ? 'bg-brand-accent text-white border-brand-accent'
-                : 'bg-white text-text-secondary border-border-default hover:border-brand-accent'
+                : 'bg-[var(--card)] text-text-secondary border-[var(--border)] hover:border-brand-accent'
             }`}
           >
             All
@@ -202,7 +202,7 @@ export function MemoryGraph() {
               className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                 selectedType === type
                   ? 'bg-brand-accent text-white border-brand-accent'
-                  : 'bg-white text-text-secondary border-border-default hover:border-brand-accent'
+                  : 'bg-[var(--card)] text-text-secondary border-[var(--border)] hover:border-brand-accent'
               }`}
             >
               {getTypeLabel(type)}
@@ -211,10 +211,10 @@ export function MemoryGraph() {
         </div>
       </div>
 
-      <div className="bg-white border border-border-default rounded-xl shadow-sm overflow-hidden" style={{ height: 'calc(100vh - 22rem)' }}>
+      <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-sm overflow-hidden" style={{ height: 'calc(100vh - 22rem)' }}>
         {filteredNodes.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-8">
-            <div className="w-20 h-20 rounded-full bg-surface-light flex items-center justify-center mb-6">
+            <div className="w-20 h-20 rounded-full bg-[var(--surface-elevated)] flex items-center justify-center mb-6">
               <Brain size={36} className="text-text-muted" />
             </div>
             <h3 className="text-xl font-medium text-text-primary">
@@ -230,12 +230,12 @@ export function MemoryGraph() {
           <div className="h-full overflow-y-auto p-4 space-y-2">
             {filteredNodes.map((node) => {
               const Icon = typeIcons[node.type] || Brain;
-              const colorClass = typeColors[node.type] || 'bg-gray-100 text-gray-700 border-gray-200';
+              const colorClass = typeColors[node.type] || 'bg-[var(--surface-elevated)] text-[var(--text-primary)] border-[var(--border)]';
               const connections = connectionMap.get(node.id) || 0;
               return (
                 <div
                   key={node.id}
-                  className="flex items-start gap-3 p-3 rounded-lg border border-border-default hover:border-brand-accent/30 hover:bg-surface-light/50 transition-colors"
+                  className="flex items-start gap-3 p-3 rounded-lg border border-[var(--border)] hover:border-brand-accent/30 hover:bg-[var(--surface-elevated)]/50 transition-colors"
                 >
                   <div className={`p-2 rounded-lg border ${colorClass} flex-shrink-0`}>
                     <Icon size={16} />

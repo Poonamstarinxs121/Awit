@@ -198,7 +198,7 @@ export function CronJobManager({ agentId }: CronJobManagerProps) {
           {jobs.map((job) => (
             <div
               key={job.id}
-              className="bg-white rounded-xl border border-border-default p-4"
+              className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-4"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
@@ -207,10 +207,10 @@ export function CronJobManager({ agentId }: CronJobManagerProps) {
                     <Badge variant={job.is_active ? 'active' : 'default'}>
                       {job.is_active ? 'Active' : 'Inactive'}
                     </Badge>
-                    <span className="text-xs text-text-muted bg-surface-light px-2 py-0.5 rounded">
+                    <span className="text-xs text-text-muted bg-[var(--surface-elevated)] px-2 py-0.5 rounded">
                       {job.schedule_type}
                     </span>
-                    <span className="text-xs text-text-muted bg-surface-light px-2 py-0.5 rounded">
+                    <span className="text-xs text-text-muted bg-[var(--surface-elevated)] px-2 py-0.5 rounded">
                       {job.execution_mode === 'main_session' ? 'Main Session' : 'Isolated'}
                     </span>
                   </div>
@@ -234,7 +234,7 @@ export function CronJobManager({ agentId }: CronJobManagerProps) {
                   <button
                     onClick={() => triggerMutation.mutate(job.id)}
                     disabled={triggeringId === job.id}
-                    className="p-2 text-text-secondary hover:text-teal-400 hover:bg-surface-light rounded-lg transition-colors disabled:opacity-50"
+                    className="p-2 text-text-secondary hover:text-teal-400 hover:bg-[var(--surface-elevated)] rounded-lg transition-colors disabled:opacity-50"
                     title="Run Now"
                   >
                     {triggeringId === job.id ? (
@@ -247,8 +247,8 @@ export function CronJobManager({ agentId }: CronJobManagerProps) {
                     onClick={() => toggleActive(job)}
                     className={`p-2 rounded-lg transition-colors ${
                       job.is_active
-                        ? 'text-teal-400 hover:text-amber-400 hover:bg-surface-light'
-                        : 'text-text-muted hover:text-teal-400 hover:bg-surface-light'
+                        ? 'text-teal-400 hover:text-amber-400 hover:bg-[var(--surface-elevated)]'
+                        : 'text-text-muted hover:text-teal-400 hover:bg-[var(--surface-elevated)]'
                     }`}
                     title={job.is_active ? 'Deactivate' : 'Activate'}
                   >
@@ -256,7 +256,7 @@ export function CronJobManager({ agentId }: CronJobManagerProps) {
                   </button>
                   <button
                     onClick={() => openEdit(job)}
-                    className="p-2 text-text-secondary hover:text-blue-400 hover:bg-surface-light rounded-lg transition-colors"
+                    className="p-2 text-text-secondary hover:text-blue-400 hover:bg-[var(--surface-elevated)] rounded-lg transition-colors"
                     title="Edit"
                   >
                     <Edit size={16} />
@@ -267,7 +267,7 @@ export function CronJobManager({ agentId }: CronJobManagerProps) {
                         deleteMutation.mutate(job.id);
                       }
                     }}
-                    className="p-2 text-text-secondary hover:text-red-400 hover:bg-surface-light rounded-lg transition-colors"
+                    className="p-2 text-text-secondary hover:text-red-400 hover:bg-[var(--surface-elevated)] rounded-lg transition-colors"
                     title="Delete"
                   >
                     <Trash2 size={16} />
@@ -304,7 +304,7 @@ export function CronJobManager({ agentId }: CronJobManagerProps) {
             <select
               value={form.schedule_type}
               onChange={(e) => setForm({ ...form, schedule_type: e.target.value as CronJobForm['schedule_type'] })}
-              className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
             >
               <option value="cron">Cron Expression</option>
               <option value="interval">Interval</option>
@@ -337,7 +337,7 @@ export function CronJobManager({ agentId }: CronJobManagerProps) {
             <select
               value={form.execution_mode}
               onChange={(e) => setForm({ ...form, execution_mode: e.target.value as CronJobForm['execution_mode'] })}
-              className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
             >
               <option value="main_session">Main Session</option>
               <option value="isolated">Isolated</option>
@@ -353,7 +353,7 @@ export function CronJobManager({ agentId }: CronJobManagerProps) {
               value={form.command}
               onChange={(e) => setForm({ ...form, command: e.target.value })}
               rows={4}
-              className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
+              className="w-full px-4 py-3 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
               placeholder="Generate the daily standup report and post it to the team channel"
             />
           </div>
@@ -363,7 +363,7 @@ export function CronJobManager({ agentId }: CronJobManagerProps) {
             <select
               value={form.model_override}
               onChange={(e) => setForm({ ...form, model_override: e.target.value })}
-              className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
             >
               <option value="">Use agent default</option>
               <option value="gpt-4o-mini">gpt-4o-mini</option>

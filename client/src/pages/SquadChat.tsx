@@ -132,8 +132,8 @@ export function SquadChat() {
         </div>
       </div>
 
-      <div className="flex-1 bg-white border border-border-default rounded-xl shadow-sm flex flex-col overflow-hidden">
-        <div className="px-4 py-3 border-b border-border-default bg-surface-light/50">
+      <div className="flex-1 bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-sm flex flex-col overflow-hidden">
+        <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--surface-elevated)]/50">
           <p className="text-sm text-text-secondary">
             Watch your agents coordinate and collaborate. You can participate too.
             {total > 0 && <span className="ml-2 text-text-muted">({total} messages)</span>}
@@ -158,7 +158,7 @@ export function SquadChat() {
             </div>
           ) : messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
-              <div className="w-16 h-16 rounded-full bg-surface-light flex items-center justify-center mb-4">
+              <div className="w-16 h-16 rounded-full bg-[var(--surface-elevated)] flex items-center justify-center mb-4">
                 <Users size={28} className="text-text-muted" />
               </div>
               <h3 className="text-lg font-medium text-text-primary">Squad Chat</h3>
@@ -185,7 +185,7 @@ export function SquadChat() {
                         <div className="h-px flex-1 bg-border-default" />
                       </div>
                     )}
-                    <div className="group flex items-start gap-3 py-1.5 px-2 rounded-lg hover:bg-surface-light/50 transition-colors">
+                    <div className="group flex items-start gap-3 py-1.5 px-2 rounded-lg hover:bg-[var(--surface-elevated)]/50 transition-colors">
                       <div
                         className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
                           msg.sender_type === 'agent'
@@ -217,7 +217,7 @@ export function SquadChat() {
           )}
         </div>
 
-        <div className="px-4 py-3 border-t border-border-default">
+        <div className="px-4 py-3 border-t border-[var(--border)]">
           <div className="flex gap-2">
             <input
               type="text"
@@ -226,7 +226,7 @@ export function SquadChat() {
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={sending}
-              className="flex-1 px-4 py-2 bg-surface-light border border-border-default rounded-lg text-text-primary placeholder-text-muted text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent disabled:opacity-50"
+              className="flex-1 px-4 py-2 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent disabled:opacity-50"
             />
             <button
               onClick={handleSend}

@@ -41,9 +41,9 @@ export function AdminLogin() {
             <p className="text-text-secondary mt-2">SaaS administration access</p>
           </div>
 
-          <div className="bg-white border border-border-default rounded-xl p-8 shadow-sm">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-8 shadow-sm">
             {error && (
-              <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              <div className="mb-4 px-4 py-3 bg-[rgba(255,59,48,0.1)] border border-[rgba(255,59,48,0.3)] rounded-lg text-sm text-[var(--negative)]">
                 {error}
               </div>
             )}
@@ -57,7 +57,7 @@ export function AdminLogin() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-colors"
+                  className="w-full px-4 py-2.5 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-colors"
                 />
               </div>
 
@@ -69,7 +69,7 @@ export function AdminLogin() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-colors"
+                  className="w-full px-4 py-2.5 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-colors"
                 />
               </div>
 
@@ -83,7 +83,7 @@ export function AdminLogin() {
             </form>
 
             <div
-              className="mt-6 bg-surface-light border border-border-default rounded-lg p-3 cursor-pointer hover:border-brand-accent transition text-left"
+              className="mt-6 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg p-3 cursor-pointer hover:border-brand-accent transition text-left"
               onClick={fillDemoCredentials}
             >
               <p className="text-sm font-medium text-text-primary">Admin Demo</p>

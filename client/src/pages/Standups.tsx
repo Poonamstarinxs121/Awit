@@ -27,7 +27,7 @@ function StandupCard({ standup }: { standup: Standup }) {
   const agentSummaries = (standup.per_agent_summaries || []) as AgentSummary[];
 
   return (
-    <div className="bg-white rounded-xl border border-border-default">
+    <div className="bg-[var(--card)] rounded-xl border border-[var(--border)]">
       <div className="p-6">
         <div className="flex items-center gap-3 mb-3">
           <Calendar size={18} className="text-brand-accent" />
@@ -54,9 +54,9 @@ function StandupCard({ standup }: { standup: Standup }) {
       </div>
 
       {expanded && agentSummaries.length > 0 && (
-        <div className="border-t border-border-default px-6 py-4 space-y-4">
+        <div className="border-t border-[var(--border)] px-6 py-4 space-y-4">
           {agentSummaries.map((as, idx) => (
-            <div key={idx} className="bg-surface-light rounded-lg p-4 border border-border-default">
+            <div key={idx} className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
               <h4 className="text-text-primary font-medium mb-3">{as.agent_name || `Agent ${idx + 1}`}</h4>
               <div className="space-y-2">
                 {as.completed && as.completed.length > 0 && (
@@ -119,13 +119,13 @@ export function Standups() {
       )}
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-red-400">
+        <div className="bg-[rgba(255,59,48,0.1)]0/10 border border-red-500/30 rounded-xl p-6 text-red-400">
           Failed to load standups: {(error as Error).message}
         </div>
       )}
 
       {!isLoading && !error && standups.length === 0 && (
-        <div className="bg-white rounded-xl border border-border-default p-12 text-center">
+        <div className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-12 text-center">
           <Calendar className="mx-auto mb-4 text-text-muted" size={48} />
           <p className="text-text-secondary text-lg">No standups generated yet.</p>
           <p className="text-text-muted mt-2">Standups are automatically generated at the end of each business day.</p>

@@ -151,8 +151,8 @@ export function AgentChat({ agentId, agentName }: AgentChatProps) {
   const displayMessages = localMessages.filter(m => m.role !== 'system');
 
   return (
-    <div className="flex flex-col h-[600px] bg-white rounded-xl border border-border-default">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border-default">
+    <div className="flex flex-col h-[600px] bg-[var(--card)] rounded-xl border border-[var(--border)]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
         <div className="flex items-center gap-2">
           <Bot size={18} className="text-teal-400" />
           <span className="text-sm font-medium text-text-primary">Chat with {agentName}</span>
@@ -231,7 +231,7 @@ export function AgentChat({ agentId, agentName }: AgentChatProps) {
         )
       )}
 
-      <div className="p-4 border-t border-border-default">
+      <div className="p-4 border-t border-[var(--border)]">
         <div className="flex gap-2">
           <textarea
             ref={textareaRef}
@@ -240,7 +240,7 @@ export function AgentChat({ agentId, agentName }: AgentChatProps) {
             onKeyDown={handleKeyDown}
             placeholder={`Message ${agentName}...`}
             rows={1}
-            className="flex-1 px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-none"
+            className="flex-1 px-4 py-2.5 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-none"
             disabled={isStreaming}
           />
           <Button onClick={sendMessage} disabled={!input.trim() || isStreaming} size="md">
@@ -273,7 +273,7 @@ function MessageBubble({
       <div className={`max-w-[80%] rounded-xl px-4 py-3 text-sm ${
         isUser
           ? 'bg-brand-accent/10 border border-brand-accent/30 text-text-primary'
-          : 'bg-surface-light border border-border-default text-text-primary'
+          : 'bg-[var(--surface-elevated)] border border-[var(--border)] text-text-primary'
       }`}>
         <p className="text-xs text-text-muted mb-1">
           {isUser ? 'You' : agentName}

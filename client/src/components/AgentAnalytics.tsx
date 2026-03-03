@@ -68,7 +68,7 @@ export function AgentAnalytics({ agentId }: { agentId: string }) {
                     className="w-full bg-brand-accent rounded-t opacity-80 hover:opacity-100 transition-opacity min-h-[2px]"
                     style={{ height: `${Math.max(2, (day.tokens / maxTokens) * 100)}%` }}
                   />
-                  <div className="absolute bottom-full mb-2 hidden group-hover:block bg-white text-xs text-text-primary px-2 py-1 rounded shadow-lg whitespace-nowrap z-10 border border-border-default">
+                  <div className="absolute bottom-full mb-2 hidden group-hover:block bg-[var(--card)] text-xs text-text-primary px-2 py-1 rounded shadow-lg whitespace-nowrap z-10 border border-[var(--border)]">
                     {day.date}: {day.tokens.toLocaleString()} tokens, ${day.cost.toFixed(4)}
                     {day.errors > 0 && `, ${day.errors} errors`}
                   </div>
@@ -96,7 +96,7 @@ export function AgentAnalytics({ agentId }: { agentId: string }) {
                     className="w-full bg-emerald-500 rounded-t opacity-80 hover:opacity-100 transition-opacity min-h-[2px]"
                     style={{ height: `${Math.max(2, (day.cost / maxCost) * 100)}%` }}
                   />
-                  <div className="absolute bottom-full mb-2 hidden group-hover:block bg-white text-xs text-text-primary px-2 py-1 rounded shadow-lg whitespace-nowrap z-10 border border-border-default">
+                  <div className="absolute bottom-full mb-2 hidden group-hover:block bg-[var(--card)] text-xs text-text-primary px-2 py-1 rounded shadow-lg whitespace-nowrap z-10 border border-[var(--border)]">
                     {day.date}: ${day.cost.toFixed(4)}
                   </div>
                 </div>

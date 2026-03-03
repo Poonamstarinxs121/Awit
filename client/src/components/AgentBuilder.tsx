@@ -50,7 +50,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
                   ? 'bg-brand-accent border-brand-accent text-white'
                   : index === currentStep
                   ? 'border-brand-accent text-brand-accent bg-transparent'
-                  : 'border-border-default text-text-muted bg-transparent'
+                  : 'border-[var(--border)] text-text-muted bg-transparent'
               }`}
             >
               {index < currentStep ? <Check size={18} /> : index + 1}
@@ -204,7 +204,7 @@ export function AgentBuilder() {
                     className={`flex-1 px-4 py-2.5 rounded-lg border text-sm font-medium capitalize transition-all ${
                       form.level === lvl
                         ? 'border-brand-accent bg-brand-accent/10 text-text-primary'
-                        : 'border-border-default bg-surface-light text-text-secondary hover:border-brand-accent/40'
+                        : 'border-[var(--border)] bg-[var(--surface-elevated)] text-text-secondary hover:border-brand-accent/40'
                     }`}
                   >
                     {lvl}
@@ -220,7 +220,7 @@ export function AgentBuilder() {
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 rows={3}
-                className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y text-sm"
+                className="w-full px-4 py-3 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y text-sm"
                 placeholder="Brief description of what this agent will do..."
               />
             </div>
@@ -247,7 +247,7 @@ export function AgentBuilder() {
 
             {useSoulCraft && (
               <div className="space-y-4">
-                <div className="space-y-4 bg-surface-light/50 rounded-xl p-5 border border-border-default">
+                <div className="space-y-4 bg-[var(--surface-elevated)]/50 rounded-xl p-5 border border-[var(--border)]">
                   <div className="space-y-1.5">
                     <label className="block text-sm font-medium text-text-secondary">
                       What tone should {form.name || 'this agent'} use?
@@ -267,7 +267,7 @@ export function AgentBuilder() {
                       value={form.strengths}
                       onChange={(e) => setForm({ ...form, strengths: e.target.value })}
                       rows={2}
-                      className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y text-sm"
+                      className="w-full px-4 py-3 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y text-sm"
                       placeholder="e.g. deep technical knowledge, creative problem solving, attention to detail"
                     />
                   </div>
@@ -280,7 +280,7 @@ export function AgentBuilder() {
                       value={form.values}
                       onChange={(e) => setForm({ ...form, values: e.target.value })}
                       rows={2}
-                      className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y text-sm"
+                      className="w-full px-4 py-3 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y text-sm"
                       placeholder="e.g. code quality over speed, user-first thinking, transparency"
                     />
                   </div>
@@ -293,7 +293,7 @@ export function AgentBuilder() {
                       value={form.avoid}
                       onChange={(e) => setForm({ ...form, avoid: e.target.value })}
                       rows={2}
-                      className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y text-sm"
+                      className="w-full px-4 py-3 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y text-sm"
                       placeholder="e.g. security decisions, budget discussions, HR matters"
                     />
                   </div>
@@ -335,7 +335,7 @@ export function AgentBuilder() {
                   value={form.soul_md}
                   onChange={(e) => setForm({ ...form, soul_md: e.target.value })}
                   rows={10}
-                  className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
+                  className="w-full px-4 py-3 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
                   placeholder="Define who this agent is..."
                 />
               </div>
@@ -348,7 +348,7 @@ export function AgentBuilder() {
                   value={form.soul_md}
                   onChange={(e) => setForm({ ...form, soul_md: e.target.value })}
                   rows={12}
-                  className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
+                  className="w-full px-4 py-3 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
                   placeholder={'You are ' + (form.name || '[Agent Name]') + ', the ' + (form.role || '[Role]') + ' for the team.\n\nDefine personality, approach, beliefs, and working style...'}
                 />
               </div>
@@ -369,7 +369,7 @@ export function AgentBuilder() {
                 value={form.agents_md}
                 onChange={(e) => setForm({ ...form, agents_md: e.target.value })}
                 rows={8}
-                className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
+                className="w-full px-4 py-3 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
                 placeholder="Define operating instructions..."
               />
             </div>
@@ -382,7 +382,7 @@ export function AgentBuilder() {
                 value={form.tools_md}
                 onChange={(e) => setForm({ ...form, tools_md: e.target.value })}
                 rows={8}
-                className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
+                className="w-full px-4 py-3 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
                 placeholder="Define available tools..."
               />
             </div>
@@ -402,7 +402,7 @@ export function AgentBuilder() {
                   const models = MODEL_OPTIONS[provider];
                   setForm({ ...form, provider, model: models[0] });
                 }}
-                className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+                className="w-full px-4 py-2.5 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
               >
                 <option value="openai">OpenAI</option>
                 <option value="anthropic">Anthropic</option>
@@ -427,7 +427,7 @@ export function AgentBuilder() {
                     value={form.model}
                     onChange={(e) => setForm({ ...form, model: e.target.value })}
                     placeholder="e.g. llama3.3, mistral, qwen2.5"
-                    className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+                    className="w-full px-4 py-2.5 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
                   />
                   <div className="flex flex-wrap gap-1.5">
                     {MODEL_OPTIONS.ollama.map((m) => (
@@ -435,7 +435,7 @@ export function AgentBuilder() {
                         key={m}
                         type="button"
                         onClick={() => setForm({ ...form, model: m })}
-                        className={`text-xs px-2 py-1 rounded border transition-colors ${form.model === m ? 'bg-brand-accent text-white border-brand-accent' : 'border-border-default text-text-secondary hover:border-brand-accent hover:text-brand-accent'}`}
+                        className={`text-xs px-2 py-1 rounded border transition-colors ${form.model === m ? 'bg-brand-accent text-white border-brand-accent' : 'border-[var(--border)] text-text-secondary hover:border-brand-accent hover:text-brand-accent'}`}
                       >
                         {m}
                       </button>
@@ -446,7 +446,7 @@ export function AgentBuilder() {
                 <select
                   value={form.model}
                   onChange={(e) => setForm({ ...form, model: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+                  className="w-full px-4 py-2.5 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
                 >
                   {(MODEL_OPTIONS[form.provider] || []).map((m) => (
                     <option key={m} value={m}>{m}</option>
@@ -483,7 +483,7 @@ export function AgentBuilder() {
                 value={form.heartbeat_md}
                 onChange={(e) => setForm({ ...form, heartbeat_md: e.target.value })}
                 rows={6}
-                className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
+                className="w-full px-4 py-3 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
                 placeholder="- [ ] Check for new tasks..."
               />
             </div>
@@ -495,51 +495,51 @@ export function AgentBuilder() {
         <Card title="Review & Create">
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+              <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
                 <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">Name</p>
                 <p className="text-text-primary font-medium">{form.name}</p>
               </div>
-              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+              <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
                 <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">Role</p>
                 <p className="text-text-primary font-medium">{form.role}</p>
               </div>
-              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+              <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
                 <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">Level</p>
                 <p className="text-text-primary font-medium capitalize">{form.level}</p>
               </div>
-              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+              <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
                 <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">Model</p>
                 <p className="text-text-primary font-medium">{form.provider} / {form.model}</p>
               </div>
-              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+              <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
                 <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">Temperature</p>
                 <p className="text-text-primary font-medium">{form.temperature.toFixed(1)}</p>
               </div>
             </div>
 
             {form.soul_md && (
-              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+              <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
                 <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">SOUL.md</p>
                 <p className="text-text-secondary text-sm whitespace-pre-wrap">{form.soul_md}</p>
               </div>
             )}
 
             {form.agents_md && (
-              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+              <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
                 <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">Operating Instructions</p>
                 <p className="text-text-secondary text-sm whitespace-pre-wrap">{form.agents_md}</p>
               </div>
             )}
 
             {form.tools_md && (
-              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+              <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
                 <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">Tools & Capabilities</p>
                 <p className="text-text-secondary text-sm whitespace-pre-wrap">{form.tools_md}</p>
               </div>
             )}
 
             {form.heartbeat_md && (
-              <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+              <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
                 <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">Heartbeat Checklist</p>
                 <p className="text-text-secondary text-sm whitespace-pre-wrap">{form.heartbeat_md}</p>
               </div>

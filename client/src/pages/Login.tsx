@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { PublicNav } from '../components/PublicNav';
 
 export function Login() {
   const { login } = useAuth();
@@ -26,89 +25,107 @@ export function Login() {
     }
   }
 
-  function fillDemoCredentials() {
-    setEmail('kaustubh@awitmedia.com');
-    setPassword('member123');
-  }
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '10px 14px',
+    backgroundColor: 'var(--surface-elevated)',
+    border: '1px solid var(--border)',
+    borderRadius: '8px',
+    color: 'var(--text-primary)',
+    fontSize: '14px',
+    outline: 'none',
+    fontFamily: 'var(--font-body)',
+    boxSizing: 'border-box',
+  };
 
   return (
-    <div className="min-h-screen bg-brand-bg flex flex-col">
-      <PublicNav actionLabel="Sign up" actionTo="/register" />
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+      <div style={{ width: '100%', maxWidth: '400px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{ fontSize: '40px', marginBottom: '12px' }}>🦑</div>
+          <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
+            SquidJob Mission Control
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Sign in to your workspace</p>
+        </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-text-primary">Welcome back</h1>
-            <p className="text-text-secondary mt-2">Sign in to your Mission Control</p>
-          </div>
+        <div style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '28px' }}>
+          {error && (
+            <div style={{ marginBottom: '16px', padding: '10px 14px', backgroundColor: 'var(--negative-soft)', border: '1px solid var(--negative)', borderRadius: '8px', color: 'var(--negative)', fontSize: '13px' }}>
+              {error}
+            </div>
+          )}
 
-          <div className="bg-white border border-border-default rounded-xl p-8 shadow-sm">
-            {error && (
-              <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-                {error}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Email Address
+              </label>
+              <input
+                type="email"
+                placeholder="you@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                style={inputStyle}
+                onFocus={(e) => { e.target.style.borderColor = 'var(--accent)'; }}
+                onBlur={(e) => { e.target.style.borderColor = 'var(--border)'; }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Password
+              </label>
+              <input
+                type="password"
+                placeholder="••••••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                style={inputStyle}
+                onFocus={(e) => { e.target.style.borderColor = 'var(--accent)'; }}
+                onBlur={(e) => { e.target.style.borderColor = 'var(--border)'; }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{ padding: '11px', backgroundColor: 'var(--accent)', border: 'none', borderRadius: '8px', color: 'white', fontSize: '14px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, fontFamily: 'var(--font-body)', transition: 'opacity 150ms' }}
+            >
+              {loading ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
+
+          <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '12px' }}>
+              Don't have an account?{' '}
+              <Link to="/register" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 500 }}>Create one</Link>
+            </p>
+            <button
+              onClick={() => setShowDemo(!showDemo)}
+              style={{ fontSize: '12px', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+            >
+              {showDemo ? 'Hide demo credentials' : 'Show demo credentials'}
+            </button>
+            {showDemo && (
+              <div
+                onClick={() => { setEmail('kaustubh@awitmedia.com'); setPassword('member123'); }}
+                style={{ marginTop: '8px', backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px 12px', cursor: 'pointer', textAlign: 'left', transition: 'border-color 150ms' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; }}
+              >
+                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '2px' }}>Member Account</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>kaustubh@awitmedia.com / member123</div>
               </div>
             )}
-
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-text-primary">Email address</label>
-                <input
-                  type="email"
-                  placeholder="you@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-colors"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-text-primary">Password</label>
-                <input
-                  type="password"
-                  placeholder="••••••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-colors"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 bg-brand-accent hover:bg-brand-accent-hover text-white font-medium rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Signing in...' : 'Sign In'}
-              </button>
-            </form>
-
-            <p className="mt-6 text-center text-sm text-text-secondary">
-              Don't have an account?{' '}
-              <Link to="/register" className="text-purple-accent hover:underline font-medium">
-                Create one
-              </Link>
-            </p>
-
-            <div className="mt-4 text-center">
-              <button
-                onClick={() => setShowDemo(!showDemo)}
-                className="text-xs text-text-muted hover:text-text-secondary transition-colors"
-              >
-                {showDemo ? 'Hide demo' : 'Demo credentials'}
-              </button>
-              {showDemo && (
-                <div
-                  className="mt-2 bg-surface-light border border-border-default rounded-lg p-3 cursor-pointer hover:border-brand-accent transition text-left"
-                  onClick={fillDemoCredentials}
-                >
-                  <p className="text-sm font-medium text-text-primary">Member Account</p>
-                  <p className="text-xs text-text-secondary mt-1">kaustubh@awitmedia.com / member123</p>
-                </div>
-              )}
-            </div>
           </div>
         </div>
+
+        <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '12px', color: 'var(--text-muted)' }}>
+          <Link to="/admin/login" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Admin Login →</Link>
+        </p>
       </div>
     </div>
   );

@@ -43,11 +43,11 @@ interface ExecResult {
 function StatusDot({ status }: { status: string }) {
   const colors: Record<string, string> = {
     online: 'bg-green-500',
-    offline: 'bg-red-500',
-    unknown: 'bg-gray-400',
+    offline: 'bg-[rgba(255,59,48,0.1)]0',
+    unknown: 'bg-[var(--surface-elevated)]',
   };
   return (
-    <span className={`inline-block w-2 h-2 rounded-full ${colors[status] || 'bg-gray-400'} flex-shrink-0`} title={status} />
+    <span className={`inline-block w-2 h-2 rounded-full ${colors[status] || 'bg-[var(--surface-elevated)]'} flex-shrink-0`} title={status} />
   );
 }
 
@@ -191,7 +191,7 @@ export function Machines() {
         </Button>
       </div>
 
-      <div className="flex gap-1 border-b border-border-default">
+      <div className="flex gap-1 border-b border-[var(--border)]">
         {(['machines', 'groups'] as const).map(tab => (
           <button
             key={tab}
@@ -225,7 +225,7 @@ export function Machines() {
               {machines.map(machine => {
                 const ping = pingStates[machine.id];
                 return (
-                  <div key={machine.id} className="bg-white rounded-xl border border-border-default shadow-sm p-5 space-y-3">
+                  <div key={machine.id} className="bg-[var(--card)] rounded-xl border border-[var(--border)] shadow-sm p-5 space-y-3">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2.5">
                         <StatusDot status={machine.status} />
@@ -306,7 +306,7 @@ export function Machines() {
               {groups.map(group => {
                 const groupMachines = machines.filter(m => m.group_id === group.id);
                 return (
-                  <div key={group.id} className="bg-white rounded-xl border border-border-default shadow-sm p-5">
+                  <div key={group.id} className="bg-[var(--card)] rounded-xl border border-[var(--border)] shadow-sm p-5">
                     <div className="flex items-center justify-between mb-3">
                       <div>
                         <h3 className="text-text-primary font-semibold">{group.name}</h3>
@@ -332,7 +332,7 @@ export function Machines() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {groupMachines.map(m => (
-                        <div key={m.id} className="flex items-center gap-1.5 bg-surface-light rounded-full px-3 py-1">
+                        <div key={m.id} className="flex items-center gap-1.5 bg-[var(--surface-elevated)] rounded-full px-3 py-1">
                           <StatusDot status={m.status} />
                           <span className="text-text-secondary text-xs">{m.name}</span>
                         </div>
@@ -362,7 +362,7 @@ export function Machines() {
             <select
               value={machineForm.ssh_auth_type}
               onChange={e => setMachineForm(p => ({ ...p, ssh_auth_type: e.target.value as 'key' | 'password' }))}
-              className="w-full px-4 py-2.5 bg-white border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent"
+              className="w-full px-4 py-2.5 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent"
             >
               <option value="key">SSH Private Key (recommended)</option>
               <option value="password">Password</option>
@@ -378,7 +378,7 @@ export function Machines() {
                 value={machineForm.ssh_credential}
                 onChange={e => setMachineForm(p => ({ ...p, ssh_credential: e.target.value }))}
                 rows={5}
-                className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-xs placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent resize-y"
+                className="w-full px-4 py-3 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary font-mono text-xs placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent resize-y"
                 placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;..."
               />
             ) : (
@@ -395,7 +395,7 @@ export function Machines() {
             <select
               value={machineForm.group_id}
               onChange={e => setMachineForm(p => ({ ...p, group_id: e.target.value }))}
-              className="w-full px-4 py-2.5 bg-white border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent"
+              className="w-full px-4 py-2.5 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent"
             >
               <option value="">No group</option>
               {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
@@ -431,7 +431,7 @@ export function Machines() {
               onChange={e => setCommand(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && runExec()}
               placeholder="e.g. df -h"
-              className="flex-1 px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
+              className="flex-1 px-4 py-2.5 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
             />
             <Button onClick={runExec} disabled={!command.trim() || execRunning} size="sm">
               {execRunning ? <Spinner size="sm" /> : <Play size={14} />}
@@ -440,11 +440,11 @@ export function Machines() {
           {execResults.length > 0 && (
             <div className="space-y-2">
               {execResults.map((r, i) => (
-                <div key={i} className="bg-gray-900 rounded-lg p-4 font-mono text-xs text-green-400 space-y-1 max-h-64 overflow-y-auto">
-                  {r.machine_name && <div className="text-gray-400 text-[10px] mb-2">[{r.machine_name}]</div>}
+                <div key={i} className="bg-[var(--bg)] rounded-lg p-4 font-mono text-xs text-green-400 space-y-1 max-h-64 overflow-y-auto">
+                  {r.machine_name && <div className="text-[var(--text-muted)] text-[10px] mb-2">[{r.machine_name}]</div>}
                   {r.stdout && <pre className="whitespace-pre-wrap">{r.stdout}</pre>}
                   {r.stderr && <pre className="text-red-400 whitespace-pre-wrap">{r.stderr}</pre>}
-                  <div className={`text-[10px] mt-2 ${r.exitCode === 0 ? 'text-gray-500' : 'text-red-500'}`}>exit: {r.exitCode}</div>
+                  <div className={`text-[10px] mt-2 ${r.exitCode === 0 ? 'text-[var(--text-secondary)]' : 'text-red-500'}`}>exit: {r.exitCode}</div>
                 </div>
               ))}
             </div>

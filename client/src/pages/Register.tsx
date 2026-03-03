@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { PublicNav } from '../components/PublicNav';
 
 export function Register() {
   const { register } = useAuth();
@@ -26,78 +25,100 @@ export function Register() {
     }
   }
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '10px 14px',
+    backgroundColor: 'var(--surface-elevated)',
+    border: '1px solid var(--border)',
+    borderRadius: '8px',
+    color: 'var(--text-primary)',
+    fontSize: '14px',
+    outline: 'none',
+    fontFamily: 'var(--font-body)',
+    boxSizing: 'border-box',
+  };
+
   return (
-    <div className="min-h-screen bg-brand-bg flex flex-col">
-      <PublicNav actionLabel="Log in" actionTo="/login" />
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+      <div style={{ width: '100%', maxWidth: '400px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{ fontSize: '40px', marginBottom: '12px' }}>🦑</div>
+          <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
+            Create Your Workspace
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Start building your AI agent squad</p>
+        </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-text-primary">Create your account</h1>
-            <p className="text-text-secondary mt-2">Start building your AI squad</p>
-          </div>
+        <div style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '28px' }}>
+          {error && (
+            <div style={{ marginBottom: '16px', padding: '10px 14px', backgroundColor: 'var(--negative-soft)', border: '1px solid var(--negative)', borderRadius: '8px', color: 'var(--negative)', fontSize: '13px' }}>
+              {error}
+            </div>
+          )}
 
-          <div className="bg-white border border-border-default rounded-xl p-8 shadow-sm">
-            {error && (
-              <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-                {error}
-              </div>
-            )}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Full Name
+              </label>
+              <input
+                type="text"
+                placeholder="John Doe"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                style={inputStyle}
+                onFocus={(e) => { e.target.style.borderColor = 'var(--accent)'; }}
+                onBlur={(e) => { e.target.style.borderColor = 'var(--border)'; }}
+              />
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-text-primary">Full name</label>
-                <input
-                  type="text"
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-colors"
-                />
-              </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Email Address
+              </label>
+              <input
+                type="email"
+                placeholder="you@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                style={inputStyle}
+                onFocus={(e) => { e.target.style.borderColor = 'var(--accent)'; }}
+                onBlur={(e) => { e.target.style.borderColor = 'var(--border)'; }}
+              />
+            </div>
 
-              <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-text-primary">Email address</label>
-                <input
-                  type="email"
-                  placeholder="you@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-colors"
-                />
-              </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Password
+              </label>
+              <input
+                type="password"
+                placeholder="••••••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                style={inputStyle}
+                onFocus={(e) => { e.target.style.borderColor = 'var(--accent)'; }}
+                onBlur={(e) => { e.target.style.borderColor = 'var(--border)'; }}
+              />
+            </div>
 
-              <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-text-primary">Password</label>
-                <input
-                  type="password"
-                  placeholder="••••••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-colors"
-                />
-              </div>
+            <button
+              type="submit"
+              disabled={loading}
+              style={{ padding: '11px', backgroundColor: 'var(--accent)', border: 'none', borderRadius: '8px', color: 'white', fontSize: '14px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, fontFamily: 'var(--font-body)', transition: 'opacity 150ms' }}
+            >
+              {loading ? 'Creating account...' : 'Create Account'}
+            </button>
+          </form>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 bg-brand-accent hover:bg-brand-accent-hover text-white font-medium rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Creating account...' : 'Create Account'}
-              </button>
-            </form>
-
-            <p className="mt-6 text-center text-sm text-text-secondary">
-              Already have an account?{' '}
-              <Link to="/login" className="text-purple-accent hover:underline font-medium">
-                Sign in
-              </Link>
-            </p>
-          </div>
+          <p style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border)', textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)' }}>
+            Already have an account?{' '}
+            <Link to="/login" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 500 }}>Sign in</Link>
+          </p>
         </div>
       </div>
     </div>

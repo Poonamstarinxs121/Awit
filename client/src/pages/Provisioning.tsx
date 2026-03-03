@@ -95,7 +95,7 @@ export function Provisioning() {
             </button>
             <button
               onClick={() => { window.location.href = '/agents'; }}
-              className="w-full py-3 bg-white border border-border-default hover:bg-surface-light text-text-primary font-medium rounded-full transition-colors"
+              className="w-full py-3 bg-[var(--card)] border border-[var(--border)] hover:bg-[var(--surface-elevated)] text-text-primary font-medium rounded-full transition-colors"
             >
               Meet Your Squad
             </button>
@@ -114,9 +114,9 @@ export function Provisioning() {
           <p className="text-text-secondary">This takes about 2 minutes. Hang tight!</p>
         </div>
 
-        <div className="bg-white border border-border-default rounded-xl p-5 shadow-sm">
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-surface-light flex items-center justify-center text-2xl">
+            <div className="w-12 h-12 rounded-xl bg-[var(--surface-elevated)] flex items-center justify-center text-2xl">
               {currentStep?.emoji}
             </div>
             <div>
@@ -134,7 +134,7 @@ export function Provisioning() {
             <span className="text-text-secondary">Progress</span>
             <span className="text-text-secondary font-medium">{progress}%</span>
           </div>
-          <div className="h-2 bg-surface-light rounded-full overflow-hidden">
+          <div className="h-2 bg-[var(--surface-elevated)] rounded-full overflow-hidden">
             <div
               className="h-full bg-green-500 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${progress}%` }}
@@ -142,7 +142,7 @@ export function Provisioning() {
           </div>
         </div>
 
-        <div className="bg-white border border-border-default rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden shadow-sm">
           {steps.map((step) => (
             <div
               key={step.id}
@@ -156,7 +156,7 @@ export function Provisioning() {
                 ) : step.status === 'in_progress' ? (
                   <Loader2 size={22} className="text-amber-500 animate-spin" />
                 ) : (
-                  <div className="w-[22px] h-[22px] rounded-full border-2 border-gray-200" />
+                  <div className="w-[22px] h-[22px] rounded-full border-2 border-[var(--border)]" />
                 )}
               </div>
               <span className={`flex-1 text-sm ${

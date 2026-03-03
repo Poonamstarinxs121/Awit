@@ -67,7 +67,7 @@ export function Setup() {
             <p className="text-text-secondary mt-2">Link your Telegram bot to start building your AI squad</p>
           </div>
 
-          <div className="bg-white border border-border-default rounded-xl p-6 shadow-sm space-y-6">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 shadow-sm space-y-6">
             <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 flex items-center gap-2">
               <CheckCircle size={18} className="text-green-600" />
               <span className="text-sm text-green-800">Signed in as {user?.email}</span>
@@ -85,9 +85,9 @@ export function Setup() {
               <div className="space-y-3 pl-2">
                 {[
                   'Click the button below to open BotFather in Telegram',
-                  <>Type <code className="bg-white px-1.5 py-0.5 rounded text-sm font-mono border border-green-200">/newbot</code> and send</>,
+                  <>Type <code className="bg-[var(--card)] px-1.5 py-0.5 rounded text-sm font-mono border border-green-200">/newbot</code> and send</>,
                   'Pick a name (e.g., "My AI Squad")',
-                  <>Pick a username ending in <code className="bg-white px-1.5 py-0.5 rounded text-sm font-mono border border-green-200">_bot</code></>,
+                  <>Pick a username ending in <code className="bg-[var(--card)] px-1.5 py-0.5 rounded text-sm font-mono border border-green-200">_bot</code></>,
                   'Copy the token and paste it below',
                 ].map((step, i) => (
                   <div key={i} className="flex items-start gap-3">
@@ -123,7 +123,7 @@ export function Setup() {
                 value={botToken}
                 onChange={(e) => validateBotToken(e.target.value)}
                 className={`w-full px-4 py-3 border rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent transition-colors ${
-                  botValidated ? 'border-brand-accent bg-brand-accent/5' : 'border-border-default bg-white'
+                  botValidated ? 'border-brand-accent bg-brand-accent/5' : 'border-[var(--border)] bg-[var(--card)]'
                 }`}
               />
             </div>
@@ -168,12 +168,12 @@ export function Setup() {
                 placeholder="123456789"
                 value={telegramUserId}
                 onChange={(e) => setTelegramUserId(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent transition-colors"
+                className="w-full px-4 py-3 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent transition-colors"
               />
             </div>
           </div>
 
-          <div className="bg-white border border-border-default rounded-xl p-6 shadow-sm space-y-6">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 shadow-sm space-y-6">
             <h2 className="text-xl font-bold text-text-primary">Connect Claude</h2>
 
             <div className="grid grid-cols-2 gap-3">
@@ -182,7 +182,7 @@ export function Setup() {
                 className={`p-4 rounded-xl border-2 text-left transition-colors ${
                   authMethod === 'token'
                     ? 'border-brand-accent bg-brand-accent/5'
-                    : 'border-border-default bg-white'
+                    : 'border-[var(--border)] bg-[var(--card)]'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
@@ -198,12 +198,12 @@ export function Setup() {
                 className={`p-4 rounded-xl border-2 text-left transition-colors relative ${
                   authMethod === 'apikey'
                     ? 'border-brand-accent bg-brand-accent/5'
-                    : 'border-border-default bg-white opacity-60'
+                    : 'border-[var(--border)] bg-[var(--card)] opacity-60'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-semibold text-text-primary">API Key</span>
-                  <span className="text-[10px] font-bold uppercase bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Coming soon</span>
+                  <span className="text-[10px] font-bold uppercase bg-[var(--surface-elevated)] text-[var(--text-secondary)] px-2 py-0.5 rounded-full">Coming soon</span>
                 </div>
                 <p className="text-xs text-text-secondary">Pay per use</p>
                 <p className="text-xs text-blue-600 mt-1 font-medium">📊 Usage-based</p>
@@ -222,7 +222,7 @@ export function Setup() {
               <div className="space-y-3 pl-2">
                 {[
                   <>Subscribe to Claude Pro/Max at <a href="https://claude.ai" target="_blank" rel="noopener noreferrer" className="text-purple-accent underline">claude.ai</a></>,
-                  <>Open terminal and run:<div className="mt-1.5 bg-white border border-green-200 rounded-lg px-3 py-2 font-mono text-sm text-text-primary">npx @anthropic-ai/claude-code setup-token</div></>,
+                  <>Open terminal and run:<div className="mt-1.5 bg-[var(--card)] border border-green-200 rounded-lg px-3 py-2 font-mono text-sm text-text-primary">npx @anthropic-ai/claude-code setup-token</div></>,
                   'Your browser will open — click "Approve" to authorize',
                   'Copy the token from your terminal and paste below',
                 ].map((step, i) => (
@@ -249,13 +249,13 @@ export function Setup() {
                 placeholder="sk-ant-oat01-..."
                 value={claudeToken}
                 onChange={(e) => setClaudeToken(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent transition-colors font-mono text-sm"
+                className="w-full px-4 py-3 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent transition-colors font-mono text-sm"
               />
             </div>
           </div>
 
           {launchError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+            <div className="bg-[rgba(255,59,48,0.1)] border border-[rgba(255,59,48,0.3)] rounded-lg px-4 py-3 text-sm text-[var(--negative)]">
               {launchError}
             </div>
           )}

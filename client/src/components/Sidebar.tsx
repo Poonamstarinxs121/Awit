@@ -47,7 +47,7 @@ function NavSection({ label, items, badge }: { label: string; items: typeof main
             `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               isActive
                 ? 'bg-blue-50 text-brand-accent'
-                : 'text-text-secondary hover:text-text-primary hover:bg-surface-light'
+                : 'text-text-secondary hover:text-text-primary hover:bg-[var(--surface-elevated)]'
             }`
           }
         >
@@ -77,8 +77,8 @@ export function Sidebar() {
   const governanceBadge = approvalCount?.pending ? { '/approvals': approvalCount.pending } : {};
 
   return (
-    <aside className="w-[260px] h-screen bg-surface-sidebar border-r border-border-default flex flex-col shrink-0">
-      <div className="px-6 py-5 border-b border-border-default">
+    <aside className="w-[260px] h-screen bg-surface-sidebar border-r border-[var(--border)] flex flex-col shrink-0">
+      <div className="px-6 py-5 border-b border-[var(--border)]">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-brand-accent flex items-center justify-center shadow-sm">
             <span className="text-white font-bold text-sm font-heading">S</span>
@@ -99,10 +99,10 @@ export function Sidebar() {
         <NavSection label="System" items={systemNav} />
       </nav>
 
-      <div className="px-4 py-3 border-t border-border-default">
+      <div className="px-4 py-3 border-t border-[var(--border)]">
         {user && (
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-brand-accent/10 border border-border-default flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-full bg-brand-accent/10 border border-[var(--border)] flex items-center justify-center shrink-0">
               <span className="text-brand-accent font-semibold text-xs">
                 {user.name.charAt(0).toUpperCase()}
               </span>

@@ -146,7 +146,7 @@ export function AgentDetail() {
         <button onClick={() => navigate('/agents')} className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors">
           <ArrowLeft size={18} /> Back to Agents
         </button>
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-red-400">
+        <div className="bg-[rgba(255,59,48,0.1)]0/10 border border-red-500/30 rounded-xl p-6 text-red-400">
           {error ? `Failed to load agent: ${(error as Error).message}` : 'Agent not found'}
         </div>
       </div>
@@ -201,14 +201,14 @@ export function AgentDetail() {
         </button>
       </div>
 
-      <div className="flex gap-1 overflow-x-auto border-b border-border-default pb-px">
+      <div className="flex gap-1 overflow-x-auto border-b border-[var(--border)] pb-px">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap rounded-t-lg transition-colors ${
               activeTab === tab.id
-                ? 'text-text-primary bg-white border border-border-default border-b-transparent -mb-px'
+                ? 'text-text-primary bg-[var(--card)] border border-[var(--border)] border-b-transparent -mb-px'
                 : 'text-text-secondary hover:text-text-primary'
             }`}
           >
@@ -231,7 +231,7 @@ export function AgentDetail() {
               <select
                 value={form.level}
                 onChange={(e) => setForm({ ...form, level: e.target.value as AgentLevel })}
-                className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+                className="w-full px-4 py-2.5 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
               >
                 <option value="intern">Intern</option>
                 <option value="specialist">Specialist</option>
@@ -243,7 +243,7 @@ export function AgentDetail() {
               <select
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value as AgentStatus })}
-                className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+                className="w-full px-4 py-2.5 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
               >
                 <option value="active">Active</option>
                 <option value="idle">Idle</option>
@@ -264,7 +264,7 @@ export function AgentDetail() {
               value={form.soul_md}
               onChange={(e) => setForm({ ...form, soul_md: e.target.value })}
               rows={16}
-              className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
+              className="w-full px-4 py-3 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
               placeholder="# Agent SOUL&#10;&#10;Define the agent's personality..."
             />
           </div>
@@ -279,7 +279,7 @@ export function AgentDetail() {
               value={form.agents_md}
               onChange={(e) => setForm({ ...form, agents_md: e.target.value })}
               rows={16}
-              className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
+              className="w-full px-4 py-3 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
               placeholder="# Operating Instructions&#10;&#10;Define how the agent operates..."
             />
           </div>
@@ -294,7 +294,7 @@ export function AgentDetail() {
               value={form.tools_md}
               onChange={(e) => setForm({ ...form, tools_md: e.target.value })}
               rows={16}
-              className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
+              className="w-full px-4 py-3 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
               placeholder="# Capabilities&#10;&#10;Define what tools the agent can use..."
             />
           </div>
@@ -310,7 +310,7 @@ export function AgentDetail() {
               value={form.heartbeat_md}
               onChange={(e) => setForm({ ...form, heartbeat_md: e.target.value })}
               rows={16}
-              className="w-full px-4 py-3 bg-surface-light border border-border-default rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
+              className="w-full px-4 py-3 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary font-mono text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-y"
               placeholder="# Heartbeat Checklist&#10;&#10;- [ ] Check for new tasks..."
             />
           </div>
@@ -339,7 +339,7 @@ export function AgentDetail() {
                 step={0.1}
                 value={form.temperature}
                 onChange={(e) => setForm({ ...form, temperature: parseFloat(e.target.value) || 0 })}
-                className="w-full px-4 py-2.5 bg-surface-light border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
+                className="w-full px-4 py-2.5 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
               />
             </div>
           </div>
@@ -351,12 +351,12 @@ export function AgentDetail() {
           {stats ? (
             <div className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-surface-light rounded-lg p-4 border border-border-default">
+                <div className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
                   <p className="text-xs text-text-secondary uppercase tracking-wider">Completed</p>
                   <p className="text-2xl font-bold text-teal-400 mt-1">{stats.total_completed ?? 0}</p>
                 </div>
                 {stats.tasks_by_status && Object.entries(stats.tasks_by_status).map(([status, count]) => (
-                  <div key={status} className="bg-surface-light rounded-lg p-4 border border-border-default">
+                  <div key={status} className="bg-[var(--surface-elevated)] rounded-lg p-4 border border-[var(--border)]">
                     <p className="text-xs text-text-secondary uppercase tracking-wider">{status.replace('_', ' ')}</p>
                     <p className="text-2xl font-bold text-text-primary mt-1">{count as number}</p>
                   </div>

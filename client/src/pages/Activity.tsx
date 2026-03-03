@@ -108,7 +108,7 @@ export function Activity() {
             className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
               activeFilter === type.value
                 ? 'bg-brand-accent text-white border-brand-accent'
-                : 'bg-white text-text-secondary border-border-default hover:border-brand-accent hover:text-brand-accent'
+                : 'bg-[var(--card)] text-text-secondary border-[var(--border)] hover:border-brand-accent hover:text-brand-accent'
             }`}
           >
             {type.label}
@@ -121,17 +121,17 @@ export function Activity() {
           <Spinner />
         </div>
       ) : allActivities.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-48 bg-white border border-border-default rounded-xl text-center">
+        <div className="flex flex-col items-center justify-center h-48 bg-[var(--card)] border border-[var(--border)] rounded-xl text-center">
           <ActivityIcon size={40} className="text-text-muted mb-3" />
           <p className="font-medium text-text-primary">No activity yet</p>
           <p className="text-sm text-text-secondary mt-1">Events will appear here as agents work.</p>
         </div>
       ) : (
-        <div className="bg-white border border-border-default rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden shadow-sm">
           <div className="divide-y divide-border-default">
             {allActivities.map((event, idx) => (
-              <div key={event.id ?? idx} className="flex items-start gap-4 px-5 py-3.5 hover:bg-slate-50/60 transition-colors">
-                <div className="mt-0.5 w-7 h-7 rounded-lg bg-slate-50 border border-border-default flex items-center justify-center shrink-0">
+              <div key={event.id ?? idx} className="flex items-start gap-4 px-5 py-3.5 hover:bg-[var(--surface-elevated)]/60 transition-colors">
+                <div className="mt-0.5 w-7 h-7 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] flex items-center justify-center shrink-0">
                   {eventIcon(event.action)}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -141,7 +141,7 @@ export function Activity() {
                     )}
                     <span className="text-sm text-text-secondary">{actionLabel(event.action)}</span>
                     {event.target_type && (
-                      <span className="text-xs text-text-muted bg-slate-100 px-1.5 py-0.5 rounded">
+                      <span className="text-xs text-text-muted bg-[var(--surface-elevated)] px-1.5 py-0.5 rounded">
                         {event.target_type}
                       </span>
                     )}
@@ -163,7 +163,7 @@ export function Activity() {
           </div>
 
           {hasMore && (
-            <div className="border-t border-border-default p-4 flex justify-center">
+            <div className="border-t border-[var(--border)] p-4 flex justify-center">
               <Button
                 variant="secondary"
                 size="sm"

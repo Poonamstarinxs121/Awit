@@ -65,7 +65,7 @@ function BoardGroupForm({
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Optional description"
           rows={2}
-          className="w-full px-4 py-2.5 bg-white border border-border-default rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-none"
+          className="w-full px-4 py-2.5 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent resize-none"
         />
       </div>
       <div className="space-y-1.5">
@@ -151,10 +151,10 @@ export function BoardGroups() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <button
           onClick={() => navigate('/kanban')}
-          className="group text-left bg-white border-2 border-dashed border-border-default rounded-xl p-5 hover:border-brand-accent hover:bg-blue-50/30 transition-colors"
+          className="group text-left bg-[var(--card)] border-2 border-dashed border-[var(--border)] rounded-xl p-5 hover:border-brand-accent hover:bg-blue-50/30 transition-colors"
         >
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-slate-100">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-[var(--surface-elevated)]">
               <Columns3 size={20} className="text-text-secondary" />
             </div>
             <div>
@@ -170,13 +170,13 @@ export function BoardGroups() {
         {groups.map((group) => (
           <div
             key={group.id}
-            className="relative group bg-white border border-border-default rounded-xl p-5 hover:shadow-md transition-shadow cursor-pointer"
+            className="relative group bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 hover:shadow-md transition-shadow cursor-pointer"
             onClick={() => navigate(`/kanban?boardGroupId=${group.id}`)}
           >
             <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={(e) => { e.stopPropagation(); setEditGroup(group); }}
-                className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-light transition-colors"
+                className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-[var(--surface-elevated)] transition-colors"
               >
                 <Pencil size={14} />
               </button>
@@ -187,7 +187,7 @@ export function BoardGroups() {
                     deleteMutation.mutate(group.id);
                   }
                 }}
-                className="p-1.5 rounded-lg text-text-muted hover:text-danger hover:bg-red-50 transition-colors"
+                className="p-1.5 rounded-lg text-text-muted hover:text-danger hover:bg-[rgba(255,59,48,0.1)] transition-colors"
               >
                 <Trash2 size={14} />
               </button>

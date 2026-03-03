@@ -120,8 +120,8 @@ export function HelpCenter() {
 
   return (
     <div className="flex h-[calc(100vh-8rem)] gap-6">
-      <aside className="w-[260px] shrink-0 bg-white border border-border-default rounded-xl overflow-y-auto">
-        <div className="px-4 py-4 border-b border-border-default">
+      <aside className="w-[260px] shrink-0 bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-y-auto">
+        <div className="px-4 py-4 border-b border-[var(--border)]">
           <div className="flex items-center gap-2">
             <span className="text-xl">📖</span>
             <div>
@@ -145,7 +145,7 @@ export function HelpCenter() {
                     className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-sm transition-colors ${
                       activeTopicId === topic.id
                         ? 'bg-brand-accent/10 text-brand-accent font-medium'
-                        : 'text-text-secondary hover:text-text-primary hover:bg-surface-light'
+                        : 'text-text-secondary hover:text-text-primary hover:bg-[var(--surface-elevated)]'
                     }`}
                   >
                     <span className="text-sm">{topic.emoji}</span>
@@ -157,7 +157,7 @@ export function HelpCenter() {
           ))}
         </nav>
 
-        <div className="px-4 py-3 border-t border-border-default">
+        <div className="px-4 py-3 border-t border-[var(--border)]">
           <a
             href="mailto:support@squidjob.com"
             className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
@@ -168,8 +168,8 @@ export function HelpCenter() {
         </div>
       </aside>
 
-      <div className="flex-1 bg-white border border-border-default rounded-xl overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-border-default px-6 py-3 flex items-center justify-between z-10">
+      <div className="flex-1 bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-y-auto">
+        <div className="sticky top-0 bg-[var(--card)] border-b border-[var(--border)] px-6 py-3 flex items-center justify-between z-10">
           <div className="flex items-center gap-3">
             <span className="text-2xl">{activeTopic.emoji}</span>
             <h1 className="text-lg font-bold text-text-primary">{activeTopic.title}</h1>
@@ -184,7 +184,7 @@ export function HelpCenter() {
           dangerouslySetInnerHTML={{ __html: activeTopic.content }}
         />
 
-        <div className="px-8 py-4 border-t border-border-default flex items-center justify-between">
+        <div className="px-8 py-4 border-t border-[var(--border)] flex items-center justify-between">
           <button
             onClick={() => {
               if (activeIndex > 0) setActiveTopicId(HELP_TOPICS[activeIndex - 1].id);
