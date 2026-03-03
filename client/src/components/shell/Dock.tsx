@@ -1,9 +1,9 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, Monitor, FolderOpen, Brain, Bot, Activity,
-  Clock, Puzzle, DollarSign, Settings, History, Search, GitBranch,
+  LayoutDashboard, Monitor, Brain, Bot, Activity,
+  Clock, DollarSign, Settings, History, Search,
   BarChart3, Calendar, Terminal, FileText, Zap,
-  Server, ShieldCheck, HelpCircle, CreditCard, Columns3, ScrollText,
+  Server, ShieldCheck, HelpCircle, CreditCard, Columns3,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiGet } from '../../api/client';
@@ -24,18 +24,15 @@ const dockSections = [
     items: [
       { href: '/analytics', label: 'Analytics', icon: BarChart3 },
       { href: '/costs', label: 'Costs', icon: DollarSign },
-      { href: '/memory-graph', label: 'Memory', icon: Brain },
-      { href: '/skills', label: 'Skills', icon: Puzzle },
+      { href: '/memory', label: 'Memory', icon: Brain },
       { href: '/search', label: 'Search', icon: Search },
     ],
   },
   {
     label: 'Automation',
     items: [
-      { href: '/cron', label: 'Cron', icon: Clock },
-      { href: '/workflows', label: 'Workflows', icon: Zap },
+      { href: '/automation', label: 'Automation', icon: Zap },
       { href: '/calendar', label: 'Calendar', icon: Calendar },
-      { href: '/reports', label: 'Reports', icon: BarChart3 },
     ],
   },
   {
@@ -43,9 +40,6 @@ const dockSections = [
     items: [
       { href: '/machines', label: 'Machines', icon: Server },
       { href: '/terminal', label: 'Terminal', icon: Terminal },
-      { href: '/logs', label: 'Logs', icon: ScrollText },
-      { href: '/files', label: 'Files', icon: FolderOpen },
-      { href: '/git', label: 'Git', icon: GitBranch },
     ],
   },
   {

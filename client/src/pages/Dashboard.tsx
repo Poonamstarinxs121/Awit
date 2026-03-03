@@ -13,7 +13,7 @@ const quickLinks = [
   { to: '/agents', label: 'Agents', icon: Bot, color: 'var(--accent)' },
   { to: '/boards', label: 'Boards', icon: Columns3, color: 'var(--info)' },
   { to: '/kanban', label: 'Board', icon: MessageSquare, color: 'var(--positive)' },
-  { to: '/memory-graph', label: 'Memory', icon: Brain, color: 'var(--type-command)' },
+  { to: '/memory', label: 'Memory', icon: Brain, color: 'var(--type-command)' },
   { to: '/machines', label: 'Machines', icon: Server, color: 'var(--type-file)' },
   { to: '/approvals', label: 'Approvals', icon: ShieldCheck, color: 'var(--warning)' },
   { to: '/analytics', label: 'Analytics', icon: BarChart3, color: '#FF9500' },

@@ -14,7 +14,7 @@ const mainNav = [
 
 const knowledgeNav = [
   { to: '/documents', label: 'Documents', icon: FileText },
-  { to: '/memory-graph', label: 'Memory Graph', icon: Brain },
+  { to: '/memory', label: 'Memory', icon: Brain },
 ];
 
 const commsNav = [

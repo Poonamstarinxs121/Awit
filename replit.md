@@ -62,15 +62,37 @@ SquidJob is built as a monorepo with distinct `server/` and `client/` directorie
 - `/dashboard` — Main dashboard (protected, inside Layout shell)
 - `/login`, `/register` — Auth pages (public, dark theme)
 - `/subscription` — Plan management (protected, standalone dark page)
-- All other routes (`/agents`, `/kanban`, `/settings`, etc.) — protected, inside Layout shell
+- Protected routes inside Layout shell:
+  - `/dashboard`, `/boards`, `/kanban` (unified Board), `/agents`, `/agents/new`, `/agents/:id`
+  - `/standups`, `/settings`, `/documents`, `/machines`, `/approvals`
+  - `/activity` (enhanced LogsPage with terminal UI), `/system`, `/sessions`
+  - `/costs`, `/analytics`, `/calendar`, `/terminal`
+  - `/automation` (merged Cron+Webhooks), `/search`, `/actions`, `/about`
+  - `/memory` (MemoryGraph), `/help`
 
-## Recent Changes (Phase 10 — Unified Board + Chat)
+## Dock Navigation (Left, 68px)
+- **Core**: Dashboard, System, Agents, Sessions, Activity
+- **Intelligence**: Analytics, Costs, Memory, Search
+- **Automation**: Automation (cron+webhooks), Calendar
+- **Infrastructure**: Machines, Terminal
+- **Workspace**: Boards, Docs, Standups, Approvals
+- **System**: Settings, Billing, Help
+
+## Recent Changes (Phase 11 — App-Wide Consolidation Audit)
+- **9 pages removed** — eliminated all redundancy and duplicate features
+- **LogsPage → Activity** (`/activity`): Kept tenacitOS terminal UI (JetBrains Mono, syntax highlighting, auto-scroll, export). Merged Activity.tsx filter chips (Task Created, Agent Message, Heartbeat, Cron, SSH, Approval, etc.) + relative time display. Deleted Activity.tsx.
+- **WorkflowsPage → Automation** (`/automation`): Kept tenacitOS polished tabbed dashboard with stats cards + webhooks tab. Merged CronPage's full CRUD (create/delete jobs, agent selector). Fixed broken field mappings (`schedule`/`is_active`). Deleted CronPage.tsx.
+- **Standups** (`/standups`): Already had `delivered_to` channel display. Deleted ReportsPage.tsx (duplicate data source).
+- **Documents** (`/documents`): Full CRUD with categories already complete. Deleted FilesPage.tsx (read-only stub).
+- **Removed stubs**: SkillsPage (redundant with Agents), GitPage (empty placeholder)
+- **Removed orphans**: Kanban.tsx, SquadChat.tsx (replaced by Board.tsx + BoardChat.tsx in Phase 10)
+- **MemoryGraph**: Consolidated from dual routes (`/memory-graph` + `/memory`) to single `/memory`
+- **Dock reorganized**: Removed 7 dead entries (Logs, Cron, Reports, Files, Git, Skills, duplicate Memory), clean 6-section layout
+
+## Previous Changes (Phase 10 — Unified Board + Chat)
 - **Unified Board Page**: Merged Squad Chat and Kanban into single `Board.tsx` with split layout — Kanban columns left + Board Chat panel right + Agents sidebar
 - **Board Chat Panel**: `client/src/components/board/BoardChat.tsx` — persistent chat in right panel with @mention autocomplete for agents, keyboard navigation, 5s polling
 - **@mention Agent Routing**: Backend POST `/v1/squad-chat/messages` now parses @AgentName mentions, routes to named agent (or lead agent as fallback), posts agent responses back to chat
-- **Agents Sidebar**: Left column showing all agents with status dots (green=active, yellow=idle, red=error, gray=disabled), links to agent detail pages
-- **Routing Cleanup**: `/squad-chat` route removed; `/kanban` now renders unified Board page; Squad Chat dock icon removed; Dashboard and Sidebar links updated
-- **Responsive**: Chat panel toggleable via PanelRight icon; mobile overlay for chat on small screens; agents sidebar hidden below `lg` breakpoint
 
 ## Previous Changes (Phase 9 — Landing + Subscription)
 - **Public Landing Page**: `LandingPage.tsx` at `/` for unauthenticated users; purple (#7C3AED) + brown + offwhite + yellow palette
