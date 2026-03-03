@@ -77,7 +77,15 @@ SquidJob is built as a monorepo with distinct `server/` and `client/` directorie
 - **Workspace**: Boards, Docs, Standups, Approvals
 - **System**: Org, Settings, Billing, Help
 
-## Recent Changes (Phase 13 — Board Redesign + Organisation Page + Consolidation Completion)
+## Recent Changes (Phase 14 — Global AppSidebar + Machines Redesign + Agent Detail Redesign)
+- **Global AppSidebar**: Extracted Board's inner sidebar into `client/src/components/shell/AppSidebar.tsx` — now rendered on ALL pages via Layout.tsx (220px, fixed, between Dock and main content). Has Personal/Organisation workspace switcher, grouped nav sections (Navigation, Boards, Skills, Administration) with expand/collapse, live agent list with status dots.
+- **Layout updated**: Total left offset = dockWidth + 220px (AppSidebar). TopBar and StatusBar adjust to full offset.
+- **Board.tsx**: Removed inner BoardSidebar (now global). Renamed "Mission Control" → "Boards". Dock Boards link → `/kanban`.
+- **Machines page redesign**: Stat cards (total/online/offline/groups), table-style machine list with status glow dots, slide-in panels for add/edit/terminal (replacing Modals), SSH terminal output in dark terminal window.
+- **Agent Detail redesign**: Hero header card with avatar + status glow + level badge, vertical tab sidebar grouped into INTERACT/CONFIGURE/AUTOMATE, save button in each card header, model config with provider dropdown + temperature slider.
+- **Dock**: Expand/collapse tab on right edge (visible pull tab), section headers when expanded, icon+label when collapsed, theme picker + user menu popups.
+
+## Previous Changes (Phase 13 — Board Redesign + Organisation Page + Consolidation Completion)
 - **Board.tsx Redesign**: Added structured left inner sidebar (200px) with Personal/Organisation workspace switcher dropdown, NAVIGATION/BOARDS/SKILLS/ADMINISTRATION nav sections, agents list with status dots. Toolbar with Board/List view toggle, +Add, Play/Pause, Filter, Copy, Edit, Settings, Chat icons. Improved task cards with priority color strips + assignee initials.
 - **Organisation Page** (`/organisation`): New page with 4 stat cards, org details + subscription info, team members list, API providers status, permissions/roles grid. Added to Dock System section and `/organisation` route.
 - **Phase 11 Consolidation Complete**: All 9 orphaned pages removed (Activity, CronPage, ReportsPage, FilesPage, SkillsPage, GitPage, Kanban, SquadChat, duplicate memory route). Final page count: ~32 pages.

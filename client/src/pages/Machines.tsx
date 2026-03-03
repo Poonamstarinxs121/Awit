@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Server, Plus, Trash2, Terminal, Wifi, WifiOff, RefreshCw, Play, Layers, Edit2, X } from 'lucide-react';
+import {
+  Server, Plus, Trash2, Terminal, Wifi, WifiOff,
+  RefreshCw, Play, Layers, Edit2, X, CheckCircle,
+  Clock, Cpu, AlertCircle,
+} from 'lucide-react';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../api/client';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Badge } from '../components/ui/Badge';
 import { Spinner } from '../components/ui/Spinner';
-import { Modal } from '../components/ui/Modal';
 
 interface Machine {
   id: string;
@@ -40,30 +39,44 @@ interface ExecResult {
   error?: string;
 }
 
-function StatusDot({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    online: 'bg-green-500',
-    offline: 'bg-[rgba(255,59,48,0.1)]0',
-    unknown: 'bg-[var(--surface-elevated)]',
-  };
-  return (
-    <span className={`inline-block w-2 h-2 rounded-full ${colors[status] || 'bg-[var(--surface-elevated)]'} flex-shrink-0`} title={status} />
-  );
-}
+const STATUS_CONFIG: Record<string, { color: string; glow: string; label: string; icon: typeof CheckCircle }> = {
+  online:  { color: '#30D158', glow: 'rgba(48,209,88,0.3)',  label: 'Online',  icon: CheckCircle },
+  offline: { color: '#FF453A', glow: 'rgba(255,69,58,0.3)', label: 'Offline', icon: AlertCircle },
+  unknown: { color: '#636366', glow: 'rgba(99,99,102,0.3)', label: 'Unknown', icon: Clock },
+};
 
 function timeSince(dateStr: string | null): string {
   if (!dateStr) return 'Never';
-  const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-  if (seconds < 60) return `${seconds}s ago`;
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  return `${Math.floor(seconds / 86400)}d ago`;
+  const s = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
+const fieldStyle: React.CSSProperties = {
+  width: '100%', padding: '9px 12px',
+  backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)',
+  borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', outline: 'none',
+};
+
+const labelStyle: React.CSSProperties = {
+  fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)',
+  display: 'block', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.4px',
+};
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label style={labelStyle}>{label}</label>
+      {children}
+    </div>
+  );
 }
 
 export function Machines() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'machines' | 'groups'>('machines');
-
   const [showAddMachine, setShowAddMachine] = useState(false);
   const [editMachine, setEditMachine] = useState<Machine | null>(null);
   const [terminalMachine, setTerminalMachine] = useState<Machine | null>(null);
@@ -72,14 +85,13 @@ export function Machines() {
   const [execResults, setExecResults] = useState<ExecResult[]>([]);
   const [execRunning, setExecRunning] = useState(false);
   const [pingStates, setPingStates] = useState<Record<string, { loading: boolean; latency?: number }>>({});
-
   const [showAddGroup, setShowAddGroup] = useState(false);
   const [editGroup, setEditGroup] = useState<MachineGroup | null>(null);
+  const [formError, setFormError] = useState('');
 
   const blankForm = { name: '', host: '', ssh_port: '22', ssh_user: '', ssh_auth_type: 'key' as const, ssh_credential: '', group_id: '', description: '' };
   const [machineForm, setMachineForm] = useState(blankForm);
   const [groupForm, setGroupForm] = useState({ name: '', description: '' });
-  const [formError, setFormError] = useState('');
 
   const { data: machinesData, isLoading: loadingMachines } = useQuery({
     queryKey: ['machines'],
@@ -93,11 +105,11 @@ export function Machines() {
 
   const machines = machinesData?.machines ?? [];
   const groups = groupsData?.groups ?? [];
+  const onlineCount = machines.filter(m => m.status === 'online').length;
+  const offlineCount = machines.filter(m => m.status === 'offline').length;
 
   const createMachineMutation = useMutation({
-    mutationFn: (data: typeof blankForm) => apiPost('/v1/machines', {
-      ...data, ssh_port: Number(data.ssh_port), group_id: data.group_id || undefined,
-    }),
+    mutationFn: (data: typeof blankForm) => apiPost('/v1/machines', { ...data, ssh_port: Number(data.ssh_port), group_id: data.group_id || undefined }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['machines'] }); setShowAddMachine(false); setMachineForm(blankForm); setFormError(''); },
     onError: (err: Error) => setFormError(err.message),
   });
@@ -163,119 +175,238 @@ export function Machines() {
 
   function openEdit(machine: Machine) {
     setMachineForm({
-      name: machine.name,
-      host: machine.host,
-      ssh_port: String(machine.ssh_port),
-      ssh_user: machine.ssh_user,
-      ssh_auth_type: machine.ssh_auth_type,
-      ssh_credential: '',
-      group_id: machine.group_id || '',
-      description: machine.description || '',
+      name: machine.name, host: machine.host, ssh_port: String(machine.ssh_port),
+      ssh_user: machine.ssh_user, ssh_auth_type: machine.ssh_auth_type,
+      ssh_credential: '', group_id: machine.group_id || '', description: machine.description || '',
     });
     setEditMachine(machine);
     setFormError('');
   }
 
+  const showMachineForm = showAddMachine || !!editMachine;
+  const showGroupForm = showAddGroup || !!editGroup;
+  const showTerminal = !!terminalMachine || !!terminalGroup;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Infrastructure</h1>
-          <p className="text-text-secondary text-sm mt-0.5">Manage your Mac Minis and machine groups via SSH</p>
+          <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.3px', margin: '0 0 4px' }}>
+            Machines
+          </h1>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
+            Manage SSH-connected machines and groups for remote execution
+          </p>
         </div>
-        <Button
+        <button
           onClick={() => { setActiveTab('machines'); setShowAddMachine(true); setMachineForm(blankForm); setFormError(''); }}
-          size="sm"
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '8px 16px', borderRadius: '8px',
+            backgroundColor: 'var(--accent)', border: 'none',
+            color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+            flexShrink: 0,
+          }}
         >
-          <Plus size={16} className="mr-1.5" /> Add Machine
-        </Button>
+          <Plus size={15} /> Add Machine
+        </button>
       </div>
 
-      <div className="flex gap-1 border-b border-[var(--border)]">
+      {/* Stat cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+        {[
+          { label: 'Total Machines', value: machines.length, color: 'var(--text-primary)', icon: Server },
+          { label: 'Online', value: onlineCount, color: '#30D158', icon: CheckCircle },
+          { label: 'Offline', value: offlineCount, color: '#FF453A', icon: AlertCircle },
+          { label: 'Groups', value: groups.length, color: '#64D2FF', icon: Layers },
+        ].map(stat => {
+          const Icon = stat.icon;
+          return (
+            <div key={stat.label} style={{
+              backgroundColor: 'var(--card)', border: '1px solid var(--border)',
+              borderRadius: '12px', padding: '16px 18px',
+              display: 'flex', alignItems: 'center', gap: '12px',
+            }}>
+              <div style={{
+                width: '36px', height: '36px', borderRadius: '9px',
+                backgroundColor: 'var(--surface-elevated)', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Icon size={18} style={{ color: stat.color }} />
+              </div>
+              <div>
+                <p style={{ fontSize: '22px', fontWeight: 700, color: stat.color, fontFamily: 'var(--font-heading)', margin: 0, lineHeight: 1 }}>
+                  {stat.value}
+                </p>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '3px 0 0' }}>
+                  {stat.label}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Tab bar */}
+      <div style={{ display: 'flex', gap: '4px', borderBottom: '1px solid var(--border)', paddingBottom: '1px' }}>
         {(['machines', 'groups'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-medium capitalize border-b-2 transition-colors ${activeTab === tab ? 'border-brand-accent text-brand-accent' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
+            style={{
+              padding: '8px 16px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500,
+              borderRadius: '6px 6px 0 0', transition: 'all 150ms',
+              backgroundColor: activeTab === tab ? 'var(--card)' : 'transparent',
+              color: activeTab === tab ? 'var(--accent)' : 'var(--text-secondary)',
+              borderBottom: activeTab === tab ? '2px solid var(--accent)' : '2px solid transparent',
+            }}
           >
-            {tab}
-            {tab === 'machines' && <span className="ml-1.5 text-xs text-text-muted">({machines.length})</span>}
-            {tab === 'groups' && <span className="ml-1.5 text-xs text-text-muted">({groups.length})</span>}
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            <span style={{ marginLeft: '6px', fontSize: '11px', color: 'var(--text-muted)', backgroundColor: 'var(--surface-elevated)', padding: '1px 6px', borderRadius: '10px', border: '1px solid var(--border)' }}>
+              {tab === 'machines' ? machines.length : groups.length}
+            </span>
           </button>
         ))}
       </div>
 
+      {/* Machines list */}
       {activeTab === 'machines' && (
         <div>
           {loadingMachines ? (
-            <div className="flex justify-center py-12"><Spinner /></div>
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}><Spinner /></div>
           ) : machines.length === 0 ? (
-            <Card>
-              <div className="text-center py-12">
-                <Server size={40} className="mx-auto text-text-muted mb-3" />
-                <p className="text-text-muted text-sm">No machines registered yet.</p>
-                <p className="text-text-muted text-xs mt-1">Add your Mac Minis to manage them via SSH.</p>
-                <Button className="mt-4" size="sm" onClick={() => setShowAddMachine(true)}>
-                  <Plus size={14} className="mr-1.5" /> Add First Machine
-                </Button>
+            <div style={{
+              backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px',
+              padding: '60px 24px', textAlign: 'center',
+            }}>
+              <div style={{
+                width: '56px', height: '56px', borderRadius: '16px', backgroundColor: 'var(--surface-elevated)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
+              }}>
+                <Server size={28} style={{ color: 'var(--text-muted)' }} />
               </div>
-            </Card>
+              <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 8px' }}>No machines registered</p>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 20px' }}>Add your Mac Minis or servers to manage them via SSH</p>
+              <button
+                onClick={() => setShowAddMachine(true)}
+                style={{ padding: '9px 20px', backgroundColor: 'var(--accent)', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Plus size={14} /> Add First Machine
+              </button>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {machines.map(machine => {
+            <div style={{
+              backgroundColor: 'var(--card)', border: '1px solid var(--border)',
+              borderRadius: '14px', overflow: 'hidden',
+            }}>
+              {/* Table header */}
+              <div style={{
+                display: 'grid', gridTemplateColumns: '40px 1fr 160px 120px 100px 120px 140px',
+                padding: '10px 16px', borderBottom: '1px solid var(--border)',
+                backgroundColor: 'var(--surface)',
+              }}>
+                {['', 'Machine', 'Host', 'Auth', 'Group', 'Last Ping', 'Actions'].map((h, i) => (
+                  <div key={i} style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center' }}>
+                    {h}
+                  </div>
+                ))}
+              </div>
+              {/* Table rows */}
+              {machines.map((machine, idx) => {
                 const ping = pingStates[machine.id];
+                const sc = STATUS_CONFIG[machine.status] || STATUS_CONFIG.unknown;
                 return (
-                  <div key={machine.id} className="bg-[var(--card)] rounded-xl border border-[var(--border)] shadow-sm p-5 space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <StatusDot status={machine.status} />
-                        <div>
-                          <h3 className="text-text-primary font-semibold">{machine.name}</h3>
-                          <p className="text-text-muted text-xs">{machine.ssh_user}@{machine.host}:{machine.ssh_port}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {machine.group_name && <Badge variant="info">{machine.group_name}</Badge>}
-                        <Badge variant={machine.status === 'online' ? 'active' : machine.status === 'offline' ? 'idle' : 'info'}>
-                          {machine.status}
-                        </Badge>
-                      </div>
+                  <div
+                    key={machine.id}
+                    style={{
+                      display: 'grid', gridTemplateColumns: '40px 1fr 160px 120px 100px 120px 140px',
+                      padding: '12px 16px', alignItems: 'center',
+                      borderBottom: idx < machines.length - 1 ? '1px solid var(--border)' : 'none',
+                      transition: 'background-color 150ms',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--surface-elevated)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                  >
+                    {/* Status dot */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{
+                        width: '9px', height: '9px', borderRadius: '50%',
+                        backgroundColor: sc.color,
+                        boxShadow: `0 0 6px ${sc.glow}`,
+                      }} />
                     </div>
 
-                    {machine.description && (
-                      <p className="text-text-secondary text-xs">{machine.description}</p>
-                    )}
-
-                    <div className="flex items-center justify-between text-xs text-text-muted">
-                      <span>Last ping: {timeSince(machine.last_ping)}</span>
-                      {ping?.latency !== undefined && <span className="text-green-600">+{ping.latency}ms</span>}
+                    {/* Name + desc */}
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {machine.name}
+                      </p>
+                      {machine.description && (
+                        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {machine.description}
+                        </p>
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-2 pt-1">
-                      <Button
-                        size="sm"
-                        variant="secondary"
+                    {/* Host */}
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {machine.ssh_user}@{machine.host}:{machine.ssh_port}
+                    </div>
+
+                    {/* Auth type */}
+                    <div>
+                      <span style={{
+                        fontSize: '10px', fontWeight: 600, padding: '2px 8px', borderRadius: '5px',
+                        backgroundColor: machine.ssh_auth_type === 'key' ? 'rgba(100,210,255,0.1)' : 'rgba(255,159,10,0.1)',
+                        color: machine.ssh_auth_type === 'key' ? '#64D2FF' : '#FF9F0A',
+                        textTransform: 'uppercase', letterSpacing: '0.3px',
+                      }}>
+                        {machine.ssh_auth_type === 'key' ? 'SSH Key' : 'Password'}
+                      </span>
+                    </div>
+
+                    {/* Group */}
+                    <div>
+                      {machine.group_name ? (
+                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)', backgroundColor: 'var(--surface-elevated)', padding: '2px 8px', borderRadius: '5px', border: '1px solid var(--border)' }}>
+                          {machine.group_name}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>—</span>
+                      )}
+                    </div>
+
+                    {/* Last ping */}
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                      {ping?.latency !== undefined
+                        ? <span style={{ color: '#30D158', fontFamily: 'var(--font-mono)' }}>{ping.latency}ms</span>
+                        : timeSince(machine.last_ping)
+                      }
+                    </div>
+
+                    {/* Actions */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <ActionBtn
+                        icon={ping?.loading ? RefreshCw : machine.status === 'online' ? Wifi : WifiOff}
                         onClick={() => pingMachine(machine)}
                         disabled={ping?.loading}
-                        className="flex-1"
-                      >
-                        {ping?.loading ? <Spinner size="sm" className="mr-1" /> : machine.status === 'online' ? <Wifi size={12} className="mr-1" /> : <WifiOff size={12} className="mr-1" />}
-                        Ping
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
+                        title="Ping"
+                        spin={ping?.loading}
+                      />
+                      <ActionBtn
+                        icon={Terminal}
                         onClick={() => { setTerminalMachine(machine); setTerminalGroup(null); setCommand(''); setExecResults([]); }}
-                        className="flex-1"
-                      >
-                        <Terminal size={12} className="mr-1" /> Terminal
-                      </Button>
-                      <button onClick={() => openEdit(machine)} className="p-1.5 text-text-muted hover:text-text-primary rounded transition-colors">
-                        <Edit2 size={14} />
-                      </button>
-                      <button onClick={() => deleteMachineMutation.mutate(machine.id)} className="p-1.5 text-text-muted hover:text-red-500 rounded transition-colors">
-                        <Trash2 size={14} />
-                      </button>
+                        title="SSH Terminal"
+                      />
+                      <ActionBtn icon={Edit2} onClick={() => openEdit(machine)} title="Edit" />
+                      <ActionBtn
+                        icon={Trash2}
+                        onClick={() => deleteMachineMutation.mutate(machine.id)}
+                        title="Delete"
+                        danger
+                      />
                     </div>
                   </div>
                 );
@@ -285,196 +416,304 @@ export function Machines() {
         </div>
       )}
 
+      {/* Groups tab */}
       {activeTab === 'groups' && (
-        <div className="space-y-4">
-          <div className="flex justify-end">
-            <Button size="sm" variant="secondary" onClick={() => { setShowAddGroup(true); setGroupForm({ name: '', description: '' }); }}>
-              <Plus size={14} className="mr-1.5" /> New Group
-            </Button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => { setShowAddGroup(true); setGroupForm({ name: '', description: '' }); }}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '8px', backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }}
+            >
+              <Plus size={13} /> New Group
+            </button>
           </div>
+
           {loadingGroups ? (
-            <div className="flex justify-center py-12"><Spinner /></div>
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}><Spinner /></div>
           ) : groups.length === 0 ? (
-            <Card>
-              <div className="text-center py-12">
-                <Layers size={40} className="mx-auto text-text-muted mb-3" />
-                <p className="text-text-muted text-sm">No groups yet. Create one to manage machines together.</p>
-              </div>
-            </Card>
+            <div style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '48px 24px', textAlign: 'center' }}>
+              <Layers size={36} style={{ color: 'var(--text-muted)', margin: '0 auto 12px', display: 'block' }} />
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>No groups yet. Create one to run commands across multiple machines.</p>
+            </div>
           ) : (
-            <div className="space-y-3">
-              {groups.map(group => {
-                const groupMachines = machines.filter(m => m.group_id === group.id);
-                return (
-                  <div key={group.id} className="bg-[var(--card)] rounded-xl border border-[var(--border)] shadow-sm p-5">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h3 className="text-text-primary font-semibold">{group.name}</h3>
-                        {group.description && <p className="text-text-muted text-xs mt-0.5">{group.description}</p>}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="info">{group.machine_count} machines</Badge>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => { setTerminalGroup(group); setTerminalMachine(null); setCommand(''); setExecResults([]); }}
-                          disabled={group.machine_count === 0}
-                        >
-                          <Play size={12} className="mr-1" /> Run on Group
-                        </Button>
-                        <button onClick={() => { setEditGroup(group); setGroupForm({ name: group.name, description: group.description || '' }); }} className="p-1.5 text-text-muted hover:text-text-primary rounded">
-                          <Edit2 size={14} />
-                        </button>
-                        <button onClick={() => deleteGroupMutation.mutate(group.id)} className="p-1.5 text-text-muted hover:text-red-500 rounded">
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {groupMachines.map(m => (
-                        <div key={m.id} className="flex items-center gap-1.5 bg-[var(--surface-elevated)] rounded-full px-3 py-1">
-                          <StatusDot status={m.status} />
-                          <span className="text-text-secondary text-xs">{m.name}</span>
+            groups.map(group => {
+              const groupMachines = machines.filter(m => m.group_id === group.id);
+              const onlineInGroup = groupMachines.filter(m => m.status === 'online').length;
+              return (
+                <div key={group.id} style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px 22px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'var(--surface-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Layers size={16} style={{ color: 'var(--accent)' }} />
                         </div>
-                      ))}
-                      {groupMachines.length === 0 && <p className="text-text-muted text-xs">No machines in this group yet. Assign machines via the Machines tab.</p>}
+                        <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{group.name}</h3>
+                        <span style={{ fontSize: '11px', color: '#30D158', backgroundColor: 'rgba(48,209,88,0.1)', padding: '2px 8px', borderRadius: '5px' }}>
+                          {onlineInGroup}/{groupMachines.length} online
+                        </span>
+                      </div>
+                      {group.description && (
+                        <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 0 42px' }}>{group.description}</p>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <button
+                        onClick={() => { setTerminalGroup(group); setTerminalMachine(null); setCommand(''); setExecResults([]); }}
+                        disabled={group.machine_count === 0}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '7px',
+                          backgroundColor: 'var(--accent-soft)', border: '1px solid rgba(255,59,48,0.25)',
+                          color: 'var(--accent)', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                          opacity: group.machine_count === 0 ? 0.4 : 1,
+                        }}
+                      >
+                        <Play size={12} fill="currentColor" /> Run on Group
+                      </button>
+                      <ActionBtn icon={Edit2} onClick={() => { setEditGroup(group); setGroupForm({ name: group.name, description: group.description || '' }); }} title="Edit" />
+                      <ActionBtn icon={Trash2} onClick={() => deleteGroupMutation.mutate(group.id)} title="Delete" danger />
                     </div>
                   </div>
-                );
-              })}
-            </div>
+
+                  {/* Machines in group */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {groupMachines.map(m => {
+                      const sc = STATUS_CONFIG[m.status] || STATUS_CONFIG.unknown;
+                      return (
+                        <div key={m.id} style={{
+                          display: 'flex', alignItems: 'center', gap: '6px',
+                          padding: '5px 10px', borderRadius: '7px',
+                          backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)',
+                        }}>
+                          <div style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: sc.color, flexShrink: 0 }} />
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{m.name}</span>
+                        </div>
+                      );
+                    })}
+                    {groupMachines.length === 0 && (
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>No machines in this group. Assign machines via the Machines tab.</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
       )}
 
-      <Modal open={showAddMachine || !!editMachine} onClose={() => { setShowAddMachine(false); setEditMachine(null); setFormError(''); }} title={editMachine ? 'Edit Machine' : 'Add Machine'}>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Name" value={machineForm.name} onChange={e => setMachineForm(p => ({ ...p, name: e.target.value }))} placeholder="Mac Mini 1" />
-            <Input label="Host / IP" value={machineForm.host} onChange={e => setMachineForm(p => ({ ...p, host: e.target.value }))} placeholder="192.168.1.10" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="SSH Port" value={machineForm.ssh_port} onChange={e => setMachineForm(p => ({ ...p, ssh_port: e.target.value }))} placeholder="22" />
-            <Input label="SSH User" value={machineForm.ssh_user} onChange={e => setMachineForm(p => ({ ...p, ssh_user: e.target.value }))} placeholder="kaustubh" />
-          </div>
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-text-secondary">Auth Type</label>
-            <select
-              value={machineForm.ssh_auth_type}
-              onChange={e => setMachineForm(p => ({ ...p, ssh_auth_type: e.target.value as 'key' | 'password' }))}
-              className="w-full px-4 py-2.5 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent"
-            >
-              <option value="key">SSH Private Key (recommended)</option>
-              <option value="password">Password</option>
-            </select>
-          </div>
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-text-secondary">
-              {machineForm.ssh_auth_type === 'key' ? 'Private Key' : 'Password'}
-              {editMachine && ' (leave blank to keep existing)'}
-            </label>
-            {machineForm.ssh_auth_type === 'key' ? (
-              <textarea
-                value={machineForm.ssh_credential}
-                onChange={e => setMachineForm(p => ({ ...p, ssh_credential: e.target.value }))}
-                rows={5}
-                className="w-full px-4 py-3 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary font-mono text-xs placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent resize-y"
-                placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;..."
-              />
-            ) : (
-              <Input
-                type="password"
-                value={machineForm.ssh_credential}
-                onChange={e => setMachineForm(p => ({ ...p, ssh_credential: e.target.value }))}
-                placeholder="SSH password"
-              />
+      {/* Add/Edit Machine Slide-in Panel */}
+      {showMachineForm && (
+        <SlidePanel title={editMachine ? `Edit: ${editMachine.name}` : 'Add Machine'} onClose={() => { setShowAddMachine(false); setEditMachine(null); setFormError(''); }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <Field label="Name">
+                <input style={fieldStyle} value={machineForm.name} onChange={e => setMachineForm(p => ({ ...p, name: e.target.value }))} placeholder="Mac Mini 1" />
+              </Field>
+              <Field label="Host / IP">
+                <input style={fieldStyle} value={machineForm.host} onChange={e => setMachineForm(p => ({ ...p, host: e.target.value }))} placeholder="192.168.1.10" />
+              </Field>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <Field label="SSH Port">
+                <input style={fieldStyle} value={machineForm.ssh_port} onChange={e => setMachineForm(p => ({ ...p, ssh_port: e.target.value }))} placeholder="22" />
+              </Field>
+              <Field label="SSH User">
+                <input style={fieldStyle} value={machineForm.ssh_user} onChange={e => setMachineForm(p => ({ ...p, ssh_user: e.target.value }))} placeholder="username" />
+              </Field>
+            </div>
+            <Field label="Auth Type">
+              <select style={{ ...fieldStyle, cursor: 'pointer' }} value={machineForm.ssh_auth_type} onChange={e => setMachineForm(p => ({ ...p, ssh_auth_type: e.target.value as 'key' | 'password' }))}>
+                <option value="key">SSH Private Key (recommended)</option>
+                <option value="password">Password</option>
+              </select>
+            </Field>
+            <Field label={machineForm.ssh_auth_type === 'key' ? 'Private Key' : 'Password'}>
+              {machineForm.ssh_auth_type === 'key' ? (
+                <textarea
+                  style={{ ...fieldStyle, fontFamily: 'var(--font-mono)', fontSize: '11px', minHeight: '120px', resize: 'vertical' }}
+                  value={machineForm.ssh_credential}
+                  onChange={e => setMachineForm(p => ({ ...p, ssh_credential: e.target.value }))}
+                  placeholder={'-----BEGIN OPENSSH PRIVATE KEY-----\n...\n-----END OPENSSH PRIVATE KEY-----'}
+                />
+              ) : (
+                <input type="password" style={fieldStyle} value={machineForm.ssh_credential} onChange={e => setMachineForm(p => ({ ...p, ssh_credential: e.target.value }))} placeholder="SSH password" />
+              )}
+            </Field>
+            <Field label="Group (optional)">
+              <select style={{ ...fieldStyle, cursor: 'pointer' }} value={machineForm.group_id} onChange={e => setMachineForm(p => ({ ...p, group_id: e.target.value }))}>
+                <option value="">No group</option>
+                {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Description (optional)">
+              <input style={fieldStyle} value={machineForm.description} onChange={e => setMachineForm(p => ({ ...p, description: e.target.value }))} placeholder="e.g. Video encoding machine" />
+            </Field>
+            {formError && (
+              <div style={{ padding: '10px 12px', backgroundColor: 'rgba(255,69,58,0.1)', border: '1px solid rgba(255,69,58,0.25)', borderRadius: '8px', fontSize: '12px', color: '#FF453A' }}>
+                {formError}
+              </div>
             )}
-          </div>
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-text-secondary">Group (optional)</label>
-            <select
-              value={machineForm.group_id}
-              onChange={e => setMachineForm(p => ({ ...p, group_id: e.target.value }))}
-              className="w-full px-4 py-2.5 bg-[var(--card)] border border-[var(--border)] rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-accent"
+            <button
+              onClick={() => {
+                if (editMachine) {
+                  const updateData: Partial<typeof blankForm> = { ...machineForm };
+                  if (!updateData.ssh_credential) delete (updateData as Record<string, unknown>).ssh_credential;
+                  updateMachineMutation.mutate({ id: editMachine.id, data: updateData });
+                } else {
+                  createMachineMutation.mutate(machineForm);
+                }
+              }}
+              disabled={!machineForm.name || !machineForm.host || !machineForm.ssh_user || createMachineMutation.isPending || updateMachineMutation.isPending}
+              style={{
+                width: '100%', padding: '10px', borderRadius: '8px',
+                backgroundColor: 'var(--accent)', border: 'none', color: '#fff',
+                fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                opacity: (!machineForm.name || !machineForm.host || !machineForm.ssh_user) ? 0.5 : 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+              }}
             >
-              <option value="">No group</option>
-              {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-            </select>
+              {(createMachineMutation.isPending || updateMachineMutation.isPending) && <Spinner size="sm" />}
+              {editMachine ? 'Save Changes' : 'Add Machine'}
+            </button>
           </div>
-          <Input label="Description (optional)" value={machineForm.description} onChange={e => setMachineForm(p => ({ ...p, description: e.target.value }))} placeholder="e.g. Video encoding machine" />
-          {formError && <p className="text-sm text-red-500">{formError}</p>}
-          <Button
-            onClick={() => {
-              if (editMachine) {
-                const updateData: Partial<typeof blankForm> = { ...machineForm };
-                if (!updateData.ssh_credential) delete (updateData as Record<string, unknown>).ssh_credential;
-                updateMachineMutation.mutate({ id: editMachine.id, data: updateData });
-              } else {
-                createMachineMutation.mutate(machineForm);
-              }
-            }}
-            disabled={!machineForm.name || !machineForm.host || !machineForm.ssh_user || (createMachineMutation.isPending || updateMachineMutation.isPending)}
-            className="w-full"
-          >
-            {(createMachineMutation.isPending || updateMachineMutation.isPending) && <Spinner size="sm" className="mr-2" />}
-            {editMachine ? 'Save Changes' : 'Add Machine'}
-          </Button>
-        </div>
-      </Modal>
+        </SlidePanel>
+      )}
 
-      <Modal open={!!terminalMachine || !!terminalGroup} onClose={() => { setTerminalMachine(null); setTerminalGroup(null); setExecResults([]); setCommand(''); }} title={terminalMachine ? `Terminal: ${terminalMachine.name}` : `Run on Group: ${terminalGroup?.name}`}>
-        <div className="space-y-4">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={command}
-              onChange={e => setCommand(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && runExec()}
-              placeholder="e.g. df -h"
-              className="flex-1 px-4 py-2.5 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
-            />
-            <Button onClick={runExec} disabled={!command.trim() || execRunning} size="sm">
-              {execRunning ? <Spinner size="sm" /> : <Play size={14} />}
-            </Button>
+      {/* Add/Edit Group Panel */}
+      {showGroupForm && (
+        <SlidePanel title={editGroup ? 'Edit Group' : 'New Group'} onClose={() => { setShowAddGroup(false); setEditGroup(null); }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <Field label="Group Name">
+              <input style={fieldStyle} value={groupForm.name} onChange={e => setGroupForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. dev-macs" />
+            </Field>
+            <Field label="Description (optional)">
+              <input style={fieldStyle} value={groupForm.description} onChange={e => setGroupForm(p => ({ ...p, description: e.target.value }))} placeholder="e.g. Development machines" />
+            </Field>
+            <button
+              onClick={() => { if (editGroup) updateGroupMutation.mutate({ id: editGroup.id, data: groupForm }); else createGroupMutation.mutate(groupForm); }}
+              disabled={!groupForm.name || createGroupMutation.isPending || updateGroupMutation.isPending}
+              style={{ width: '100%', padding: '10px', borderRadius: '8px', backgroundColor: 'var(--accent)', border: 'none', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+            >
+              {(createGroupMutation.isPending || updateGroupMutation.isPending) && <Spinner size="sm" />}
+              {editGroup ? 'Save Group' : 'Create Group'}
+            </button>
           </div>
-          {execResults.length > 0 && (
-            <div className="space-y-2">
-              {execResults.map((r, i) => (
-                <div key={i} className="bg-[var(--bg)] rounded-lg p-4 font-mono text-xs text-green-400 space-y-1 max-h-64 overflow-y-auto">
-                  {r.machine_name && <div className="text-[var(--text-muted)] text-[10px] mb-2">[{r.machine_name}]</div>}
-                  {r.stdout && <pre className="whitespace-pre-wrap">{r.stdout}</pre>}
-                  {r.stderr && <pre className="text-red-400 whitespace-pre-wrap">{r.stderr}</pre>}
-                  <div className={`text-[10px] mt-2 ${r.exitCode === 0 ? 'text-[var(--text-secondary)]' : 'text-red-500'}`}>exit: {r.exitCode}</div>
+        </SlidePanel>
+      )}
+
+      {/* SSH Terminal Panel */}
+      {showTerminal && (
+        <SlidePanel
+          title={terminalMachine ? `SSH Terminal — ${terminalMachine.name}` : `Group Exec — ${terminalGroup?.name}`}
+          onClose={() => { setTerminalMachine(null); setTerminalGroup(null); setExecResults([]); setCommand(''); }}
+          wide
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="text"
+                value={command}
+                onChange={e => setCommand(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && runExec()}
+                placeholder="Enter command... (e.g. df -h, uptime, ls -la)"
+                style={{ ...fieldStyle, fontFamily: 'var(--font-mono)', flex: 1 }}
+              />
+              <button
+                onClick={runExec}
+                disabled={!command.trim() || execRunning}
+                style={{ padding: '9px 16px', borderRadius: '8px', backgroundColor: 'var(--accent)', border: 'none', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', opacity: !command.trim() ? 0.5 : 1 }}
+              >
+                {execRunning ? <Spinner size="sm" /> : <Play size={14} fill="currentColor" />}
+                Run
+              </button>
+            </div>
+
+            {execRunning && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                <RefreshCw size={13} className="animate-spin" /> Running via SSH...
+              </div>
+            )}
+
+            {execResults.map((r, i) => (
+              <div key={i} style={{ backgroundColor: '#0A0A0A', border: '1px solid var(--border)', borderRadius: '10px', padding: '14px 16px', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
+                {r.machine_name && (
+                  <div style={{ color: 'var(--text-muted)', fontSize: '10px', marginBottom: '8px', letterSpacing: '0.3px' }}>
+                    [{r.machine_name}]
+                  </div>
+                )}
+                {r.stdout && <pre style={{ color: '#30D158', whiteSpace: 'pre-wrap', margin: 0 }}>{r.stdout}</pre>}
+                {r.stderr && <pre style={{ color: '#FF453A', whiteSpace: 'pre-wrap', margin: 0 }}>{r.stderr}</pre>}
+                <div style={{ color: r.exitCode === 0 ? 'var(--text-muted)' : '#FF453A', fontSize: '10px', marginTop: '8px' }}>
+                  exit code: {r.exitCode}
                 </div>
-              ))}
-            </div>
-          )}
-          {execRunning && (
-            <div className="flex items-center gap-2 text-text-muted text-sm">
-              <RefreshCw size={14} className="animate-spin" />
-              Running command via SSH...
-            </div>
-          )}
-        </div>
-      </Modal>
+              </div>
+            ))}
+          </div>
+        </SlidePanel>
+      )}
+    </div>
+  );
+}
 
-      <Modal open={showAddGroup || !!editGroup} onClose={() => { setShowAddGroup(false); setEditGroup(null); }} title={editGroup ? 'Edit Group' : 'New Group'}>
-        <div className="space-y-4">
-          <Input label="Group Name" value={groupForm.name} onChange={e => setGroupForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. dev-macs" />
-          <Input label="Description (optional)" value={groupForm.description} onChange={e => setGroupForm(p => ({ ...p, description: e.target.value }))} placeholder="e.g. Development machines" />
-          <Button
-            onClick={() => {
-              if (editGroup) updateGroupMutation.mutate({ id: editGroup.id, data: groupForm });
-              else createGroupMutation.mutate(groupForm);
-            }}
-            disabled={!groupForm.name || createGroupMutation.isPending || updateGroupMutation.isPending}
-            className="w-full"
+function ActionBtn({ icon: Icon, onClick, disabled, title, danger, spin }: {
+  icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>;
+  onClick?: () => void; disabled?: boolean; title?: string; danger?: boolean; spin?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      style={{
+        width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        borderRadius: '6px', border: '1px solid var(--border)', cursor: disabled ? 'not-allowed' : 'pointer',
+        backgroundColor: 'var(--surface-elevated)',
+        color: danger ? '#FF453A' : 'var(--text-secondary)',
+        opacity: disabled ? 0.4 : 1, transition: 'all 150ms', flexShrink: 0,
+      }}
+      onMouseEnter={e => { if (!disabled) { e.currentTarget.style.backgroundColor = danger ? 'rgba(255,69,58,0.12)' : 'var(--surface-hover)'; } }}
+      onMouseLeave={e => { if (!disabled) { e.currentTarget.style.backgroundColor = 'var(--surface-elevated)'; } }}
+    >
+      <Icon size={13} className={spin ? 'animate-spin' : ''} />
+    </button>
+  );
+}
+
+function SlidePanel({ title, onClose, children, wide }: {
+  title: string; onClose: () => void; children: React.ReactNode; wide?: boolean;
+}) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 100,
+      display: 'flex', justifyContent: 'flex-end',
+    }}>
+      <div
+        style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)' }}
+        onClick={onClose}
+      />
+      <div style={{
+        position: 'relative', width: wide ? '600px' : '440px', maxWidth: '90vw',
+        height: '100%', backgroundColor: 'var(--card)',
+        borderLeft: '1px solid var(--border)',
+        display: 'flex', flexDirection: 'column',
+        boxShadow: '-20px 0 60px rgba(0,0,0,0.6)',
+      }}>
+        <div style={{
+          padding: '18px 20px', borderBottom: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          backgroundColor: 'var(--surface)', flexShrink: 0,
+        }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{title}</h2>
+          <button
+            onClick={onClose}
+            style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', border: '1px solid var(--border)', backgroundColor: 'var(--surface-elevated)', color: 'var(--text-muted)', cursor: 'pointer' }}
           >
-            {(createGroupMutation.isPending || updateGroupMutation.isPending) && <Spinner size="sm" className="mr-2" />}
-            {editGroup ? 'Save Group' : 'Create Group'}
-          </Button>
+            <X size={14} />
+          </button>
         </div>
-      </Modal>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+          {children}
+        </div>
+      </div>
     </div>
   );
 }

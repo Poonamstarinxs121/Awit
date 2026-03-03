@@ -299,7 +299,6 @@ export function Board() {
   const [chatOpen, setChatOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('board');
   const [isPlaying, setIsPlaying] = useState(false);
-  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>('personal');
   const [filterOpen, setFilterOpen] = useState(false);
 
   const { data: boardGroupData } = useQuery({
@@ -394,7 +393,7 @@ export function Board() {
     setCreateModalOpen(true);
   };
 
-  const boardTitle = boardGroupId ? (boardGroupData?.name ?? 'Board') : 'Mission Control';
+  const boardTitle = boardGroupId ? (boardGroupData?.name ?? 'Board') : 'Boards';
 
   function ToolbarBtn({ icon: Icon, onClick, active = false, title }: { icon: typeof Play; onClick?: () => void; active?: boolean; title?: string }) {
     return (
@@ -419,15 +418,6 @@ export function Board() {
   return (
     <div style={{ height: 'calc(100vh - 48px - 32px)', display: 'flex', flexDirection: 'column', minHeight: 0, margin: '-24px', overflow: 'hidden' }}>
       <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        <BoardSidebar
-          agents={agents}
-          filterTagId={filterTagId}
-          setFilterTagId={setFilterTagId}
-          tags={allTags}
-          workspaceMode={workspaceMode}
-          setWorkspaceMode={setWorkspaceMode}
-        />
-
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 }}>
           <div style={{
             padding: '16px 20px 12px',
