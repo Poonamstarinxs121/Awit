@@ -37,6 +37,8 @@ import { SearchPage } from './pages/SearchPage';
 import { ActionsPage } from './pages/ActionsPage';
 import { AboutPage } from './pages/AboutPage';
 import { Organisation } from './pages/Organisation';
+import { MarketplacePage } from './pages/MarketplacePage';
+import { PacksPage } from './pages/PacksPage';
 import { useAuth } from './hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 
@@ -110,6 +112,8 @@ export default function App() {
               <Route path="/about" element={<AboutPage />} />
               <Route path="/memory" element={<MemoryGraph />} />
               <Route path="/organisation" element={<Organisation />} />
+              <Route path="/marketplace" element={<MarketplacePage />} />
+              <Route path="/packs" element={<PacksPage />} />
             </Route>
           </Routes>
           </BrowserRouter>

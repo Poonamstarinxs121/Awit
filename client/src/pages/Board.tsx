@@ -13,6 +13,7 @@ import {
   LayoutDashboard, Columns3, Tags, ShieldCheck, Layers,
   Network, Play, Pause, List, LayoutGrid, Filter, Settings,
   Pencil, Zap, AlertCircle, Activity, Building2, Check, Clipboard,
+  Store, Package,
 } from 'lucide-react';
 import type { Task, TaskStatus, TaskPriority, Agent, Comment, Activity as ActivityType } from '../types';
 import { useLocation } from 'react-router-dom';
@@ -228,9 +229,13 @@ function BoardSidebar({
         <NavItem href="/settings" icon={Tags} label="Tags" />
         <NavItem href="/approvals" icon={ShieldCheck} label="Approvals" />
 
-        <SectionLabel label="Skills" />
+        <SectionLabel label="Agents & Automation" />
         <NavItem href="/agents" icon={Bot} label="Agents" />
         <NavItem href="/automation" icon={Zap} label="Automation" />
+
+        <SectionLabel label="Skills" />
+        <NavItem href="/marketplace" icon={Store} label="Marketplace" />
+        <NavItem href="/packs" icon={Package} label="Packs" />
 
         <SectionLabel label="Administration" />
         <NavItem href="/organisation" icon={Building2} label="Organization" />

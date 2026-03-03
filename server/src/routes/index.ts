@@ -29,6 +29,7 @@ import systemRoutes from './system.js';
 import sessionsRoutes from './sessions.js';
 import weatherRoutes from './weather.js';
 import healthRoutes from './health.js';
+import marketplaceRoutes from './marketplace.js';
 
 const router = Router();
 
@@ -63,6 +64,7 @@ router.use('/v1/board-groups', authMiddleware, tenantMiddleware, boardGroupsRout
 router.use('/v1/tags', authMiddleware, tenantMiddleware, tagsRoutes);
 router.use('/v1/api-tokens', authMiddleware, tenantMiddleware, apiTokensRoutes);
 router.use('/v1/billing', billingRoutes);
+router.use('/v1/marketplace', authMiddleware, tenantMiddleware, marketplaceRoutes);
 router.use('/admin/v1', adminRoutes);
 
 export default router;

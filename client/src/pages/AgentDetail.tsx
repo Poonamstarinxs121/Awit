@@ -5,9 +5,10 @@ import {
   ArrowLeft, Save, CheckCircle, AlertCircle, MessageSquare,
   Clock, BarChart3, User, Brain, Cpu, Zap, Heart,
   Play, Pause, Sparkles, Activity, ChevronRight,
-  Settings2, BarChart2, Terminal,
+  Settings2, BarChart2, Terminal, Store,
 } from 'lucide-react';
-import { apiGet, apiPatch, apiPost } from '../api/client';
+import { Link } from 'react-router-dom';
+import { apiGet, apiPatch, apiPost, apiDelete } from '../api/client';
 import { Spinner } from '../components/ui/Spinner';
 import { AgentChat } from '../components/AgentChat';
 import { AgentAnalytics } from '../components/AgentAnalytics';
@@ -38,6 +39,7 @@ const TABS = [
   { id: 'heartbeat',   label: 'Heartbeat',    icon: Heart,           group: 'Configure' },
   { id: 'model',       label: 'Model',        icon: Cpu,             group: 'Configure' },
   { id: 'cron',        label: 'Cron Jobs',    icon: Clock,           group: 'Automate' },
+  { id: 'skills',     label: 'Skills',       icon: Store,           group: 'Automate' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -470,6 +472,10 @@ export function AgentDetail() {
             </ConfigCard>
           )}
 
+          {activeTab === 'skills' && (
+            <AgentSkillsTab agentId={id!} />
+          )}
+
           {activeTab === 'model' && (
             <ConfigCard title="Model Configuration" icon={Cpu} onSave={handleSave} saving={mutation.isPending} saveMsg={saveMsg}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -511,6 +517,150 @@ export function AgentDetail() {
             </ConfigCard>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+interface InstalledSkill {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  category: string;
+  risk: 'safe' | 'moderate' | 'high';
+  pack_name: string;
+  installed_at: string;
+}
+
+
+const SKILL_RISK = {
+  safe:     { label: 'SAFE',     color: '#32D74B', bg: 'rgba(50,215,75,0.1)' },
+  moderate: { label: 'MODERATE', color: '#FF9F0A', bg: 'rgba(255,159,10,0.1)' },
+  high:     { label: 'HIGH',     color: '#FF453A', bg: 'rgba(255,69,58,0.1)' },
+};
+
+function ToggleSwitch({ on, onChange }: { on: boolean; onChange: () => void }) {
+  return (
+    <button
+      onClick={onChange}
+      style={{
+        width: '36px', height: '20px', borderRadius: '10px', border: 'none',
+        backgroundColor: on ? '#32D74B' : 'var(--surface-elevated)',
+        outline: '1px solid ' + (on ? '#32D74B' : 'var(--border)'),
+        cursor: 'pointer', position: 'relative', transition: 'background-color 200ms',
+        flexShrink: 0,
+      }}
+    >
+      <span style={{
+        position: 'absolute', top: '3px',
+        left: on ? '19px' : '3px',
+        width: '14px', height: '14px', borderRadius: '50%',
+        backgroundColor: '#fff',
+        transition: 'left 200ms',
+        display: 'block',
+      }} />
+    </button>
+  );
+}
+
+function AgentSkillsTab({ agentId }: { agentId: string }) {
+  const queryClient = useQueryClient();
+
+  const { data: installedData, isLoading: loadingInstalled } = useQuery({
+    queryKey: ['installed-skills'],
+    queryFn: () => apiGet<{ skills: InstalledSkill[] }>('/v1/marketplace/skills/installed'),
+  });
+
+  const { data: agentSkillsData, isLoading: loadingAgent } = useQuery({
+    queryKey: ['agent-skills', agentId],
+    queryFn: () => apiGet<{ skills: Array<{ id: string }> }>(`/v1/marketplace/agent/${agentId}/skills`),
+  });
+
+  const enableMutation = useMutation({
+    mutationFn: (skillId: string) => apiPost(`/v1/marketplace/agent/${agentId}/skills/${skillId}`, {}),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['agent-skills', agentId] }),
+  });
+
+  const disableMutation = useMutation({
+    mutationFn: (skillId: string) => apiDelete(`/v1/marketplace/agent/${agentId}/skills/${skillId}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['agent-skills', agentId] }),
+  });
+
+  const installedSkills = installedData?.skills ?? [];
+  const enabledIds = new Set((agentSkillsData?.skills ?? []).map((s: any) => s.id));
+  const isLoading = loadingInstalled || loadingAgent;
+
+  return (
+    <div style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', backgroundColor: 'var(--surface)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Store size={16} strokeWidth={2} style={{ color: 'var(--accent)' }} />
+        <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Agent Skills</span>
+      </div>
+      <div style={{ padding: '20px' }}>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+          Enable installed skills to extend this agent's capabilities. Skills inject specialised instructions into the agent's context.
+        </p>
+
+        {isLoading ? (
+          <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>Loading skills...</div>
+        ) : installedSkills.length === 0 ? (
+          <div style={{ padding: '32px', textAlign: 'center', border: '1px dashed var(--border)', borderRadius: '10px' }}>
+            <Store size={32} style={{ color: 'var(--text-muted)', margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>No skills installed in your workspace yet.</p>
+            <Link
+              to="/marketplace"
+              style={{ fontSize: '12px', color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}
+            >
+              Browse the Marketplace →
+            </Link>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {installedSkills.map(skill => {
+              const isEnabled = enabledIds.has(skill.id);
+              const isBusy = enableMutation.isPending || disableMutation.isPending;
+              const risk = SKILL_RISK[skill.risk] || SKILL_RISK.safe;
+
+              return (
+                <div
+                  key={skill.id}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '12px 14px', borderRadius: '8px',
+                    backgroundColor: isEnabled ? 'rgba(50,215,75,0.04)' : 'var(--surface-elevated)',
+                    border: `1px solid ${isEnabled ? 'rgba(50,215,75,0.2)' : 'var(--border)'}`,
+                    transition: 'all 150ms',
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{skill.name}</span>
+                      <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', backgroundColor: risk.bg, color: risk.color, fontFamily: 'var(--font-mono)' }}>
+                        {risk.label}
+                      </span>
+                      <span style={{ fontSize: '10px', color: 'var(--text-muted)', padding: '1px 6px', borderRadius: '4px', backgroundColor: 'var(--card)', border: '1px solid var(--border)', textTransform: 'capitalize' }}>
+                        {skill.category}
+                      </span>
+                    </div>
+                    {skill.description && (
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>{skill.description}</p>
+                    )}
+                    <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px', opacity: 0.7 }}>Pack: {skill.pack_name}</p>
+                  </div>
+                  <ToggleSwitch
+                    on={isEnabled}
+                    onChange={() => {
+                      if (isBusy) return;
+                      if (isEnabled) disableMutation.mutate(skill.id);
+                      else enableMutation.mutate(skill.id);
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

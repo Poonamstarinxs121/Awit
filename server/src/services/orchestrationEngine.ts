@@ -66,6 +66,22 @@ async function loadAgentMemories(tenantId: string, agentId: string, queryContext
   return `\n## Relevant Memories\n${memoryText}`;
 }
 
+async function loadAgentSkills(agentId: string): Promise<string> {
+  try {
+    const result = await pool.query(
+      `SELECT s.name, s.tools_md FROM agent_skills ags
+       JOIN skills s ON s.id = ags.skill_id
+       WHERE ags.agent_id = $1 ORDER BY s.name ASC`,
+      [agentId]
+    );
+    if (result.rows.length === 0) return '';
+    const skillSections = result.rows.map((s: any) => s.tools_md).filter(Boolean).join('\n\n');
+    return skillSections ? `\n\n## Installed Skills\n${skillSections}` : '';
+  } catch {
+    return '';
+  }
+}
+
 async function loadMachineContext(tenantId: string, agentLevel: string): Promise<string> {
   if (agentLevel !== 'lead') return '';
   try {
@@ -202,14 +218,16 @@ export async function executeAgentTurn(
     temperature: (agent.model_config?.temperature as number) ?? 0.7,
   };
 
-  const [memories, tasks, machineContext] = await Promise.all([
+  const [memories, tasks, machineContext, skillsContext] = await Promise.all([
     loadAgentMemories(tenantId, agentId, userMessage),
     loadAgentTasks(tenantId, agentId),
     loadMachineContext(tenantId, agent.level),
+    loadAgentSkills(agentId),
   ]);
 
   let soulContent = buildSystemPrompt(agent, session.compactionSummary);
   if (machineContext) soulContent += machineContext;
+  if (skillsContext) soulContent += skillsContext;
   const historyContent = session.messages.map(m => `${m.role}: ${m.content}`).join('\n');
 
   let budget = allocateContextBudget(modelConfig.model || 'gpt-4o-mini', {
@@ -356,16 +374,18 @@ export async function executeAgentTurnStream(
     temperature: (agent.model_config?.temperature as number) ?? 0.7,
   };
 
-  const [memories, tasks] = await Promise.all([
+  const [memories, tasks, skillsContextStream] = await Promise.all([
     loadAgentMemories(tenantId, agentId, userMessage),
     loadAgentTasks(tenantId, agentId),
+    loadAgentSkills(agentId),
   ]);
 
-  const soulContent = buildSystemPrompt(agent, session.compactionSummary);
+  let soulContentStream = buildSystemPrompt(agent, session.compactionSummary);
+  if (skillsContextStream) soulContentStream += skillsContextStream;
   const historyContent = session.messages.map(m => `${m.role}: ${m.content}`).join('\n');
 
   const budget = allocateContextBudget(modelConfig.model || 'gpt-4o-mini', {
-    soul: soulContent,
+    soul: soulContentStream,
     memories: memories || '',
     tasks: tasks || '',
     history: historyContent,

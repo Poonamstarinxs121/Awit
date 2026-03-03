@@ -539,6 +539,110 @@ export async function runMigrations(): Promise<void> {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_machines_tenant ON machines(tenant_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_machine_groups_tenant ON machine_groups(tenant_id)`);
 
+    // --- Skills Marketplace ---
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS skill_packs (
+        id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        name         TEXT NOT NULL,
+        slug         TEXT NOT NULL UNIQUE,
+        description  TEXT,
+        source_url   TEXT,
+        is_builtin   BOOLEAN NOT NULL DEFAULT false,
+        last_synced_at TIMESTAMPTZ,
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS skills (
+        id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        pack_id     UUID NOT NULL REFERENCES skill_packs(id) ON DELETE CASCADE,
+        name        TEXT NOT NULL,
+        slug        TEXT NOT NULL,
+        description TEXT,
+        category    TEXT NOT NULL DEFAULT 'uncategorized',
+        risk        TEXT NOT NULL DEFAULT 'safe' CHECK (risk IN ('safe','moderate','high')),
+        tools_md    TEXT NOT NULL DEFAULT '',
+        metadata    JSONB,
+        created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(pack_id, slug)
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS installed_skills (
+        id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        tenant_id    UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        skill_id     UUID NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
+        installed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(tenant_id, skill_id)
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS agent_skills (
+        id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        agent_id   UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+        skill_id   UUID NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
+        enabled_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(agent_id, skill_id)
+      )
+    `);
+
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_skills_pack ON skills(pack_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_installed_skills_tenant ON installed_skills(tenant_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_agent_skills_agent ON agent_skills(agent_id)`);
+
+    // Seed built-in skill packs (idempotent)
+    await client.query(`
+      INSERT INTO skill_packs (name, slug, description, is_builtin) VALUES
+        ('SquidJob Core Skills', 'squidjob/core-skills', 'Essential capabilities for AI agents — research, development, productivity, and data tools.', true),
+        ('SquidJob Communication Skills', 'squidjob/communication-skills', 'Messaging, notification, and collaboration capabilities for AI agents.', true)
+      ON CONFLICT (slug) DO NOTHING
+    `);
+
+    await client.query(`
+      INSERT INTO skills (pack_id, name, slug, description, category, risk, tools_md)
+      SELECT p.id, s.name, s.slug, s.description, s.category, s.risk, s.tools_md
+      FROM skill_packs p
+      CROSS JOIN (VALUES
+        ('squidjob/core-skills', 'Web Search',     'web-search',     'Search the web for current information and retrieve relevant results.',                        'research',     'safe',     E'## Web Search Capability\nYou can search the web for current information. When asked to research a topic, use web search to retrieve relevant results. Summarise findings clearly and cite your sources with URLs.'),
+        ('squidjob/core-skills', 'Deep Research',  'deep-research',  'Conduct multi-step research across multiple sources to build comprehensive reports.',          'research',     'moderate', E'## Deep Research Capability\nYou can conduct in-depth, multi-step research across multiple sources. Break complex research questions into sub-queries, synthesise information from multiple sources, identify contradictions, and produce structured research reports with citations.'),
+        ('squidjob/core-skills', 'Code Review',    'code-review',    'Analyse code for bugs, security issues, style violations, and improvement opportunities.',    'development',  'safe',     E'## Code Review Capability\nYou can review code systematically. Check for: logic errors, security vulnerabilities (injection, XSS, CSRF, insecure dependencies), performance issues, code style/readability, and adherence to best practices. Provide actionable, specific feedback with line references.'),
+        ('squidjob/core-skills', 'Code Execution', 'code-execution', 'Write and reason about executable code solutions to technical problems.',                     'development',  'moderate', E'## Code Execution Capability\nYou can write production-quality code in multiple languages. When solving technical problems: identify the approach, write clean code with comments, reason through edge cases, and verify logic step-by-step. Present code in properly formatted code blocks.'),
+        ('squidjob/core-skills', 'Git Operations', 'git-operations', 'Reason about Git workflows, branch strategies, and version control best practices.',         'development',  'moderate', E'## Git Operations Capability\nYou can advise on and generate Git commands for common workflows: branching strategies, merging, rebasing, resolving conflicts, writing commit messages, and setting up CI/CD pipelines. Always explain the impact of destructive operations.'),
+        ('squidjob/core-skills', 'File Operations','file-operations','Read, write, organise, and transform file content and directory structures.',                  'system',       'moderate', E'## File Operations Capability\nYou can reason about file operations including reading files, writing structured content, organising directory structures, and transforming file formats. When working with files, validate paths, handle errors gracefully, and never overwrite important files without confirmation.'),
+        ('squidjob/core-skills', 'Data Analysis',  'data-analysis',  'Analyse datasets, identify patterns, compute statistics, and generate insights.',             'analytics',    'safe',     E'## Data Analysis Capability\nYou can analyse structured data to extract insights. This includes: descriptive statistics, trend analysis, anomaly detection, correlation analysis, and data quality assessment. Present findings with clear visualisation descriptions and actionable recommendations.'),
+        ('squidjob/core-skills', 'CSV Processing', 'csv-processing', 'Parse, clean, transform, and summarise CSV and spreadsheet data.',                            'analytics',    'safe',     E'## CSV/Spreadsheet Processing Capability\nYou can process tabular data from CSV or spreadsheet formats. Tasks include: parsing headers, cleaning dirty data, filtering rows, aggregating columns, pivot operations, and generating summary reports. Handle encoding issues and large files efficiently.'),
+        ('squidjob/core-skills', 'API Testing',    'api-testing',    'Design and reason about API test cases, request structures, and response validation.',        'development',  'safe',     E'## API Testing Capability\nYou can design comprehensive API test suites. For each endpoint, define: happy path tests, edge cases, error scenarios, authentication tests, and performance benchmarks. Generate test cases in common formats (Jest, Pytest, Postman collections) and interpret API responses to identify issues.'),
+        ('squidjob/core-skills', 'Email Drafting', 'email-drafting', 'Compose professional emails for various business contexts and communication needs.',           'communication','safe',     E'## Email Drafting Capability\nYou can compose professional emails tailored to context. Match tone (formal/casual) to the recipient and purpose. Structure emails with clear subject lines, opening context, body with key points, and call-to-action. Review for clarity, brevity, and appropriate formality.'),
+        ('squidjob/core-skills', 'Task Planning',  'task-planning',  'Break down complex goals into structured, actionable task hierarchies with priorities.',       'productivity', 'safe',     E'## Task Planning Capability\nYou can decompose complex goals into structured task plans. For each goal: identify milestones, break into actionable sub-tasks, estimate effort, identify dependencies, flag risks, and suggest a sequenced execution plan. Output in a structured format compatible with the project board.'),
+        ('squidjob/core-skills', 'Documentation',  'documentation',  'Write, structure, and maintain technical and non-technical documentation.',                   'productivity', 'safe',     E'## Documentation Capability\nYou can write clear, structured documentation including: README files, API references, architecture decision records (ADRs), runbooks, user guides, and inline code comments. Use appropriate formatting (Markdown) and tailor detail level to the target audience.'),
+        ('squidjob/core-skills', 'Security Audit', 'security-audit', 'Identify security vulnerabilities, misconfigurations, and compliance gaps in systems.',       'security',     'high',     E'## Security Audit Capability\nYou can conduct security audits of code, configurations, and architectures. Check for: OWASP Top 10 vulnerabilities, insecure dependencies (CVEs), secrets in code, misconfigured permissions, weak authentication, and compliance gaps (SOC2, GDPR). Produce a prioritised findings report with remediation steps.'),
+        ('squidjob/core-skills', 'Screenshot',     'screenshot',     'Describe and reason about capturing visual snapshots of web pages or UI components.',         'system',       'moderate', E'## Screenshot Capability\nYou can reason about capturing and analysing screenshots of web pages and UI components. Describe what to capture, identify visual layout issues, compare before/after states, and extract text content from images. Use for documentation, QA verification, and visual regression testing.'),
+        ('squidjob/core-skills', 'Database Query', 'database-query', 'Compose, optimise, and explain SQL queries and database operations.',                         'data',         'high',     E'## Database Query Capability\nYou can compose and optimise SQL queries for PostgreSQL and other databases. Tasks include: SELECT with complex JOINs, aggregations, window functions, CTEs, index optimisation, EXPLAIN analysis, schema design, and migration scripts. Always validate queries before suggesting execution on production data.')
+      ) AS s(pack_slug, name, slug, description, category, risk, tools_md)
+      WHERE p.slug = s.pack_slug
+      ON CONFLICT (pack_id, slug) DO NOTHING
+    `);
+
+    await client.query(`
+      INSERT INTO skills (pack_id, name, slug, description, category, risk, tools_md)
+      SELECT p.id, s.name, s.slug, s.description, s.category, s.risk, s.tools_md
+      FROM skill_packs p
+      CROSS JOIN (VALUES
+        ('squidjob/communication-skills', 'Slack Notify',       'slack-notify',     'Send structured notifications and messages to Slack channels via webhooks.',               'communication','safe',     E'## Slack Notification Capability\nYou can compose and send notifications to Slack channels. Format messages with Slack markdown (bold, code blocks, links), use appropriate channels for context, include relevant data, and avoid spamming. Structure important alerts with clear titles, details, and action items.'),
+        ('squidjob/communication-skills', 'Telegram Notify',    'telegram-notify',  'Send messages and alerts to Telegram chats and channels.',                                 'communication','safe',     E'## Telegram Notification Capability\nYou can compose messages for Telegram delivery. Use Telegram markdown formatting, keep messages concise, include relevant context and links. For alerts, use clear severity indicators and provide next steps.'),
+        ('squidjob/communication-skills', 'WhatsApp Send',      'whatsapp-send',    'Send WhatsApp messages via Twilio integration for business communications.',               'communication','moderate', E'## WhatsApp Communication Capability\nYou can compose WhatsApp messages for business use via the Twilio integration. Keep messages professional, clear, and concise. Include all necessary context since recipients may not have prior conversation history. Respect opt-in requirements and privacy regulations.'),
+        ('squidjob/communication-skills', 'Standup Generation', 'standup-gen',      'Generate structured standup reports from agent activity logs and task updates.',           'productivity', 'safe',     E'## Standup Generation Capability\nYou can generate structured standup reports from activity data. Format reports with: What was completed, what is in progress, blockers, and upcoming work. Tailor language to be concise and relevant to the audience. Include metrics where available (tasks closed, time spent, etc.).'),
+        ('squidjob/communication-skills', 'Calendar Events',    'calendar-events',  'Create and reason about scheduling calendar events and managing time blocks.',             'productivity', 'safe',     E'## Calendar Event Capability\nYou can reason about scheduling and calendar management. Tasks include: creating event descriptions, suggesting optimal meeting times, drafting calendar invites with agendas, identifying scheduling conflicts, and managing recurring events. Always include timezone context.'),
+        ('squidjob/communication-skills', 'Email Parser',       'email-parser',     'Extract structured information, actions, and key data from email threads.',               'communication','safe',     E'## Email Parsing Capability\nYou can extract structured information from email content. Identify: action items, deadlines, key decisions, stakeholders, sentiment, and follow-up requirements. Output in structured format with priority classification and suggested next actions.')
+      ) AS s(pack_slug, name, slug, description, category, risk, tools_md)
+      WHERE p.slug = s.pack_slug
+      ON CONFLICT (pack_id, slug) DO NOTHING
+    `);
+
     // Enable RLS on all tenant-scoped tables
     const rlsTables = [
       'tenants', 'users', 'api_keys', 'agents', 'tasks', 'comments',

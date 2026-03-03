@@ -6,7 +6,7 @@ import {
   BarChart3, Calendar, Terminal, FileText, Zap,
   Server, ShieldCheck, HelpCircle, CreditCard, Columns3,
   LogOut, Palette, ChevronRight, Building2, ChevronDown,
-  ChevronLeft,
+  ChevronLeft, Store, Package,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiGet } from '../../api/client';
@@ -43,6 +43,13 @@ const dockSections = [
     items: [
       { href: '/automation', label: 'Automation', icon: Zap },
       { href: '/calendar',   label: 'Calendar',   icon: Calendar },
+    ],
+  },
+  {
+    label: 'Skills',
+    items: [
+      { href: '/marketplace', label: 'Marketplace', icon: Store },
+      { href: '/packs',       label: 'Packs',       icon: Package },
     ],
   },
   {

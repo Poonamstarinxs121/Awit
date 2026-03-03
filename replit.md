@@ -73,11 +73,23 @@ SquidJob is built as a monorepo with distinct `server/` and `client/` directorie
 - **Core**: Dashboard, System, Agents, Sessions, Activity
 - **Intelligence**: Analytics, Costs, Memory, Search
 - **Automation**: Automation (cron+webhooks), Calendar
+- **Skills**: Marketplace, Packs
 - **Infrastructure**: Machines, Terminal
 - **Workspace**: Boards, Docs, Standups, Approvals
 - **System**: Org, Settings, Billing, Help
 
-## Recent Changes (Phase 15 — Bug Fixes & API Audit)
+## Recent Changes (Phase 16 — Skills Marketplace)
+- **4 new DB tables**: `skill_packs`, `skills`, `installed_skills`, `agent_skills` with full indexes and idempotent seed
+- **21 built-in skills** seeded across 2 packs: SquidJob Core Skills (15) and SquidJob Communication Skills (6)
+- **`/v1/marketplace` API**: Full CRUD for skills, packs, and agent-skill assignments (install/uninstall/enable/disable)
+- **MarketplacePage** (`/marketplace`): Sortable/filterable table of all skills with SAFE/MODERATE/HIGH risk badges, install/uninstall actions
+- **PacksPage** (`/packs`): Pack management with stat cards, inline add form, sync, and delete with confirmation
+- **AgentDetail Skills tab**: Toggle individual installed skills on/off per agent; linked to Marketplace for empty state
+- **Orchestration injection**: `loadAgentSkills()` appends enabled skills' `tools_md` to agent system prompt (both standard and streaming turn paths)
+- **Dock**: New "Skills" section with Marketplace + Packs links; Board inner sidebar updated with same links
+- **Routing**: `/marketplace` and `/packs` routes added to App.tsx
+
+## Previous Changes (Phase 15 — Bug Fixes & API Audit)
 - **CronJobs API**: `GET /v1/cron-jobs` now returns `{ jobs: [...] }` instead of raw array — fixes WorkflowsPage and WeeklyCalendar empty states
 - **WeeklyCalendar**: Fixed interface field names (`cron_expression→schedule`, `enabled→is_active`) to match actual DB schema
 - **Memory /nodes endpoint**: Added `GET /v1/memory-graph/nodes?query=` route with content filtering — fixes SearchPage 404 on memory search
