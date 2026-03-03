@@ -78,6 +78,17 @@ SquidJob is built as a monorepo with distinct `server/` and `client/` directorie
 - **Workspace**: Boards, Docs, Standups, Approvals
 - **System**: Org, Settings, Billing, Help
 
+## Recent Changes (Phase 17 — SaaS Admin Console)
+- **2 new DB columns**: `status` (`active`/`suspended`/`trial`, default `active`) and `subdomain` (nullable text) added to `tenants` via idempotent `ALTER TABLE IF NOT EXISTS`
+- **6 new admin API endpoints**: `GET /admin/v1/finance` (MRR/ARR/plan breakdown/monthly signups), `GET /admin/v1/tenants/:id/invoices` (live Stripe invoice list), `GET /admin/v1/tenants/:id/users`, `POST /admin/v1/tenants` (manual onboarding), `PATCH /admin/v1/tenants/:id/status`, `DELETE /admin/v1/tenants/:id` (requires suspended state)
+- **`AdminShell.tsx`**: Self-contained admin layout — collapsible sidebar (220px/60px), `#111111` bg, Platform/Tenants/Finance nav sections, topbar breadcrumb, user avatar, sign-out. Completely separate from workspace Dock/Layout.
+- **`AdminDashboard.tsx`** (`/admin`): Rebuilt with AdminShell — 4 stat cards (total/active/trial tenants + MRR), 3 plan distribution cards with revenue bars, full tenants table with inline plan dropdown + suspend/activate toggle
+- **`TenantsListPage.tsx`** (`/admin/tenants`): Search + Plan/Status filters, full tenant table, slide-in onboard panel (creates tenant+owner user+subscription), delete flow requiring suspended state
+- **`TenantDetailPage.tsx`** (`/admin/tenants/:id`): 4 tabs — Overview (usage stats + sub info), Billing & Invoices (live Stripe invoices table + Stripe dashboard link), Users (read-only list), Actions (change plan, suspend/activate, danger zone delete with name confirmation)
+- **`FinancePage.tsx`** (`/admin/finance`): MRR/ARR/subscriber stat cards, plan revenue breakdown with progress bars, monthly new-tenant bar chart (SVG, no library), subscriptions table, usage cost leaderboard
+- **`AdminRoute` guard** in `App.tsx`: Redirects non-admins to `/admin/login`; `/admin/dashboard` → redirects to `/admin`
+- **`stripeService.ts`**: Added `getCustomerInvoices(customerId)` helper
+
 ## Recent Changes (Phase 16 — Skills Marketplace)
 - **4 new DB tables**: `skill_packs`, `skills`, `installed_skills`, `agent_skills` with full indexes and idempotent seed
 - **21 built-in skills** seeded across 2 packs: SquidJob Core Skills (15) and SquidJob Communication Skills (6)

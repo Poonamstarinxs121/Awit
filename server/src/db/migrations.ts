@@ -673,6 +673,9 @@ export async function runMigrations(): Promise<void> {
       `);
     }
 
+    await client.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'trial'))`);
+    await client.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS subdomain TEXT`);
+
     await client.query('COMMIT');
     console.log('Migrations completed successfully');
 

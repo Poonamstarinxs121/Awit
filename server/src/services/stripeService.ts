@@ -170,4 +170,27 @@ export async function getSubscription(tenantId: string) {
   return result.rows[0] ?? null;
 }
 
+export async function getCustomerInvoices(customerId: string) {
+  const stripe = getStripe();
+  if (!stripe) return [];
+  try {
+    const invoices = await stripe.invoices.list({ customer: customerId, limit: 24 });
+    return invoices.data.map((inv: any) => ({
+      id: inv.id,
+      number: inv.number,
+      amount_paid: inv.amount_paid,
+      amount_due: inv.amount_due,
+      currency: inv.currency,
+      status: inv.status,
+      created: inv.created,
+      period_start: inv.period_start,
+      period_end: inv.period_end,
+      hosted_invoice_url: inv.hosted_invoice_url,
+      invoice_pdf: inv.invoice_pdf,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export { STRIPE_WEBHOOK_SECRET };

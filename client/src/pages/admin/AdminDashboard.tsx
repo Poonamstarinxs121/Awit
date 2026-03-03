@@ -1,231 +1,212 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { apiGet, apiPatch } from '../../api/client';
 import { Spinner } from '../../components/ui/Spinner';
-import { Badge } from '../../components/ui/Badge';
-import { Users, Bot, CheckSquare, Activity, TrendingUp, Building2, ChevronDown } from 'lucide-react';
+import { AdminShell } from './AdminShell';
+import { Building2, Users, Bot, DollarSign, CheckCircle, Clock, XCircle, ExternalLink } from 'lucide-react';
 
 interface TenantRow {
-  id: string;
-  name: string;
-  plan: string;
-  created_at: string;
-  user_count: number;
-  agent_count: number;
-  task_count: number;
-  last_active_at: string | null;
-  sub_status: string | null;
-  current_period_end: string | null;
+  id: string; name: string; plan: string; status: string; subdomain: string | null;
+  created_at: string; user_count: number; agent_count: number; task_count: number;
+  last_active_at: string | null; sub_status: string | null; current_period_end: string | null;
   stripe_customer_id: string | null;
 }
-
-interface UsageTotals {
-  tenant_count: number;
-  user_count: number;
-  agent_count: number;
-  total_revenue_proxy: number;
+interface FinanceData {
+  mrr: number; arr: number;
+  plan_counts: { starter: number; professional: number; enterprise: number };
+  active_count: number; trial_count: number; suspended_count: number;
 }
 
-const PLAN_VARIANT: Record<string, 'info' | 'warning' | 'active'> = {
-  starter: 'info',
-  professional: 'warning',
-  enterprise: 'active',
+const PLAN_COLORS: Record<string, { bg: string; color: string; border: string }> = {
+  starter:      { bg: 'rgba(96,165,250,0.1)',  color: '#60A5FA', border: 'rgba(96,165,250,0.2)' },
+  professional: { bg: 'rgba(191,90,242,0.1)', color: '#BF5AF2', border: 'rgba(191,90,242,0.2)' },
+  enterprise:   { bg: 'rgba(255,159,10,0.1)', color: '#FF9F0A', border: 'rgba(255,159,10,0.2)' },
 };
 
-function formatDate(d: string | null): string {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
+const STATUS_COLORS: Record<string, { dot: string; label: string }> = {
+  active:    { dot: '#32D74B', label: 'Active' },
+  trial:     { dot: '#FF9F0A', label: 'Trial' },
+  suspended: { dot: '#FF453A', label: 'Suspended' },
+};
 
-function relTime(d: string | null): string {
+function fmt(d: string | null) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+function relTime(d: string | null) {
   if (!d) return 'Never';
-  const now = Date.now();
-  const then = new Date(d).getTime();
-  const diff = now - then;
+  const diff = Date.now() - new Date(d).getTime();
   const days = Math.floor(diff / 86400000);
   if (days === 0) return 'Today';
   if (days === 1) return 'Yesterday';
   if (days < 30) return `${days}d ago`;
-  return formatDate(d);
+  return fmt(d);
 }
 
 export function AdminDashboard() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
 
   const { data: tenantsData, isLoading: loadingTenants } = useQuery({
     queryKey: ['admin-tenants'],
     queryFn: () => apiGet<{ tenants: TenantRow[] }>('/admin/v1/tenants'),
   });
-
-  const { data: usageData, isLoading: loadingUsage } = useQuery({
-    queryKey: ['admin-usage'],
-    queryFn: () => apiGet<{ by_tenant: unknown[]; totals: UsageTotals }>('/admin/v1/usage'),
+  const { data: financeData, isLoading: loadingFinance } = useQuery({
+    queryKey: ['admin-finance'],
+    queryFn: () => apiGet<FinanceData>('/admin/v1/finance'),
   });
 
   const updatePlanMutation = useMutation({
-    mutationFn: ({ id, plan }: { id: string; plan: string }) =>
-      apiPatch(`/admin/v1/tenants/${id}/plan`, { plan }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-tenants'] });
-      setEditingPlanId(null);
-    },
+    mutationFn: ({ id, plan }: { id: string; plan: string }) => apiPatch(`/admin/v1/tenants/${id}/plan`, { plan }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin-tenants'] }); setEditingPlanId(null); },
+  });
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) => apiPatch(`/admin/v1/tenants/${id}/status`, { status }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-tenants'] }),
   });
 
   const tenants = tenantsData?.tenants ?? [];
-  const totals = usageData?.totals;
+  const fin = financeData;
 
   const statCards = [
-    { label: 'Tenants', value: totals?.tenant_count ?? '—', icon: Building2, color: 'text-blue-600 bg-blue-50' },
-    { label: 'Users', value: totals?.user_count ?? '—', icon: Users, color: 'text-purple-600 bg-purple-50' },
-    { label: 'Agents', value: totals?.agent_count ?? '—', icon: Bot, color: 'text-green-600 bg-green-50' },
-    { label: 'Est. LLM Cost', value: `$${Number(totals?.total_revenue_proxy ?? 0).toFixed(2)}`, icon: TrendingUp, color: 'text-orange-600 bg-orange-50' },
+    { label: 'Total Tenants', value: tenants.length, icon: Building2, color: '#60A5FA' },
+    { label: 'Active Tenants', value: fin?.active_count ?? '—', icon: CheckCircle, color: '#32D74B' },
+    { label: 'Trial Tenants', value: fin?.trial_count ?? '—', icon: Clock, color: '#FF9F0A' },
+    { label: 'Monthly Revenue', value: fin ? `$${fin.mrr.toLocaleString()}` : '—', icon: DollarSign, color: '#BF5AF2' },
+  ];
+
+  const planBreakdown = [
+    { key: 'starter', label: 'Starter', price: 49, ...PLAN_COLORS.starter },
+    { key: 'professional', label: 'Professional', price: 149, ...PLAN_COLORS.professional },
+    { key: 'enterprise', label: 'Enterprise', price: 299, ...PLAN_COLORS.enterprise },
   ];
 
   return (
-    <div className="min-h-screen bg-brand-bg">
-      <nav className="w-full border-b border-[var(--border)] bg-[var(--card)]">
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-brand-accent flex items-center justify-center">
-              <span className="text-white font-bold text-sm">S</span>
-            </div>
-            <span className="text-lg font-bold text-text-primary font-heading">SquidJob Admin</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Activity size={16} className="text-text-muted" />
-            <span className="text-sm text-text-secondary">SaaS Admin Console</span>
-          </div>
-        </div>
-      </nav>
+    <AdminShell title="Dashboard">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary font-heading">Admin Dashboard</h1>
-          <p className="text-text-secondary text-sm mt-1">Overview of all tenants and platform usage</p>
+          <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>Admin Dashboard</h1>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Platform-wide overview of all tenants and subscriptions</p>
         </div>
 
-        {loadingUsage ? (
-          <div className="grid grid-cols-4 gap-4">
-            {[1,2,3,4].map((i) => (
-              <div key={i} className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-5 animate-pulse h-24" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {statCards.map((stat) => (
-              <div key={stat.label} className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-5 shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.color}`}>
-                    <stat.icon size={18} />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-text-primary">{stat.value}</p>
-                    <p className="text-xs text-text-muted">{stat.label}</p>
-                  </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+          {statCards.map(s => (
+            <div key={s.label} style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '18px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>{s.label}</span>
+                <div style={{ width: '30px', height: '30px', borderRadius: '8px', backgroundColor: `${s.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <s.icon size={15} style={{ color: s.color }} />
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+              <p style={{ fontFamily: 'var(--font-heading)', fontSize: '28px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                {loadingFinance && s.label !== 'Total Tenants' ? '—' : s.value}
+              </p>
+            </div>
+          ))}
+        </div>
 
-        <div className="bg-[var(--card)] rounded-xl border border-[var(--border)] shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
-            <h2 className="text-base font-semibold text-text-primary">Tenants</h2>
-            <span className="text-sm text-text-muted">{tenants.length} total</span>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+          {planBreakdown.map(p => {
+            const count = fin?.plan_counts[p.key as keyof typeof fin.plan_counts] ?? 0;
+            const mrr = count * p.price;
+            const pct = fin?.mrr ? Math.round((mrr / fin.mrr) * 100) : 0;
+            return (
+              <div key={p.key} style={{ backgroundColor: 'var(--card)', border: `1px solid ${p.border}`, borderRadius: '12px', padding: '16px 20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: p.color, backgroundColor: p.bg, padding: '2px 8px', borderRadius: '5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{p.label}</span>
+                </div>
+                <p style={{ fontFamily: 'var(--font-heading)', fontSize: '26px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '2px' }}>{count} <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 400 }}>tenants</span></p>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '10px' }}>${mrr.toLocaleString()}/mo · {pct}% of MRR</p>
+                <div style={{ height: '4px', borderRadius: '2px', backgroundColor: 'var(--surface-elevated)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${pct}%`, backgroundColor: p.color, borderRadius: '2px', transition: 'width 600ms ease' }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>All Tenants</h2>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{tenants.length} total</span>
           </div>
 
           {loadingTenants ? (
-            <div className="flex items-center justify-center py-16">
-              <Spinner size="lg" />
-            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}><Spinner /></div>
           ) : tenants.length === 0 ? (
-            <div className="text-center py-16 text-text-muted">No tenants found</div>
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', fontSize: '13px' }}>No tenants found</div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr className="bg-[var(--surface-elevated)]">
-                    <th className="text-left px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Tenant</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Plan</th>
-                    <th className="text-center px-4 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Users</th>
-                    <th className="text-center px-4 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Agents</th>
-                    <th className="text-center px-4 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Tasks</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Last Active</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Joined</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Actions</th>
+                  <tr style={{ backgroundColor: 'var(--surface-elevated)' }}>
+                    {['Tenant', 'Plan', 'Status', 'Users', 'Agents', 'Last Active', 'Sub Ends', 'Actions'].map(h => (
+                      <th key={h} style={{ textAlign: 'left', padding: '10px 16px', fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border-default">
-                  {tenants.map((tenant) => (
-                    <tr key={tenant.id} className="hover:bg-[var(--surface-elevated)] transition-colors">
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="text-sm font-medium text-text-primary">{tenant.name}</p>
-                          <p className="text-xs text-text-muted font-mono">{tenant.id.slice(0, 8)}…</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        {editingPlanId === tenant.id ? (
-                          <div className="flex items-center gap-2">
-                            <select
-                              defaultValue={tenant.plan}
-                              onChange={(e) => updatePlanMutation.mutate({ id: tenant.id, plan: e.target.value })}
-                              className="text-xs px-2 py-1 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent"
-                              autoFocus
+                <tbody>
+                  {tenants.map(t => {
+                    const pc = PLAN_COLORS[t.plan] || PLAN_COLORS.starter;
+                    const sc = STATUS_COLORS[t.status] || STATUS_COLORS.active;
+                    return (
+                      <tr key={t.id} style={{ borderTop: '1px solid var(--border)', transition: 'background 120ms' }}
+                        onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--surface-elevated)')}
+                        onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
+                        <td style={{ padding: '12px 16px' }}>
+                          <button onClick={() => navigate(`/admin/tenants/${t.id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}>
+                            <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{t.name}</p>
+                            <p style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{t.id.slice(0, 8)}…</p>
+                          </button>
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          {editingPlanId === t.id ? (
+                            <select autoFocus defaultValue={t.plan}
+                              onChange={e => updatePlanMutation.mutate({ id: t.id, plan: e.target.value })}
                               onBlur={() => setEditingPlanId(null)}
-                            >
-                              <option value="starter">Starter</option>
-                              <option value="professional">Professional</option>
-                              <option value="enterprise">Enterprise</option>
+                              style={{ fontSize: '12px', padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border)', backgroundColor: 'var(--surface-elevated)', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                              {['starter', 'professional', 'enterprise'].map(p => <option key={p} value={p}>{p}</option>)}
                             </select>
+                          ) : (
+                            <button onClick={() => setEditingPlanId(t.id)} style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 8px', borderRadius: '5px', fontSize: '11px', fontWeight: 600, backgroundColor: pc.bg, color: pc.color, border: `1px solid ${pc.border}`, cursor: 'pointer', textTransform: 'capitalize' }}>
+                              {t.plan}
+                            </button>
+                          )}
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: sc.dot, fontWeight: 500 }}>
+                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: sc.dot, flexShrink: 0 }} />
+                            {sc.label}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text-secondary)' }}>{t.user_count}</td>
+                        <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text-secondary)' }}>{t.agent_count}</td>
+                        <td style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--text-muted)' }}>{relTime(t.last_active_at)}</td>
+                        <td style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--text-muted)' }}>{fmt(t.current_period_end)}</td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button onClick={() => navigate(`/admin/tenants/${t.id}`)} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '4px 8px', borderRadius: '5px', fontSize: '11px', border: '1px solid var(--border)', backgroundColor: 'var(--surface-elevated)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                              <ExternalLink size={10} /> View
+                            </button>
+                            <button
+                              onClick={() => updateStatusMutation.mutate({ id: t.id, status: t.status === 'active' || t.status === 'trial' ? 'suspended' : 'active' })}
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '4px 8px', borderRadius: '5px', fontSize: '11px', border: `1px solid ${t.status === 'suspended' ? 'rgba(50,215,75,0.3)' : 'rgba(255,69,58,0.3)'}`, backgroundColor: t.status === 'suspended' ? 'rgba(50,215,75,0.06)' : 'rgba(255,69,58,0.06)', color: t.status === 'suspended' ? '#32D74B' : '#FF453A', cursor: 'pointer' }}>
+                              {t.status === 'suspended' ? <><CheckCircle size={10} /> Activate</> : <><XCircle size={10} /> Suspend</>}
+                            </button>
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-1.5">
-                            <Badge variant={PLAN_VARIANT[tenant.plan] ?? 'info'}>
-                              {tenant.plan}
-                            </Badge>
-                            {tenant.sub_status && tenant.sub_status !== 'active' && (
-                              <span className="text-[10px] text-red-500">({tenant.sub_status})</span>
-                            )}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-4 text-center">
-                        <span className="text-sm text-text-primary">{tenant.user_count}</span>
-                      </td>
-                      <td className="px-4 py-4 text-center">
-                        <span className="text-sm text-text-primary">{tenant.agent_count}</span>
-                      </td>
-                      <td className="px-4 py-4 text-center">
-                        <span className="text-sm text-text-primary">{tenant.task_count}</span>
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className="text-sm text-text-secondary">{relTime(tenant.last_active_at)}</span>
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className="text-sm text-text-muted">{formatDate(tenant.created_at)}</span>
-                      </td>
-                      <td className="px-4 py-4">
-                        <button
-                          onClick={() => setEditingPlanId(tenant.id)}
-                          className="flex items-center gap-1 text-xs text-brand-accent hover:underline"
-                        >
-                          <ChevronDown size={12} /> Change Plan
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
         </div>
-
-        <div className="text-center text-xs text-text-muted pb-4">
-          SquidJob SaaS Admin Console · All times UTC
-        </div>
       </div>
-    </div>
+    </AdminShell>
   );
 }

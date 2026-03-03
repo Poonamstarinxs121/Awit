@@ -7,6 +7,9 @@ import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
 import { AdminLogin } from './pages/AdminLogin';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { TenantsListPage } from './pages/admin/TenantsListPage';
+import { TenantDetailPage } from './pages/admin/TenantDetailPage';
+import { FinancePage } from './pages/admin/FinancePage';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
 import { LandingPage } from './pages/LandingPage';
@@ -42,6 +45,17 @@ import { PacksPage } from './pages/PacksPage';
 import { useAuth } from './hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return (
+    <div style={{ minHeight: '100vh', backgroundColor: '#0C0C0C', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 32, height: 32, border: '3px solid #2A2A2A', borderTopColor: '#FF3B30', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+    </div>
+  );
+  if (!user || !user.isSaasAdmin) return <Navigate to="/admin/login" replace />;
+  return <>{children}</>;
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -74,7 +88,11 @@ export default function App() {
             <Route path="/" element={<HomeRedirect />} />
             <Route path="/login" element={<Login />} />
             <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
+            <Route path="/admin/tenants" element={<AdminRoute><TenantsListPage /></AdminRoute>} />
+            <Route path="/admin/tenants/:id" element={<AdminRoute><TenantDetailPage /></AdminRoute>} />
+            <Route path="/admin/finance" element={<AdminRoute><FinancePage /></AdminRoute>} />
             <Route path="/register" element={<Register />} />
             <Route path="/setup" element={<ProtectedRoute><Setup /></ProtectedRoute>} />
             <Route path="/setup/provisioning" element={<ProtectedRoute><Provisioning /></ProtectedRoute>} />
