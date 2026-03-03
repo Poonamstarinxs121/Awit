@@ -7,7 +7,6 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Spinner } from '../components/ui/Spinner';
 import { BoardChat } from '../components/board/BoardChat';
-import { useAuth } from '../hooks/useAuth';
 import {
   Plus, Calendar, X, MessageSquare, Clock, Paperclip, Download, Trash2, Upload,
   ChevronLeft, Tag, Bot, PanelRightOpen, PanelRightClose, ChevronDown,
@@ -418,7 +417,7 @@ export function Board() {
   }
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+    <div style={{ height: 'calc(100vh - 48px - 32px)', display: 'flex', flexDirection: 'column', minHeight: 0, margin: '-24px', overflow: 'hidden' }}>
       <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
         <BoardSidebar
           agents={agents}
