@@ -153,7 +153,7 @@ export async function getAgent(tenantId: string, agentId: string) {
 }
 
 export async function updateAgent(tenantId: string, agentId: string, data: Record<string, unknown>) {
-  const allowedFields = ['name', 'role', 'soul_md', 'agents_md', 'tools_md', 'heartbeat_md', 'model_config', 'level', 'status'];
+  const allowedFields = ['name', 'role', 'soul_md', 'agents_md', 'tools_md', 'heartbeat_md', 'model_config', 'level', 'status', 'manager_id', 'job_title', 'department', 'sort_order'];
   const updates: string[] = [];
   const values: unknown[] = [];
   let paramIndex = 1;

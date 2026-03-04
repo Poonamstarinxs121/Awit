@@ -1,8 +1,11 @@
-import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { GitBranch, ChevronDown, ChevronRight, Users, Zap, Award, AlertTriangle, XCircle } from 'lucide-react';
-import { apiGet } from '../api/client';
+import {
+  GitBranch, ChevronDown, ChevronRight, Users, Zap, Award, AlertTriangle,
+  XCircle, X, Save, ExternalLink, Server, Monitor, Trash2,
+} from 'lucide-react';
+import { apiGet, apiPatch } from '../api/client';
 
 interface OrgAgent {
   id: string;
@@ -16,6 +19,7 @@ interface OrgAgent {
   department?: string | null;
   sort_order?: number;
   skills_count?: number;
+  soul_md?: string | null;
 }
 
 interface OrgStats {
@@ -31,6 +35,17 @@ interface OrgStats {
 interface TreeNode {
   agent: OrgAgent;
   children: TreeNode[];
+}
+
+interface FleetNode {
+  id: string;
+  name: string;
+  status: string;
+  agent_count?: number;
+}
+
+interface AgentDetailResponse {
+  agent: OrgAgent & { soul_md?: string };
 }
 
 function buildTree(agents: OrgAgent[]): TreeNode[] {
@@ -88,6 +103,23 @@ function getModelLabel(config: Record<string, unknown>): string {
   }
   if (raw.length > 20) return raw.slice(0, 18) + '…';
   return raw;
+}
+
+function isDescendant(agents: OrgAgent[], ancestorId: string, candidateId: string): boolean {
+  const childrenOf = new Map<string, string[]>();
+  for (const a of agents) {
+    if (a.manager_id) {
+      if (!childrenOf.has(a.manager_id)) childrenOf.set(a.manager_id, []);
+      childrenOf.get(a.manager_id)!.push(a.id);
+    }
+  }
+  const stack = [...(childrenOf.get(ancestorId) || [])];
+  while (stack.length > 0) {
+    const id = stack.pop()!;
+    if (id === candidateId) return true;
+    stack.push(...(childrenOf.get(id) || []));
+  }
+  return false;
 }
 
 function collectAllIds(nodes: TreeNode[]): string[] {
@@ -152,6 +184,82 @@ function StatusBadge({ status }: { status: string }) {
       <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: color }} />
       {label}
     </span>
+  );
+}
+
+function ConnectorHandle({
+  position,
+  onDragStart,
+  agentId,
+}: {
+  position: 'bottom' | 'top';
+  onDragStart: (agentId: string, e: React.MouseEvent) => void;
+  agentId: string;
+}) {
+  return (
+    <div
+      onMouseDown={(e) => {
+        e.stopPropagation();
+        onDragStart(agentId, e);
+      }}
+      title="Drag to connect"
+      style={{
+        position: 'absolute',
+        [position]: '-6px',
+        left: '50%', transform: 'translateX(-50%)',
+        width: '12px', height: '12px', borderRadius: '50%',
+        backgroundColor: '#FF3B30', border: '2px solid #0C0C0C',
+        cursor: 'grab', zIndex: 10,
+        opacity: 0, transition: 'opacity 0.15s',
+      }}
+      onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+      onMouseLeave={e => (e.currentTarget.style.opacity = '0')}
+    />
+  );
+}
+
+function AgentCardWrapper({
+  children,
+  agentId,
+  onDragStart,
+  onDrop,
+  isDragTarget,
+  onContextMenu,
+}: {
+  children: React.ReactNode;
+  agentId: string;
+  onDragStart: (agentId: string, e: React.MouseEvent) => void;
+  onDrop: (targetId: string) => void;
+  isDragTarget: boolean;
+  onContextMenu: (agentId: string, e: React.MouseEvent) => void;
+}) {
+  return (
+    <div
+      data-agent-id={agentId}
+      onMouseUp={() => onDrop(agentId)}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        onContextMenu(agentId, e);
+      }}
+      style={{
+        position: 'relative',
+        outline: isDragTarget ? '2px solid #FF3B30' : 'none',
+        outlineOffset: '3px',
+        borderRadius: '16px',
+      }}
+      onMouseEnter={e => {
+        const handles = e.currentTarget.querySelectorAll('[title="Drag to connect"]') as NodeListOf<HTMLElement>;
+        handles.forEach(h => (h.style.opacity = '1'));
+      }}
+      onMouseLeave={e => {
+        const handles = e.currentTarget.querySelectorAll('[title="Drag to connect"]') as NodeListOf<HTMLElement>;
+        handles.forEach(h => (h.style.opacity = '0'));
+      }}
+    >
+      <ConnectorHandle position="bottom" onDragStart={onDragStart} agentId={agentId} />
+      <ConnectorHandle position="top" onDragStart={onDragStart} agentId={agentId} />
+      {children}
+    </div>
   );
 }
 
@@ -312,13 +420,13 @@ function DepartmentSection({
   agents,
   expanded,
   onToggle,
-  onNavigate,
+  onAgentClick,
 }: {
   department: string;
   agents: OrgAgent[];
   expanded: boolean;
   onToggle: () => void;
-  onNavigate: (id: string) => void;
+  onAgentClick: (agent: OrgAgent) => void;
 }) {
   return (
     <div style={{
@@ -359,7 +467,7 @@ function DepartmentSection({
             return (
               <div
                 key={agent.id}
-                onClick={() => onNavigate(agent.id)}
+                onClick={() => onAgentClick(agent)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '10px',
                   padding: '10px 16px', cursor: 'pointer',
@@ -420,19 +528,437 @@ function HorizontalConnector({ count }: { count: number }) {
   );
 }
 
+function ConfirmModal({
+  title,
+  message,
+  onConfirm,
+  onCancel,
+  confirmLabel = 'Confirm',
+  confirmColor = '#FF3B30',
+}: {
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  confirmLabel?: string;
+  confirmColor?: string;
+}) {
+  return (
+    <div
+      onClick={onCancel}
+      style={{
+        position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A',
+          borderRadius: '16px', padding: '24px', width: '380px', maxWidth: '90vw',
+        }}
+      >
+        <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px', fontFamily: 'var(--font-heading)' }}>
+          {title}
+        </h3>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: 1.5 }}>
+          {message}
+        </p>
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+          <button
+            onClick={onCancel}
+            style={{
+              padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
+              backgroundColor: 'transparent', border: '1px solid #2A2A2A',
+              color: 'var(--text-secondary)', cursor: 'pointer',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{
+              padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600,
+              backgroundColor: confirmColor, border: 'none',
+              color: '#fff', cursor: 'pointer',
+            }}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ContextMenu({
+  x,
+  y,
+  agentName,
+  hasManager,
+  onRemoveManager,
+  onClose,
+}: {
+  x: number;
+  y: number;
+  agentName: string;
+  hasManager: boolean;
+  onRemoveManager: () => void;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const handler = () => onClose();
+    window.addEventListener('click', handler);
+    return () => window.removeEventListener('click', handler);
+  }, [onClose]);
+
+  return (
+    <div
+      onClick={e => e.stopPropagation()}
+      style={{
+        position: 'fixed', left: x, top: y, zIndex: 1001,
+        backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A',
+        borderRadius: '10px', padding: '4px', minWidth: '180px',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+      }}
+    >
+      <div style={{ padding: '6px 10px', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        {agentName}
+      </div>
+      {hasManager ? (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemoveManager();
+          }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
+            padding: '8px 10px', borderRadius: '6px', border: 'none',
+            backgroundColor: 'transparent', color: '#FF453A',
+            fontSize: '13px', cursor: 'pointer', textAlign: 'left',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#2A2A2A')}
+          onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+        >
+          <Trash2 size={14} />
+          Remove from hierarchy
+        </button>
+      ) : (
+        <div style={{ padding: '8px 10px', fontSize: '12px', color: 'var(--text-muted)' }}>
+          No manager assigned
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AgentSidePanel({
+  agent,
+  onClose,
+  onSave,
+  isSaving,
+}: {
+  agent: OrgAgent;
+  onClose: () => void;
+  onSave: (id: string, data: Record<string, unknown>) => void;
+  isSaving: boolean;
+}) {
+  const navigate = useNavigate();
+  const [jobTitle, setJobTitle] = useState(agent.job_title || '');
+  const [department, setDepartment] = useState(agent.department || '');
+  const [level, setLevel] = useState(agent.level);
+  const [status, setStatus] = useState(agent.status);
+  const [model, setModel] = useState((agent.model_config?.model as string) || '');
+  const [provider, setProvider] = useState((agent.model_config?.provider as string) || '');
+  const [soulMd, setSoulMd] = useState(agent.soul_md || '');
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const { data: detailData } = useQuery({
+    queryKey: ['agent-detail', agent.id],
+    queryFn: () => apiGet<AgentDetailResponse>(`/v1/agents/${agent.id}`),
+  });
+
+  useEffect(() => {
+    if (detailData?.agent?.soul_md && !soulMd) {
+      setSoulMd(detailData.agent.soul_md);
+    }
+  }, [detailData]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  const handleSave = () => {
+    const updates: Record<string, unknown> = {};
+    if (jobTitle !== (agent.job_title || '')) updates.job_title = jobTitle || null;
+    if (department !== (agent.department || '')) updates.department = department || null;
+    if (level !== agent.level) updates.level = level;
+    if (status !== agent.status) updates.status = status;
+    if (model !== ((agent.model_config?.model as string) || '') || provider !== ((agent.model_config?.provider as string) || '')) {
+      updates.model_config = { ...agent.model_config, model, provider };
+    }
+    if (soulMd !== (agent.soul_md || '')) updates.soul_md = soulMd;
+    if (Object.keys(updates).length > 0) {
+      onSave(agent.id, updates);
+    }
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '8px 12px', borderRadius: '8px',
+    backgroundColor: '#111', border: '1px solid #2A2A2A',
+    color: 'var(--text-primary)', fontSize: '13px',
+    fontFamily: 'var(--font-body)',
+    outline: 'none',
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)',
+    textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px', display: 'block',
+  };
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 900,
+        }}
+      />
+      <div
+        ref={panelRef}
+        style={{
+          position: 'fixed', top: 0, right: 0, bottom: 0,
+          width: '400px', maxWidth: '100vw',
+          backgroundColor: '#0C0C0C', borderLeft: '1px solid #2A2A2A',
+          zIndex: 901, overflowY: 'auto',
+          animation: 'slideInRight 0.2s ease-out',
+        }}
+      >
+        <style>{`@keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }`}</style>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #2A2A2A' }}>
+          <div>
+            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}>
+              {agent.name}
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{agent.role}</div>
+          </div>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button
+              onClick={() => navigate(`/agents/${agent.id}`)}
+              title="View Full Profile"
+              style={{
+                width: '32px', height: '32px', borderRadius: '8px',
+                backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', color: 'var(--text-muted)',
+              }}
+            >
+              <ExternalLink size={14} />
+            </button>
+            <button
+              onClick={onClose}
+              style={{
+                width: '32px', height: '32px', borderRadius: '8px',
+                backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', color: 'var(--text-muted)',
+              }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+
+        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <StatusBadge status={agent.status} />
+            <ModelBadge config={agent.model_config} />
+            <SkillsBadge count={agent.skills_count || 0} />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Job Title</label>
+            <input
+              value={jobTitle}
+              onChange={e => setJobTitle(e.target.value)}
+              placeholder="e.g. CTO, Lead Engineer"
+              style={inputStyle}
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Department</label>
+            <input
+              value={department}
+              onChange={e => setDepartment(e.target.value)}
+              placeholder="e.g. Engineering, Content"
+              style={inputStyle}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>Level</label>
+              <select
+                value={level}
+                onChange={e => setLevel(e.target.value as OrgAgent['level'])}
+                style={{ ...inputStyle, appearance: 'auto' }}
+              >
+                <option value="lead">Lead</option>
+                <option value="specialist">Specialist</option>
+                <option value="intern">Intern</option>
+              </select>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>Status</label>
+              <select
+                value={status}
+                onChange={e => setStatus(e.target.value as OrgAgent['status'])}
+                style={{ ...inputStyle, appearance: 'auto' }}
+              >
+                <option value="active">Active</option>
+                <option value="idle">Scaffolded</option>
+                <option value="disabled">Deprecated</option>
+                <option value="error">Error</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>Provider</label>
+              <input
+                value={provider}
+                onChange={e => setProvider(e.target.value)}
+                placeholder="openai, anthropic..."
+                style={inputStyle}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>Model</label>
+              <input
+                value={model}
+                onChange={e => setModel(e.target.value)}
+                placeholder="gpt-4o, claude-3..."
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label style={labelStyle}>Soul MD</label>
+            <textarea
+              value={soulMd}
+              onChange={e => setSoulMd(e.target.value)}
+              placeholder="Agent identity and personality..."
+              rows={8}
+              style={{
+                ...inputStyle,
+                resize: 'vertical', fontFamily: 'var(--font-mono)', fontSize: '12px',
+                lineHeight: 1.5, minHeight: '120px',
+              }}
+            />
+          </div>
+
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+              padding: '10px 16px', borderRadius: '10px', border: 'none',
+              backgroundColor: '#FF3B30', color: '#fff',
+              fontSize: '13px', fontWeight: 600, cursor: isSaving ? 'not-allowed' : 'pointer',
+              opacity: isSaving ? 0.6 : 1,
+            }}
+          >
+            <Save size={14} />
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export function OrgChartPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [expandedDepts, setExpandedDepts] = useState<Set<string>>(new Set());
+  const [selectedNode, setSelectedNode] = useState<string>('hub');
+  const [selectedAgent, setSelectedAgent] = useState<OrgAgent | null>(null);
+  const [dragSource, setDragSource] = useState<string | null>(null);
+  const [dragTarget, setDragTarget] = useState<string | null>(null);
+  const [confirmConnect, setConfirmConnect] = useState<{ sourceId: string; targetId: string; sourceName: string; targetName: string } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; agentId: string } | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<{ agentId: string; agentName: string } | null>(null);
+  const [dragLine, setDragLine] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
+
+  const { data: nodesData } = useQuery({
+    queryKey: ['fleet-nodes'],
+    queryFn: () => apiGet<{ nodes: FleetNode[] }>('/v1/nodes'),
+  });
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['org-chart'],
-    queryFn: () => apiGet<{ agents: OrgAgent[]; stats: OrgStats }>('/v1/agents/org-chart'),
+    queryKey: ['org-chart', selectedNode],
+    queryFn: () => {
+      if (selectedNode === 'hub') {
+        return apiGet<{ agents: OrgAgent[]; stats: OrgStats }>('/v1/agents/org-chart');
+      }
+      return apiGet<{ node: { id: string }; heartbeats?: Array<{ agent_statuses?: Array<{ id: string; name: string; status: string }> }> }>(`/v1/nodes/${selectedNode}`).then(nd => {
+        const heartbeats = nd.heartbeats || [];
+        const latest = heartbeats[0];
+        const agentStatuses = latest?.agent_statuses || [];
+        const agents: OrgAgent[] = agentStatuses.map((a: Record<string, unknown>) => ({
+          id: (a.id as string) || crypto.randomUUID(),
+          name: (a.name as string) || 'Unknown',
+          role: (a.role as string) || '',
+          level: (a.level as OrgAgent['level']) || 'specialist',
+          status: (a.status as OrgAgent['status']) || 'idle',
+          model_config: (a.model_config as Record<string, unknown>) || {},
+          manager_id: (a.manager_id as string) || null,
+          job_title: (a.job_title as string) || null,
+          department: (a.department as string) || null,
+          skills_count: 0,
+        }));
+        const stats: OrgStats = {
+          total: agents.length,
+          active: agents.filter(a => a.status === 'active').length,
+          idle: agents.filter(a => a.status === 'idle').length,
+          disabled: agents.filter(a => a.status === 'disabled').length,
+          leads: agents.filter(a => a.level === 'lead').length,
+          specialists: agents.filter(a => a.level === 'specialist').length,
+          interns: agents.filter(a => a.level === 'intern').length,
+        };
+        return { agents, stats };
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Record<string, unknown> }) =>
+      apiPatch(`/v1/agents/${id}`, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['org-chart'] });
+      queryClient.invalidateQueries({ queryKey: ['agent-detail'] });
+    },
   });
 
   const agents = data?.agents || [];
   const stats = data?.stats;
   const tree = buildTree(agents);
+
+  const agentMap = useMemo(() => {
+    const m = new Map<string, OrgAgent>();
+    for (const a of agents) m.set(a.id, a);
+    return m;
+  }, [agents]);
 
   const handleExpandAll = () => {
     setExpanded(new Set(collectAllIds(tree)));
@@ -470,6 +996,99 @@ export function OrgChartPage() {
     });
   };
 
+  const handleDragStart = useCallback((agentId: string, e: React.MouseEvent) => {
+    if (selectedNode !== 'hub') return;
+    setDragSource(agentId);
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    const startX = rect.left + rect.width / 2;
+    const startY = rect.top + rect.height / 2;
+    setDragLine({ x1: startX, y1: startY, x2: e.clientX, y2: e.clientY });
+
+    const handleMove = (me: MouseEvent) => {
+      setDragLine(prev => prev ? { ...prev, x2: me.clientX, y2: me.clientY } : null);
+      const el = document.elementFromPoint(me.clientX, me.clientY);
+      const agentCard = el?.closest('[data-agent-id]');
+      if (agentCard) {
+        setDragTarget(agentCard.getAttribute('data-agent-id'));
+      } else {
+        setDragTarget(null);
+      }
+    };
+
+    const handleUp = (me: MouseEvent) => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+      setDragLine(null);
+
+      const el = document.elementFromPoint(me.clientX, me.clientY);
+      const agentCard = el?.closest('[data-agent-id]');
+      const targetId = agentCard?.getAttribute('data-agent-id');
+
+      if (targetId && targetId !== agentId) {
+        const source = agentMap.get(agentId);
+        const target = agentMap.get(targetId);
+        if (source && target) {
+          setConfirmConnect({
+            sourceId: agentId,
+            targetId,
+            sourceName: source.name,
+            targetName: target.name,
+          });
+        }
+      }
+
+      setDragSource(null);
+      setDragTarget(null);
+    };
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+  }, [agentMap]);
+
+  const handleDrop = useCallback((_targetId: string) => {
+  }, []);
+
+  const handleContextMenu = useCallback((agentId: string, e: React.MouseEvent) => {
+    setContextMenu({ x: e.clientX, y: e.clientY, agentId });
+  }, []);
+
+  const handleConfirmConnect = () => {
+    if (confirmConnect) {
+      if (isDescendant(agents, confirmConnect.sourceId, confirmConnect.targetId)) {
+        alert('Cannot create a cycle: the target agent is a descendant of the source agent.');
+        setConfirmConnect(null);
+        return;
+      }
+      updateMutation.mutate({
+        id: confirmConnect.sourceId,
+        updates: { manager_id: confirmConnect.targetId },
+      });
+      setConfirmConnect(null);
+    }
+  };
+
+  const handleRemoveManager = (agentId: string) => {
+    updateMutation.mutate({ id: agentId, updates: { manager_id: null } });
+    setContextMenu(null);
+    setConfirmRemove(null);
+  };
+
+  const handleAgentClick = (agent: OrgAgent) => {
+    if (selectedNode === 'hub') {
+      setSelectedAgent(agent);
+    } else {
+      navigate(`/agents/${agent.id}`);
+    }
+  };
+
+  const handleSaveAgent = (id: string, updates: Record<string, unknown>) => {
+    updateMutation.mutate({ id, updates }, {
+      onSuccess: () => {
+        setSelectedAgent(null);
+      },
+    });
+  };
+
   const rootNodes = tree;
   const ceo = rootNodes.length === 1 ? rootNodes[0] : null;
   const coo = ceo && ceo.children.length === 1 ? ceo.children[0] : null;
@@ -501,8 +1120,27 @@ export function OrgChartPage() {
     return groups;
   }, [directReports]);
 
+  const nodes = nodesData?.nodes || [];
+  const isHubView = selectedNode === 'hub';
+
   return (
-    <div>
+    <div ref={chartRef}>
+      {dragLine && (
+        <svg
+          style={{
+            position: 'fixed', inset: 0, width: '100vw', height: '100vh',
+            pointerEvents: 'none', zIndex: 999,
+          }}
+        >
+          <line
+            x1={dragLine.x1} y1={dragLine.y1}
+            x2={dragLine.x2} y2={dragLine.y2}
+            stroke="#FF3B30" strokeWidth="2" strokeDasharray="6,4"
+          />
+          <circle cx={dragLine.x2} cy={dragLine.y2} r="5" fill="#FF3B30" />
+        </svg>
+      )}
+
       <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <GitBranch size={28} color="var(--text-primary)" />
@@ -516,7 +1154,48 @@ export function OrgChartPage() {
             </p>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            backgroundColor: '#111', border: '1px solid #2A2A2A',
+            borderRadius: '8px', padding: '4px',
+          }}>
+            <button
+              onClick={() => setSelectedNode('hub')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '5px',
+                padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 500,
+                backgroundColor: isHubView ? '#1A1A1A' : 'transparent',
+                border: isHubView ? '1px solid #2A2A2A' : '1px solid transparent',
+                color: isHubView ? 'var(--text-primary)' : 'var(--text-muted)',
+                cursor: 'pointer',
+              }}
+            >
+              <Server size={12} />
+              Hub
+            </button>
+            {nodes.map(node => (
+              <button
+                key={node.id}
+                onClick={() => setSelectedNode(node.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '5px',
+                  padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 500,
+                  backgroundColor: selectedNode === node.id ? '#1A1A1A' : 'transparent',
+                  border: selectedNode === node.id ? '1px solid #2A2A2A' : '1px solid transparent',
+                  color: selectedNode === node.id ? 'var(--text-primary)' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                }}
+              >
+                <Monitor size={12} />
+                <span style={{
+                  width: '6px', height: '6px', borderRadius: '50%',
+                  backgroundColor: node.status === 'online' ? '#32D74B' : node.status === 'degraded' ? '#FFD60A' : '#636366',
+                }} />
+                {node.name}
+              </button>
+            ))}
+          </div>
           <button
             onClick={handleExpandAll}
             style={{
@@ -542,8 +1221,8 @@ export function OrgChartPage() {
 
       {stats && (
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-          gap: '12px', marginBottom: '32px',
+          display: 'flex', marginBottom: '28px',
+          border: '1px solid #2A2A2A', borderRadius: '10px', overflow: 'hidden',
         }}>
           {[
             { label: 'Chiefs', value: stats.leads, icon: Award, borderColor: '#FF453A' },
@@ -551,23 +1230,22 @@ export function OrgChartPage() {
             { label: 'Active', value: stats.active, icon: Zap, borderColor: '#32D74B' },
             { label: 'Scaffolded', value: stats.idle, icon: AlertTriangle, borderColor: '#FFD60A' },
             { label: 'Deprecated', value: stats.disabled, icon: XCircle, borderColor: '#FF453A' },
-          ].map(stat => (
+          ].map((stat, idx) => (
             <div key={stat.label} style={{
-              backgroundColor: '#111111',
-              border: `1px solid #2A2A2A`,
+              flex: 1, padding: '12px 16px', textAlign: 'center',
               borderTop: `2px solid ${stat.borderColor}`,
-              borderRadius: '10px', padding: '16px 18px',
-              textAlign: 'center',
+              borderRight: idx < 4 ? '1px solid #2A2A2A' : 'none',
+              backgroundColor: '#111111',
             }}>
               <div style={{
-                fontSize: '28px', fontWeight: 800, color: 'var(--text-primary)',
-                fontFamily: 'var(--font-heading)', lineHeight: 1, marginBottom: '4px',
+                fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)',
+                fontFamily: 'var(--font-heading)', lineHeight: 1, marginBottom: '2px',
               }}>
                 {stat.value}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
-                <stat.icon size={12} color={stat.borderColor} />
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{stat.label}</span>
+                <stat.icon size={11} color={stat.borderColor} />
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{stat.label}</span>
               </div>
             </div>
           ))}
@@ -601,7 +1279,15 @@ export function OrgChartPage() {
 
             {ceo && (
               <>
-                <ExecutiveCard agent={ceo.agent} isRoot onClick={() => navigate(`/agents/${ceo.agent.id}`)} />
+                <AgentCardWrapper
+                  agentId={ceo.agent.id}
+                  onDragStart={handleDragStart}
+                  onDrop={handleDrop}
+                  isDragTarget={dragTarget === ceo.agent.id && dragSource !== ceo.agent.id}
+                  onContextMenu={handleContextMenu}
+                >
+                  <ExecutiveCard agent={ceo.agent} isRoot onClick={() => handleAgentClick(ceo.agent)} />
+                </AgentCardWrapper>
 
                 {coo && (
                   <>
@@ -610,7 +1296,15 @@ export function OrgChartPage() {
                     <VerticalLine height={24} />
 
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '32px' }}>
-                      <ExecutiveCard agent={coo.agent} onClick={() => navigate(`/agents/${coo.agent.id}`)} />
+                      <AgentCardWrapper
+                        agentId={coo.agent.id}
+                        onDragStart={handleDragStart}
+                        onDrop={handleDrop}
+                        isDragTarget={dragTarget === coo.agent.id && dragSource !== coo.agent.id}
+                        onContextMenu={handleContextMenu}
+                      >
+                        <ExecutiveCard agent={coo.agent} onClick={() => handleAgentClick(coo.agent)} />
+                      </AgentCardWrapper>
 
                       {groupedDirectReports.size > 0 && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: '4px' }}>
@@ -634,7 +1328,7 @@ export function OrgChartPage() {
                               {groupAgents.map(ga => (
                                 <div
                                   key={ga.id}
-                                  onClick={() => navigate(`/agents/${ga.id}`)}
+                                  onClick={() => handleAgentClick(ga)}
                                   style={{
                                     display: 'flex', alignItems: 'center', gap: '8px',
                                     padding: '6px 0', cursor: 'pointer',
@@ -683,7 +1377,15 @@ export function OrgChartPage() {
                 {chiefs.map(chief => (
                   <div key={chief.agent.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <VerticalLine height={16} />
-                    <ChiefCard agent={chief.agent} onClick={() => navigate(`/agents/${chief.agent.id}`)} />
+                    <AgentCardWrapper
+                      agentId={chief.agent.id}
+                      onDragStart={handleDragStart}
+                      onDrop={handleDrop}
+                      isDragTarget={dragTarget === chief.agent.id && dragSource !== chief.agent.id}
+                      onContextMenu={handleContextMenu}
+                    >
+                      <ChiefCard agent={chief.agent} onClick={() => handleAgentClick(chief.agent)} />
+                    </AgentCardWrapper>
 
                     {chief.children.length > 0 && (
                       <>
@@ -727,7 +1429,7 @@ export function OrgChartPage() {
                                       agents={deptAgents}
                                       expanded={expandedDepts.has(chief.agent.id + ':' + dept)}
                                       onToggle={() => toggleDept(chief.agent.id + ':' + dept)}
-                                      onNavigate={(id) => navigate(`/agents/${id}`)}
+                                      onAgentClick={handleAgentClick}
                                     />
                                   ))}
                                 </div>
@@ -745,13 +1447,69 @@ export function OrgChartPage() {
             {!ceo && !coo && chiefs.length === 0 && tree.length > 0 && (
               <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', justifyContent: 'center' }}>
                 {tree.map(node => (
-                  <ChiefCard key={node.agent.id} agent={node.agent} onClick={() => navigate(`/agents/${node.agent.id}`)} />
+                  <AgentCardWrapper
+                    key={node.agent.id}
+                    agentId={node.agent.id}
+                    onDragStart={handleDragStart}
+                    onDrop={handleDrop}
+                    isDragTarget={dragTarget === node.agent.id && dragSource !== node.agent.id}
+                    onContextMenu={handleContextMenu}
+                  >
+                    <ChiefCard agent={node.agent} onClick={() => handleAgentClick(node.agent)} />
+                  </AgentCardWrapper>
                 ))}
               </div>
             )}
 
           </div>
         </div>
+      )}
+
+      {confirmConnect && (
+        <ConfirmModal
+          title="Connect Agents"
+          message={`Set "${confirmConnect.sourceName}" to report to "${confirmConnect.targetName}"?`}
+          confirmLabel="Connect"
+          onConfirm={handleConfirmConnect}
+          onCancel={() => setConfirmConnect(null)}
+        />
+      )}
+
+      {confirmRemove && (
+        <ConfirmModal
+          title="Remove from Hierarchy"
+          message={`Remove "${confirmRemove.agentName}" from the hierarchy? This agent will become a root node.`}
+          confirmLabel="Remove"
+          onConfirm={() => handleRemoveManager(confirmRemove.agentId)}
+          onCancel={() => setConfirmRemove(null)}
+        />
+      )}
+
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          agentName={agentMap.get(contextMenu.agentId)?.name || ''}
+          hasManager={!!agentMap.get(contextMenu.agentId)?.manager_id}
+          onRemoveManager={() => {
+            const agent = agentMap.get(contextMenu.agentId);
+            if (agent) {
+              setConfirmRemove({ agentId: agent.id, agentName: agent.name });
+              setContextMenu(null);
+            }
+          }}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+
+      {selectedAgent && isHubView && (
+        <AgentSidePanel
+          key={selectedAgent.id}
+          agent={selectedAgent}
+          onClose={() => setSelectedAgent(null)}
+          onSave={handleSaveAgent}
+          isSaving={updateMutation.isPending}
+        />
       )}
     </div>
   );
