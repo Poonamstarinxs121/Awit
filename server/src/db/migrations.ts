@@ -373,6 +373,33 @@ export async function runMigrations(): Promise<void> {
     await client.query(`ALTER TABLE tenant_settings ADD COLUMN IF NOT EXISTS setup_completed BOOLEAN DEFAULT false`);
     await client.query(`ALTER TABLE agents ADD COLUMN IF NOT EXISTS is_paused BOOLEAN DEFAULT false`);
 
+    // Org chart fields on agents
+    await client.query(`ALTER TABLE agents ADD COLUMN IF NOT EXISTS manager_id UUID REFERENCES agents(id) ON DELETE SET NULL`);
+    await client.query(`ALTER TABLE agents ADD COLUMN IF NOT EXISTS job_title TEXT`);
+    await client.query(`ALTER TABLE agents ADD COLUMN IF NOT EXISTS department TEXT`);
+    await client.query(`ALTER TABLE agents ADD COLUMN IF NOT EXISTS sort_order INT DEFAULT 0`);
+
+    // Calendar events table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS calendar_events (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        description TEXT DEFAULT '',
+        event_type TEXT NOT NULL DEFAULT 'event'
+          CHECK (event_type IN ('meeting', 'followup', 'reminder', 'task', 'event')),
+        start_at TIMESTAMPTZ NOT NULL,
+        end_at TIMESTAMPTZ,
+        all_day BOOLEAN DEFAULT false,
+        color TEXT,
+        related_task_id UUID REFERENCES tasks(id) ON DELETE SET NULL,
+        related_agent_id UUID REFERENCES agents(id) ON DELETE SET NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_calendar_events_tenant ON calendar_events(tenant_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_calendar_events_tenant_range ON calendar_events(tenant_id, start_at)`);
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS documents (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

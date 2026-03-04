@@ -47,6 +47,7 @@ import { FleetPage } from './pages/FleetPage';
 import { FleetAnalyticsPage } from './pages/FleetAnalyticsPage';
 import { NodeOfficePage } from './pages/NodeOfficePage';
 import { FleetOfficePage } from './pages/FleetOfficePage';
+import { OrgChartPage } from './pages/OrgChartPage';
 import { useAuth } from './hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 
@@ -142,6 +143,7 @@ export default function App() {
               <Route path="/fleet/nodes/:nodeId/office" element={<NodeOfficePage />} />
               <Route path="/fleet-analytics" element={<FleetAnalyticsPage />} />
               <Route path="/fleet-office" element={<FleetOfficePage />} />
+              <Route path="/org-chart" element={<OrgChartPage />} />
             </Route>
           </Routes>
           </BrowserRouter>

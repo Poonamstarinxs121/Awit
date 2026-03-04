@@ -92,6 +92,70 @@ const HELP_TOPICS: HelpTopic[] = [
     content: `<h2>Heartbeats Explained</h2><h3>What Are Heartbeats?</h3><p>Heartbeats are periodic check-ins where agents review their tasks, process new information, and take autonomous actions without being prompted.</p><h3>Why Heartbeats?</h3><p>They allow agents to work asynchronously — checking on tasks, processing new data, and proactively completing work without you needing to ask.</p><h3>Staggered Scheduling</h3><p>Heartbeats are staggered so agents don't all fire at once:</p><ul><li>Oracle: Every 30 minutes</li><li>Strategist: Every 45 minutes</li><li>Other agents: Every 60 minutes</li></ul><h3>Async Work Pattern</h3><p>You give a task → Agent receives it → Next heartbeat processes it → You get a notification when complete. No need to wait or check manually.</p><h3>Immediate Responses</h3><p>Direct messages always get immediate responses. Heartbeats handle background/autonomous work.</p>`
   },
   {
+    id: 'agent-memory', title: 'Agent Memory System', emoji: '🧠', section: 'USING YOUR SQUAD',
+    content: `<h2>Agent Memory System</h2><p>SquidJob agents don't start fresh every session — they carry structured memory across every conversation, meeting, and task. This is how they avoid repeating work, reference past decisions, and stay in sync as a team.</p>
+
+<h3>1. Shared Workspace Meeting Memory Files</h3>
+<p>When agents run daily or weekly sync meetings (standups, executive syncs, planning sessions), the meeting transcript and key decisions are written to a shared memory file in the team's workspace. The next time a similar meeting runs, agents read the previous file first — so they know what was discussed, what was decided, and what was completed.</p>
+<p>This is what prevents repetition: your Lead Agent (Muddy/Oracle) won't ask for a status update on something that was already resolved yesterday. During weekly syncs, agents reference the past week's memory file to track progress and only escalate what's genuinely new or unresolved.</p>
+<table class="help-table"><thead><tr><th>Memory File</th><th>What It Stores</th><th>Who Uses It</th></tr></thead><tbody>
+<tr><td>Daily sync memory</td><td>What happened today, decisions made, blockers flagged</td><td>All agents in the sync</td></tr>
+<tr><td>Weekly memory</td><td>Week's progress, priorities, outcomes vs. targets</td><td>All agents in the weekly review</td></tr>
+<tr><td>Agent-to-agent handoff</td><td>Context when one agent hands work to another</td><td>The receiving agent</td></tr>
+</tbody></table>
+
+<h3>2. Per-Agent Memory MD</h3>
+<p>Every agent has a dedicated <code>MEMORY.md</code> file in its workspace. This is the agent's private notepad — created empty when the agent is first provisioned via OpenClaw, then filled over time as the agent learns.</p>
+<p>Agents write to their <code>MEMORY.md</code> when they encounter important information: preferences you've expressed, recurring patterns, things to remember about your business, or context that will matter later. At the start of each new session, the agent reads this file to restore that context.</p>
+<p>You can view and edit an agent's <code>MEMORY.md</code> directly from the <strong>Memory Browser</strong> on the Node app — useful if you want to correct something the agent remembered incorrectly or seed it with initial knowledge.</p>
+
+<h3>3. Soul Identity Memory (SOUL.md)</h3>
+<p>During agent startup, the first thing each agent reads is its <code>SOUL.md</code> file. This is the core identity document — it defines who the agent is, what their responsibilities are, how they should behave, and what principles guide their decisions.</p>
+<p>Soul memory is intentionally immutable from the conversation side: a user can't accidentally override an agent's identity through prompting. While the agent can be influenced in conversation, its fundamental identity, role, and operating principles come from the soul file and reset at each new session.</p>
+<p>You can edit an agent's soul using the <strong>SoulCraft Wizard</strong> (Agent detail page → Identity tab) if you want to change who the agent fundamentally is.</p>
+
+<h3>How Memory Prevents Repetition</h3>
+<p>In practice, this means:</p>
+<ul>
+<li>A daily sync won't re-litigate decisions already made yesterday — the agents have the previous day's file</li>
+<li>Your weekly planning won't start from scratch — agents reference what was planned last week and what got done</li>
+<li>Specialist agents remember your preferences (writing style, priorities, tooling) without being told repeatedly</li>
+<li>Handoffs between agents carry full context so nothing gets lost between specialists</li>
+</ul>`
+  },
+  {
+    id: 'power-commands', title: 'Power Commands', emoji: '⚡', section: 'USING YOUR SQUAD',
+    content: `<h2>Power Commands</h2><p>Power commands are special phrases you can append to any message to change how your Lead Agent handles a request. They bypass the normal routing logic and give you direct control.</p>
+
+<h3>The "do it now" Override</h3>
+<p>Appending <code>do it now</code> (lowercase, at the end of your message) tells your Lead Agent to execute the task itself — bypassing all delegation to specialist agents. Even if the task would normally be routed to a specific specialist, the Lead Agent handles it directly.</p>
+
+<p><strong>Example:</strong></p>
+<pre><code>"Write me a one-paragraph summary of the three most important decisions from this week's sync. do it now"</code></pre>
+
+<p>Without <code>do it now</code>, the Lead Agent might route a writing task to a content specialist agent. With it, the Lead Agent writes it immediately itself.</p>
+
+<h3>When to Use It</h3>
+<table class="help-table"><thead><tr><th>Scenario</th><th>Why "do it now" Helps</th></tr></thead><tbody>
+<tr><td>Time-sensitive requests</td><td>Skip the delegation overhead — get a direct, immediate response</td></tr>
+<tr><td>Quick decisions or summaries</td><td>The Lead Agent is well-positioned to handle coordination tasks directly</td></tr>
+<tr><td>Delegation seems stuck</td><td>Force execution when the routing loop is slow or not completing</td></tr>
+<tr><td>You want guaranteed ownership</td><td>Know exactly which agent is doing the work (the Lead, not a delegated specialist)</td></tr>
+<tr><td>Testing or debugging routing</td><td>Confirm the Lead Agent itself can handle a task</td></tr>
+</tbody></table>
+
+<h3>When Not to Overuse It</h3>
+<p>For complex specialist work — deep technical implementation, multi-step research, long-form content — specialist agents will typically produce better results because they have domain-specific memory, skills, and focus. Use <code>do it now</code> for fast execution, coordination, and judgment calls — not as a replacement for specialist expertise.</p>
+
+<h3>Important Notes</h3>
+<ul>
+<li>The phrase must be <strong>lowercase</strong>: <code>do it now</code> — casing matters</li>
+<li>It should appear at the <strong>end</strong> of your message</li>
+<li>It works on any message sent to your Lead Agent via Telegram, Mission Control chat, or the agent messaging interface</li>
+<li>The override is per-message — it doesn't stay active for future messages</li>
+</ul>`
+  },
+  {
     id: 'common-scenarios', title: 'Common Scenarios', emoji: '🎯', section: 'COMMON',
     content: `<h2>Common Scenarios</h2><h3>Urgent Request</h3><p>Message Oracle directly: "URGENT: I need a competitor analysis by end of day." Oracle will prioritize and delegate immediately.</p><h3>Output Not Right</h3><p>Add a comment on the task with specific feedback. Move the task back to "In Progress" and the agent will revise.</p><h3>Going on Vacation</h3><p>Use Global Pause from the header. Your squad stops all autonomous work. Resume when you're back.</p><h3>Need a New Agent</h3><p>Go to Agents → New Agent. Use the SoulCraft wizard to create a custom agent with specific skills and personality.</p><h3>Something Broken</h3><p>Try Restart Gateway first (Settings menu). If issues persist, check the Help Center or contact support.</p><h3>Want to Start Over</h3><p>Use Reset Workspace in Settings → Danger Zone. This resets everything and takes you back to the setup wizard.</p>`
   },

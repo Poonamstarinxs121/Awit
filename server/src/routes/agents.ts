@@ -10,6 +10,45 @@ import { pool } from '../db/index.js';
 
 const router = Router();
 
+router.get('/org-chart', requireMinRole('viewer'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user!.tenantId;
+
+    const result = await pool.query(
+      `SELECT
+         a.id, a.tenant_id, a.name, a.role, a.level, a.status, a.model_config,
+         a.is_default, a.is_paused, a.manager_id, a.job_title, a.department, a.sort_order, a.created_at,
+         COALESCE(sk.skills_count, 0)::int AS skills_count
+       FROM agents a
+       LEFT JOIN (
+         SELECT agent_id, COUNT(*) AS skills_count
+         FROM agent_skills
+         WHERE is_enabled = true
+         GROUP BY agent_id
+       ) sk ON sk.agent_id = a.id
+       WHERE a.tenant_id = $1
+       ORDER BY a.sort_order ASC, a.created_at ASC`,
+      [tenantId]
+    );
+
+    const agents = result.rows;
+    const stats = {
+      total: agents.length,
+      active: agents.filter((a: any) => a.status === 'active').length,
+      idle: agents.filter((a: any) => a.status === 'idle').length,
+      disabled: agents.filter((a: any) => a.status === 'disabled').length,
+      leads: agents.filter((a: any) => a.level === 'lead').length,
+      specialists: agents.filter((a: any) => a.level === 'specialist').length,
+      interns: agents.filter((a: any) => a.level === 'intern').length,
+    };
+
+    res.json({ agents, stats });
+  } catch (error) {
+    console.error('Org chart error:', error);
+    res.status(500).json({ error: 'Failed to load org chart' });
+  }
+});
+
 router.get('/analytics', requireMinRole('viewer'), async (req: Request, res: Response) => {
   try {
     const days = parseInt(req.query.days as string) || 30;

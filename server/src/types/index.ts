@@ -35,6 +35,11 @@ export interface Agent {
   level: AgentLevel;
   status: AgentStatus;
   is_default: boolean;
+  is_paused?: boolean;
+  manager_id?: string | null;
+  job_title?: string | null;
+  department?: string | null;
+  sort_order?: number;
   created_at: string;
 }
 

@@ -48,6 +48,9 @@ The codebase is a monorepo with `server/`, `client/`, `node/`, and `extension/` 
 - **Approval Flows**: Implements approval workflows with pending/approved/rejected states and a dedicated UI.
 - **Board Groups**: Organizes tasks into board groups with filtering capabilities in the Kanban view.
 - **Activity Timeline**: Provides a comprehensive event timeline with filtering by event type and pagination.
+- **Organisation Chart**: Hierarchical team tree at `/org-chart` — builds from flat agents using manager_id, shows avatar/name/job_title/status/model/level per node, expand/collapse, department grouping, stats bar, click-through to agent detail.
+- **Calendar (Enhanced)**: Three-view calendar at `/calendar` — List (upcoming events grouped by day), Weekly (7-column grid with colored event pills), Monthly (month grid with overflow). Sources: `calendar_events` table + tasks with due_date + active cron jobs. Event creation modal via `POST /v1/calendar-events`. Event types: meeting (gold), followup (green), reminder (purple), task (blue), cron (orange), event (teal).
+- **Help Center Extended**: Two new topics under "USING YOUR SQUAD" — "Agent Memory System" (shared workspace meeting files, per-agent MEMORY.md, SOUL.md identity) and "Power Commands" ("do it now" override bypasses delegation).
 - **Task Dispatch**: Hub dispatches tasks to specific nodes with full lifecycle tracking (pending→dispatched→accepted→running→completed/failed).
 - **Cross-Machine Agent Routing**: When @mentioning an agent that exists on a remote node, the Hub automatically creates a cross-node dispatch.
 - **Fleet-Wide Search**: Fan-out search to all online nodes + Hub memory, with per-source result grouping.
