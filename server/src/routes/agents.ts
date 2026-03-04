@@ -23,7 +23,6 @@ router.get('/org-chart', requireMinRole('viewer'), async (req: Request, res: Res
        LEFT JOIN (
          SELECT agent_id, COUNT(*) AS skills_count
          FROM agent_skills
-         WHERE is_enabled = true
          GROUP BY agent_id
        ) sk ON sk.agent_id = a.id
        WHERE a.tenant_id = $1
