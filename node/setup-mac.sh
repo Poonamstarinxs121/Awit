@@ -4,6 +4,9 @@ set -e
 
 # SquidJob Node Setup Script for macOS
 # This script sets up the Node app on a Mac and optionally installs it as a launchd service
+# Usage:
+#   ./setup-mac.sh                   Interactive setup with prompts
+#   ./setup-mac.sh --install-service Non-interactive service install (requires .env to exist)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NODE_HOME="$SCRIPT_DIR"
@@ -12,22 +15,29 @@ LOG_DIR="$HOME/Library/Logs/squidjob-node"
 SERVICE_NAME="com.squidjob.node"
 PLIST_PATH="$HOME/Library/LaunchAgents/$SERVICE_NAME.plist"
 
-# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
+
+INSTALL_SERVICE_FLAG=false
+for arg in "$@"; do
+    case $arg in
+        --install-service)
+            INSTALL_SERVICE_FLAG=true
+            shift
+            ;;
+    esac
+done
 
 echo -e "${BLUE}╔════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║  SquidJob Node Setup for macOS                 ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════╝${NC}"
 echo ""
 
-# Check prerequisites
 echo -e "${YELLOW}Checking prerequisites...${NC}"
 
-# Check Node.js
 if ! command -v node &> /dev/null; then
     echo -e "${RED}✗ Node.js is not installed${NC}"
     echo "  Install from: https://nodejs.org/ (v18+)"
@@ -36,7 +46,6 @@ fi
 NODE_VERSION=$(node --version)
 echo -e "${GREEN}✓ Node.js${NC} $NODE_VERSION"
 
-# Check npm
 if ! command -v npm &> /dev/null; then
     echo -e "${RED}✗ npm is not installed${NC}"
     exit 1
@@ -44,53 +53,55 @@ fi
 NPM_VERSION=$(npm --version)
 echo -e "${GREEN}✓ npm${NC} $NPM_VERSION"
 
-# Check if .env exists
 ENV_FILE="$NODE_HOME/.env"
-if [ -f "$ENV_FILE" ]; then
-    echo -e "${YELLOW}ℹ .env file already exists${NC}"
-    read -p "Overwrite existing .env? (y/n) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Using existing .env. Skipping configuration."
-        SKIP_CONFIG=true
+
+if [ "$INSTALL_SERVICE_FLAG" = true ]; then
+    if [ ! -f "$ENV_FILE" ]; then
+        echo -e "${RED}✗ .env file not found. Run without --install-service first to configure.${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✓ Using existing .env (non-interactive mode)${NC}"
+    SKIP_CONFIG=true
+    INSTALL_SERVICE="y"
+else
+    if [ -f "$ENV_FILE" ]; then
+        echo -e "${YELLOW}ℹ .env file already exists${NC}"
+        read -p "Overwrite existing .env? (y/n) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Using existing .env. Skipping configuration."
+            SKIP_CONFIG=true
+        fi
     fi
 fi
 
 echo ""
 
-# Configuration prompts (unless skipping)
 if [ "$SKIP_CONFIG" != "true" ]; then
     echo -e "${BLUE}Configure Node App${NC}"
     echo "Press Enter to use default values shown in [brackets]"
     echo ""
 
-    # Hub URL
     read -p "Hub URL [https://squidjob-hub.onrender.com]: " HUB_URL
     HUB_URL="${HUB_URL:-https://squidjob-hub.onrender.com}"
 
-    # Node ID
     read -p "Node ID (from Hub registration) [mac-studio-1]: " NODE_ID
     NODE_ID="${NODE_ID:-mac-studio-1}"
 
-    # API Key
     read -p "API Key (from Hub registration) [squidjob-api-key]: " API_KEY
     API_KEY="${API_KEY:-squidjob-api-key}"
 
-    # Node Name
     read -p "Node Name (friendly name) [mac-studio]: " NODE_NAME
     NODE_NAME="${NODE_NAME:-mac-studio}"
 
-    # Admin Password
     read -sp "Admin Password (for local dashboard) [changeme]: " ADMIN_PASSWORD
     ADMIN_PASSWORD="${ADMIN_PASSWORD:-changeme}"
     echo ""
 
-    # Install as service?
     echo ""
     read -p "Install as macOS service (auto-start on boot)? (y/n) [y]: " INSTALL_SERVICE
     INSTALL_SERVICE="${INSTALL_SERVICE:-y}"
 
-    # Write .env file
     cat > "$ENV_FILE" << EOF
 # SquidJob Node Configuration
 # Generated: $(date)
@@ -111,7 +122,6 @@ fi
 
 echo ""
 
-# Install dependencies
 echo -e "${YELLOW}Installing dependencies...${NC}"
 cd "$NODE_HOME"
 npm install
@@ -119,14 +129,17 @@ echo -e "${GREEN}✓ Dependencies installed${NC}"
 
 echo ""
 
-# Install as macOS service (optional)
-if [[ "$INSTALL_SERVICE" =~ ^[Yy]$ ]] || [ "$INSTALL_SERVICE" = "true" ]; then
+if [[ "$INSTALL_SERVICE" =~ ^[Yy]$ ]] || [ "$INSTALL_SERVICE" = "true" ] || [ "$INSTALL_SERVICE_FLAG" = true ]; then
+    echo -e "${YELLOW}Building production bundle...${NC}"
+    cd "$NODE_HOME"
+    npm run build
+    echo -e "${GREEN}✓ Production build complete${NC}"
+
+    echo ""
     echo -e "${BLUE}Setting up macOS service...${NC}"
 
-    # Create log directory
     mkdir -p "$LOG_DIR"
 
-    # Create plist content
     cat > "$PLIST_PATH" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -166,7 +179,6 @@ if [[ "$INSTALL_SERVICE" =~ ^[Yy]$ ]] || [ "$INSTALL_SERVICE" = "true" ]; then
 </plist>
 EOF
 
-    # Load the service
     launchctl unload "$PLIST_PATH" 2>/dev/null || true
     launchctl load "$PLIST_PATH"
 
@@ -182,9 +194,12 @@ EOF
 else
     echo -e "${YELLOW}Skipping service installation${NC}"
     echo ""
-    echo "To start the Node app manually, run:"
-    echo "  cd $NODE_HOME"
-    echo "  npm run dev"
+    echo -e "${BLUE}Starting dev server...${NC}"
+    echo "The Node app will start on http://localhost:3200"
+    echo "Press Ctrl+C to stop."
+    echo ""
+    cd "$NODE_HOME"
+    npm run dev
 fi
 
 echo ""
@@ -194,7 +209,7 @@ echo -e "${GREEN}╚════════════════════
 echo ""
 echo "Next steps:"
 echo "  1. Open local dashboard:  http://localhost:3200"
-echo "  2. Open Hub (cloud):      $HUB_URL"
+echo "  2. Open Hub (cloud):      ${HUB_URL:-https://squidjob-hub.onrender.com}"
 echo "  3. Go to Fleet → your machine should appear as 'online'"
 echo ""
 echo "For offline testing:"

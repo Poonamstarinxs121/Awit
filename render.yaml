@@ -14,12 +14,15 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: ENCRYPTION_KEY
-        value: squidjob-prod-encryption-key-32b!
+        generateValue: true
       - key: PORT
         value: "5000"
+    healthCheckPath: /health
 
 databases:
   - name: squidjob-db
     databaseName: squidjob
     user: squidjob_user
-    version: "16"
+    plan: starter
+    postgresMajorVersion: "16"
+    ipAllowList: []
