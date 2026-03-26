@@ -991,7 +991,7 @@ export function Settings() {
             <ol style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {[
                 <>Download the Node app above and unzip it</>,
-                <>Run the setup script: <code style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', backgroundColor: 'var(--surface)', padding: '2px 6px', borderRadius: '4px' }}>cd node && chmod +x setup-mac.sh && ./setup-mac.sh</code></>,
+                <>Run the setup script: <code style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', backgroundColor: 'var(--surface)', padding: '2px 6px', borderRadius: '4px' }}>chmod +x setup-mac.sh && ./setup-mac.sh</code></>,
                 <>Paste your Hub URL, Node ID, and API Key when prompted (register a node <a href="/fleet" style={{ color: 'var(--accent)', textDecoration: 'none' }}>here</a> first)</>,
               ].map((step, i) => (
                 <li key={i} style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{step}</li>

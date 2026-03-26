@@ -117,7 +117,6 @@ EOF
 
     echo ""
     echo -e "${GREEN}✓ Created .env file${NC}"
-    cat "$ENV_FILE"
 fi
 
 echo ""
