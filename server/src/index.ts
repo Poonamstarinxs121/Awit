@@ -20,7 +20,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const isProduction = process.env.NODE_ENV === 'production';
-const PORT = isProduction ? 5000 : 3001;
+const PORT = parseInt(process.env.PORT || (isProduction ? '5000' : '3001'), 10);
 
 app.use(cors());
 app.use('/v1/billing/webhook', express.raw({ type: 'application/json' }));

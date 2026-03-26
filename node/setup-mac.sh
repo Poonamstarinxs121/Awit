@@ -139,44 +139,12 @@ if [[ "$INSTALL_SERVICE" =~ ^[Yy]$ ]] || [ "$INSTALL_SERVICE" = "true" ] || [ "$
 
     mkdir -p "$LOG_DIR"
 
-    cat > "$PLIST_PATH" << EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>$SERVICE_NAME</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/usr/bin/env</string>
-        <string>node</string>
-        <string>$NODE_HOME/node_modules/.bin/next</string>
-        <string>start</string>
-        <string>-H</string>
-        <string>0.0.0.0</string>
-        <string>-p</string>
-        <string>3200</string>
-    </array>
-    <key>WorkingDirectory</key>
-    <string>$NODE_HOME</string>
-    <key>StandardOutPath</key>
-    <string>$LOG_DIR/output.log</string>
-    <key>StandardErrorPath</key>
-    <string>$LOG_DIR/error.log</string>
-    <key>KeepAlive</key>
-    <true/>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>EnvironmentVariables</key>
-    <dict>
-        <key>PATH</key>
-        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
-        <key>NODE_ENV</key>
-        <string>production</string>
-    </dict>
-</dict>
-</plist>
-EOF
+    PLIST_TEMPLATE="$NODE_HOME/com.squidjob.node.plist"
+    if [ ! -f "$PLIST_TEMPLATE" ]; then
+        echo -e "${RED}✗ Plist template not found at $PLIST_TEMPLATE${NC}"
+        exit 1
+    fi
+    sed -e "s|__NODE_HOME__|$NODE_HOME|g" -e "s|__LOG_DIR__|$LOG_DIR|g" "$PLIST_TEMPLATE" > "$PLIST_PATH"
 
     launchctl unload "$PLIST_PATH" 2>/dev/null || true
     launchctl load "$PLIST_PATH"
