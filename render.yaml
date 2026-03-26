@@ -19,6 +19,8 @@ services:
         value: "5000"
     healthCheckPath: /health
 
+# pgvector is enabled at runtime via server migrations: CREATE EXTENSION IF NOT EXISTS vector
+# Render managed Postgres supports extensions on all plans
 databases:
   - name: squidjob-db
     databaseName: squidjob

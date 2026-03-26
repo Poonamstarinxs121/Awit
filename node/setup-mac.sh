@@ -128,8 +128,9 @@ NODE_HUB_API_KEY=$API_KEY
 NODE_ID=$NODE_ID
 EOF
 
+    chmod 600 "$ENV_FILE"
     echo ""
-    echo -e "${GREEN}✓ Created .env file${NC}"
+    echo -e "${GREEN}✓ Created .env file (permissions restricted)${NC}"
 fi
 
 echo ""
