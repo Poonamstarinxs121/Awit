@@ -737,8 +737,8 @@ BEGIN
 
     INSERT INTO users (tenant_id, email, name, password_hash, role, is_saas_admin)
     VALUES
-      (v_tenant_id, 'admin@squidjob.com', 'SquidJob Admin', '$2a$10$JILjw/5/Tw3LNbMUHKtvw.LFHruUL2t5EFj9O3o3e83/JXOgf.jf2', 'owner', true),
-      (v_tenant_id, 'kaustubh@awitmedia.com', 'Kaustubh', '$2a$10$Hoa7Zb9njpCe2.5XdI9CC.noWYIAQ9M3rYwqaYa0HRXDHzG.jmE/q', 'owner', false);
+      (v_tenant_id, 'admin@squidjob.com', 'SquidJob Admin', '$2a$10$ARoWspGJnmlqxLU1qUOUl.E3c4vcCfRGMbVOz8dcQKTosC.yxj6Xi', 'owner', true),
+      (v_tenant_id, 'kaustubh@awitmedia.com', 'Kaustubh', '$2a$10$PcmxEZoDL0wtn9Gy58BAAOiOj.BFvQSjEz7l1FWajlsrNUUUbigiy', 'owner', false);
 
     INSERT INTO agents (tenant_id, name, role, soul_md, agents_md, tools_md, heartbeat_md, model_config, level, status, is_default) VALUES
       (v_tenant_id, 'Oracle', 'Squad lead, task triage, delegation, coordination',
