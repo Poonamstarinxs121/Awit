@@ -6,8 +6,7 @@
     <string>com.squidjob.node</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/bin/env</string>
-        <string>node</string>
+        <string>__NODE_BIN__</string>
         <string>__NODE_HOME__/node_modules/.bin/next</string>
         <string>start</string>
         <string>-H</string>
@@ -28,7 +27,7 @@
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
-        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
         <key>NODE_ENV</key>
         <string>production</string>
     </dict>

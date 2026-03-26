@@ -43,8 +43,14 @@ if ! command -v node &> /dev/null; then
     echo "  Install from: https://nodejs.org/ (v18+)"
     exit 1
 fi
+NODE_BIN=$(command -v node)
 NODE_VERSION=$(node --version)
-echo -e "${GREEN}✓ Node.js${NC} $NODE_VERSION"
+NODE_MAJOR=$(echo "$NODE_VERSION" | sed 's/v//' | cut -d. -f1)
+if [ "$NODE_MAJOR" -lt 18 ]; then
+    echo -e "${RED}✗ Node.js v18+ required (found $NODE_VERSION)${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✓ Node.js${NC} $NODE_VERSION ($NODE_BIN)"
 
 if ! command -v npm &> /dev/null; then
     echo -e "${RED}✗ npm is not installed${NC}"
@@ -144,7 +150,7 @@ if [[ "$INSTALL_SERVICE" =~ ^[Yy]$ ]] || [ "$INSTALL_SERVICE" = "true" ] || [ "$
         echo -e "${RED}✗ Plist template not found at $PLIST_TEMPLATE${NC}"
         exit 1
     fi
-    sed -e "s|__NODE_HOME__|$NODE_HOME|g" -e "s|__LOG_DIR__|$LOG_DIR|g" "$PLIST_TEMPLATE" > "$PLIST_PATH"
+    sed -e "s|__NODE_HOME__|$NODE_HOME|g" -e "s|__LOG_DIR__|$LOG_DIR|g" -e "s|__NODE_BIN__|$NODE_BIN|g" "$PLIST_TEMPLATE" > "$PLIST_PATH"
 
     launchctl unload "$PLIST_PATH" 2>/dev/null || true
     launchctl load "$PLIST_PATH"
