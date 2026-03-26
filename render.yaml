@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: squidjob-hub
+    runtime: node
+    buildCommand: cd client && npm install && npm run build && cd ../server && npm install && npm run build
+    startCommand: cd server && NODE_ENV=production node dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: squidjob-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        value: squidjob-prod-encryption-key-32b!
+      - key: PORT
+        value: "5000"
+
+databases:
+  - name: squidjob-db
+    databaseName: squidjob
+    user: squidjob_user
+    version: "16"

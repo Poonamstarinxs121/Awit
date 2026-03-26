@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.squidjob.node</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/env</string>
+        <string>node</string>
+        <string>__NODE_HOME__/node_modules/.bin/next</string>
+        <string>start</string>
+        <string>-H</string>
+        <string>0.0.0.0</string>
+        <string>-p</string>
+        <string>3200</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>__NODE_HOME__</string>
+    <key>StandardOutPath</key>
+    <string>__LOG_DIR__/output.log</string>
+    <key>StandardErrorPath</key>
+    <string>__LOG_DIR__/error.log</string>
+    <key>KeepAlive</key>
+    <true/>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>NODE_ENV</key>
+        <string>production</string>
+    </dict>
+    <key>StandardInPath</key>
+    <string>/dev/null</string>
+</dict>
+</plist>

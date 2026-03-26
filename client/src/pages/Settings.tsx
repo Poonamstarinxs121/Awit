@@ -974,6 +974,49 @@ export function Settings() {
 
   const renderDownloads = () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <SectionCard title="Mac Setup Script" icon={Download} subtitle="Automated setup for Mac machines (Studio, Mini, etc.)">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+            For Mac users, we provide a setup script that automates the entire Node installation process. It handles dependencies, environment configuration, and optional auto-start on boot via launchd.
+          </p>
+
+          <ActionButton onClick={() => handleDownload('node')} variant="primary" fullWidth>
+            <Download size={16} /> Download Node App (.zip)
+          </ActionButton>
+
+          <div style={{ backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)', borderRadius: '10px', padding: '16px' }}>
+            <h4 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Package size={14} style={{ color: 'var(--accent)' }} /> Quick Start (3 Steps)
+            </h4>
+            <ol style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {[
+                <>Download the Node app above and unzip it</>,
+                <>Run the setup script: <code style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', backgroundColor: 'var(--surface)', padding: '2px 6px', borderRadius: '4px' }}>cd node && chmod +x setup-mac.sh && ./setup-mac.sh</code></>,
+                <>Paste your Hub URL, Node ID, and API Key when prompted (register a node <a href="/fleet" style={{ color: 'var(--accent)', textDecoration: 'none' }}>here</a> first)</>,
+              ].map((step, i) => (
+                <li key={i} style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{step}</li>
+              ))}
+            </ol>
+          </div>
+
+          <div style={{ backgroundColor: '#1a3a1a', border: '1px solid #2d5a2d', borderRadius: '8px', padding: '12px', fontSize: '12px', color: '#32D74B', fontFamily: 'var(--font-mono)', lineHeight: 1.5 }}>
+            <strong>✓ The script will automatically:</strong><br/>
+            • Check Node.js and npm are installed<br/>
+            • Install dependencies<br/>
+            • Prompt for Hub URL, Node ID, API Key<br/>
+            • Write .env configuration<br/>
+            • Optionally install as macOS service (auto-start on boot)<br/>
+            • Start the Node app
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <SmallBadge color="#FF9F0A">macOS</SmallBadge>
+            <SmallBadge color="#30D158">Automated</SmallBadge>
+            <SmallBadge color="#64D2FF">SQLite (no DB server)</SmallBadge>
+          </div>
+        </div>
+      </SectionCard>
+
       <SectionCard title="SquidJob Node" icon={Monitor} subtitle="Run agents on any machine and sync with the Hub">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
