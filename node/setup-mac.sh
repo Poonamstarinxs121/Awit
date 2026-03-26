@@ -94,14 +94,21 @@ if [ "$SKIP_CONFIG" != "true" ]; then
     read -p "Node ID (from Hub registration) [mac-studio-1]: " NODE_ID
     NODE_ID="${NODE_ID:-mac-studio-1}"
 
-    read -p "API Key (from Hub registration) [squidjob-api-key]: " API_KEY
-    API_KEY="${API_KEY:-squidjob-api-key}"
+    read -p "API Key (from Hub registration): " API_KEY
+    if [ -z "$API_KEY" ]; then
+        echo -e "${RED}✗ API Key is required${NC}"
+        exit 1
+    fi
 
     read -p "Node Name (friendly name) [mac-studio]: " NODE_NAME
     NODE_NAME="${NODE_NAME:-mac-studio}"
 
-    read -sp "Admin Password (for local dashboard) [changeme]: " ADMIN_PASSWORD
-    ADMIN_PASSWORD="${ADMIN_PASSWORD:-changeme}"
+    read -sp "Admin Password (for local dashboard): " ADMIN_PASSWORD
+    if [ -z "$ADMIN_PASSWORD" ]; then
+        echo ""
+        echo -e "${RED}✗ Admin Password is required${NC}"
+        exit 1
+    fi
     echo ""
 
     echo ""
