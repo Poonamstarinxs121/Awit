@@ -1,0 +1,100 @@
+2026-03-27T09:12:40.310789274Z         at createConnectionError (node:net:1678:14)
+2026-03-27T09:12:40.310791194Z         at afterConnectMultiple (node:net:1708:16) {
+2026-03-27T09:12:40.310793204Z       errno: -111,
+2026-03-27T09:12:40.310795455Z       code: 'ECONNREFUSED',
+2026-03-27T09:12:40.310797385Z       syscall: 'connect',
+2026-03-27T09:12:40.310799315Z       address: '::1',
+2026-03-27T09:12:40.310801255Z       port: 5432
+2026-03-27T09:12:40.310803195Z     },
+2026-03-27T09:12:40.310805155Z     Error: connect ECONNREFUSED 127.0.0.1:5432
+2026-03-27T09:12:40.310807075Z         at createConnectionError (node:net:1678:14)
+2026-03-27T09:12:40.310811045Z         at afterConnectMultiple (node:net:1708:16) {
+2026-03-27T09:12:40.310814346Z       errno: -111,
+2026-03-27T09:12:40.310817486Z       code: 'ECONNREFUSED',
+2026-03-27T09:12:40.310820706Z       syscall: 'connect',
+2026-03-27T09:12:40.310823896Z       address: '127.0.0.1',
+2026-03-27T09:12:40.310827006Z       port: 5432
+2026-03-27T09:12:40.310829917Z     }
+2026-03-27T09:12:40.310832846Z   ]
+2026-03-27T09:12:40.310835457Z }
+2026-03-27T09:12:41.30871323Z ==> Exited with status 1
+2026-03-27T09:12:41.313832536Z ==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
+2026-03-27T09:27:39.191862337Z ==> Port scan timeout reached, no open ports detected. Bind your service to at least one port. If you don't need to receive traffic on any port, create a background worker instead.
+2026-03-27T09:27:39.641764709Z ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+2026-03-27T09:56:52.374190979Z ==> Deploying...
+2026-03-27T09:56:52.606166059Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2026-03-27T09:57:20.654692534Z   code: 'ENOTFOUND',
+2026-03-27T09:57:20.654695635Z   syscall: 'getaddrinfo',
+2026-03-27T09:57:20.654698495Z   hostname: 'base'
+2026-03-27T09:57:20.654701315Z }
+2026-03-27T09:57:30.65647903Z WebSocket server initialized on /v1/realtime
+2026-03-27T09:57:30.657973489Z node:events:497
+2026-03-27T09:57:30.65799145Z       throw er; // Unhandled 'error' event
+2026-03-27T09:57:30.657996161Z       ^
+2026-03-27T09:57:30.657999471Z 
+2026-03-27T09:57:30.658004011Z Error: listen EADDRINUSE: address already in use 0.0.0.0:5000
+2026-03-27T09:57:30.658046443Z     at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+2026-03-27T09:57:30.658051283Z     at listenInCluster (node:net:1997:12)
+2026-03-27T09:57:30.658055924Z     at node:net:2206:7
+2026-03-27T09:57:30.658060514Z     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+2026-03-27T09:57:30.658064564Z Emitted 'error' event on WebSocketServer instance at:
+2026-03-27T09:57:30.658068404Z     at Server.emit (node:events:519:28)
+2026-03-27T09:57:30.658070925Z     at emitErrorNT (node:net:1976:8)
+2026-03-27T09:57:30.658073345Z     at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+2026-03-27T09:57:30.658076315Z   code: 'EADDRINUSE',
+2026-03-27T09:57:30.658078735Z   errno: -98,
+2026-03-27T09:57:30.658081125Z   syscall: 'listen',
+2026-03-27T09:57:30.658083455Z   address: '0.0.0.0',
+2026-03-27T09:57:30.658087415Z   port: 5000
+2026-03-27T09:57:30.658091506Z }
+2026-03-27T09:57:30.658094826Z 
+2026-03-27T09:57:30.658098546Z Node.js v22.22.0
+2026-03-27T09:57:33.765109378Z ==> Your service is live 🎉
+2026-03-27T09:57:34.079975466Z ==> 
+2026-03-27T09:57:34.082618336Z ==> ///////////////////////////////////////////////////////////
+2026-03-27T09:57:34.085557392Z ==> 
+2026-03-27T09:57:34.088629406Z ==> Available at your primary URL https://awit-squad.onrender.com
+2026-03-27T09:57:34.091554572Z ==> 
+2026-03-27T09:57:34.0939588Z ==> ///////////////////////////////////////////////////////////
+2026-03-27T09:57:34.443418356Z ==> Running 'cd server && NODE_ENV=production node dist/index.js'
+2026-03-27T09:57:36.120064074Z WebSocket server initialized on /v1/realtime
+2026-03-27T09:57:36.123497846Z SquidJob server running on port 5000 (production)
+2026-03-27T09:57:36.12507368Z Failed to setup PG LISTEN: Error: getaddrinfo ENOTFOUND base
+2026-03-27T09:57:36.125084601Z     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26) {
+2026-03-27T09:57:36.125087671Z   errno: -3008,
+2026-03-27T09:57:36.125090791Z   code: 'ENOTFOUND',
+2026-03-27T09:57:36.125094711Z   syscall: 'getaddrinfo',
+2026-03-27T09:57:36.125098782Z   hostname: 'base'
+2026-03-27T09:57:36.125102702Z }
+2026-03-27T09:57:36.125730715Z Migration failed (retrying in 10s): Error: getaddrinfo ENOTFOUND base
+2026-03-27T09:57:36.125739166Z     at /opt/render/project/src/server/node_modules/pg-pool/index.js:45:11
+2026-03-27T09:57:36.125743116Z     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-03-27T09:57:36.125747016Z     at async runMigrations (file:///opt/render/project/src/server/dist/db/migrations.js:5:20)
+2026-03-27T09:57:36.125749856Z     at async file:///opt/render/project/src/server/dist/index.js:52:13 {
+2026-03-27T09:57:36.125755726Z   errno: -3008,
+2026-03-27T09:57:36.125759707Z   code: 'ENOTFOUND',
+2026-03-27T09:57:36.125764227Z   syscall: 'getaddrinfo',
+2026-03-27T09:57:36.125767007Z   hostname: 'base'
+2026-03-27T09:57:36.125769887Z }
+2026-03-27T09:57:46.128611537Z WebSocket server initialized on /v1/realtime
+2026-03-27T09:57:46.130438534Z node:events:497
+2026-03-27T09:57:46.130454545Z       throw er; // Unhandled 'error' event
+2026-03-27T09:57:46.130459086Z       ^
+2026-03-27T09:57:46.130463166Z 
+2026-03-27T09:57:46.130467936Z Error: listen EADDRINUSE: address already in use 0.0.0.0:5000
+2026-03-27T09:57:46.130471816Z     at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+2026-03-27T09:57:46.130475546Z     at listenInCluster (node:net:1997:12)
+2026-03-27T09:57:46.130479816Z     at node:net:2206:7
+2026-03-27T09:57:46.130484637Z     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+2026-03-27T09:57:46.130488787Z Emitted 'error' event on WebSocketServer instance at:
+2026-03-27T09:57:46.130491777Z     at Server.emit (node:events:519:28)
+2026-03-27T09:57:46.130494137Z     at emitErrorNT (node:net:1976:8)
+2026-03-27T09:57:46.130496557Z     at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+2026-03-27T09:57:46.130499068Z   code: 'EADDRINUSE',
+2026-03-27T09:57:46.130501488Z   errno: -98,
+2026-03-27T09:57:46.130503898Z   syscall: 'listen',
+2026-03-27T09:57:46.130506358Z   address: '0.0.0.0',
+2026-03-27T09:57:46.130508758Z   port: 5000
+2026-03-27T09:57:46.130511168Z }
+2026-03-27T09:57:46.130513488Z 
+2026-03-27T09:57:46.130515849Z Node.js v22.22.0
