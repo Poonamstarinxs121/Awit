@@ -1,0 +1,50 @@
+2026-03-27T09:12:13.394932494Z         at afterConnectMultiple (node:net:1708:16) {
+2026-03-27T09:12:13.394935304Z       errno: -111,
+2026-03-27T09:12:13.394940365Z       code: 'ECONNREFUSED',
+2026-03-27T09:12:13.394943055Z       syscall: 'connect',
+2026-03-27T09:12:13.394946075Z       address: '::1',
+2026-03-27T09:12:13.394948745Z       port: 5432
+2026-03-27T09:12:13.394951355Z     },
+2026-03-27T09:12:13.394953955Z     Error: connect ECONNREFUSED 127.0.0.1:5432
+2026-03-27T09:12:13.394956715Z         at createConnectionError (node:net:1678:14)
+2026-03-27T09:12:13.394959366Z         at afterConnectMultiple (node:net:1708:16) {
+2026-03-27T09:12:13.394961976Z       errno: -111,
+2026-03-27T09:12:13.394964666Z       code: 'ECONNREFUSED',
+2026-03-27T09:12:13.394967256Z       syscall: 'connect',
+2026-03-27T09:12:13.394969846Z       address: '127.0.0.1',
+2026-03-27T09:12:13.394972386Z       port: 5432
+2026-03-27T09:12:13.394974946Z     }
+2026-03-27T09:12:13.394977476Z   ]
+2026-03-27T09:12:13.394980087Z }
+2026-03-27T09:12:38.608295872Z ==> Running 'cd server && NODE_ENV=production node dist/index.js'
+2026-03-27T09:12:40.310748842Z Failed to start server: AggregateError [ECONNREFUSED]: 
+2026-03-27T09:12:40.310772433Z     at /opt/render/project/src/server/node_modules/pg-pool/index.js:45:11
+2026-03-27T09:12:40.310775843Z     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-03-27T09:12:40.310777944Z     at async runMigrations (file:///opt/render/project/src/server/dist/db/migrations.js:5:20)
+2026-03-27T09:12:40.310779984Z     at async start (file:///opt/render/project/src/server/dist/index.js:45:9) {
+2026-03-27T09:12:40.310782894Z   code: 'ECONNREFUSED',
+2026-03-27T09:12:40.310784884Z   [errors]: [
+2026-03-27T09:12:40.310787164Z     Error: connect ECONNREFUSED ::1:5432
+2026-03-27T09:12:40.310789274Z         at createConnectionError (node:net:1678:14)
+2026-03-27T09:12:40.310791194Z         at afterConnectMultiple (node:net:1708:16) {
+2026-03-27T09:12:40.310793204Z       errno: -111,
+2026-03-27T09:12:40.310795455Z       code: 'ECONNREFUSED',
+2026-03-27T09:12:40.310797385Z       syscall: 'connect',
+2026-03-27T09:12:40.310799315Z       address: '::1',
+2026-03-27T09:12:40.310801255Z       port: 5432
+2026-03-27T09:12:40.310803195Z     },
+2026-03-27T09:12:40.310805155Z     Error: connect ECONNREFUSED 127.0.0.1:5432
+2026-03-27T09:12:40.310807075Z         at createConnectionError (node:net:1678:14)
+2026-03-27T09:12:40.310811045Z         at afterConnectMultiple (node:net:1708:16) {
+2026-03-27T09:12:40.310814346Z       errno: -111,
+2026-03-27T09:12:40.310817486Z       code: 'ECONNREFUSED',
+2026-03-27T09:12:40.310820706Z       syscall: 'connect',
+2026-03-27T09:12:40.310823896Z       address: '127.0.0.1',
+2026-03-27T09:12:40.310827006Z       port: 5432
+2026-03-27T09:12:40.310829917Z     }
+2026-03-27T09:12:40.310832846Z   ]
+2026-03-27T09:12:40.310835457Z }
+2026-03-27T09:12:41.30871323Z ==> Exited with status 1
+2026-03-27T09:12:41.313832536Z ==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
+2026-03-27T09:27:39.191862337Z ==> Port scan timeout reached, no open ports detected. Bind your service to at least one port. If you don't need to receive traffic on any port, create a background worker instead.
+2026-03-27T09:27:39.641764709Z ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
