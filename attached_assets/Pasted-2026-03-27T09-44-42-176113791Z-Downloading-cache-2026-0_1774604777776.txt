@@ -1,0 +1,41 @@
+2026-03-27T09:44:42.176113791Z ==> Downloading cache...
+2026-03-27T09:44:42.223096263Z ==> It looks like we don't have access to your repo, but we'll try to clone it anyway.
+2026-03-27T09:44:42.223168595Z ==> Cloning from https://github.com/Poonamstarinxs121/Awit
+2026-03-27T09:44:47.830543464Z ==> Checking out commit 4d620964f11088d243a97e72fa8f21113bca203e in branch main
+2026-03-27T09:44:51.232653749Z ==> Downloaded 157MB in 2s. Extraction took 3s.
+2026-03-27T09:44:55.527477569Z ==> Using Node.js version 22.22.0 (default)
+2026-03-27T09:44:55.55407032Z ==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+2026-03-27T09:44:55.686213755Z ==> Running build command 'cd client && npm install && npm run build && cd ../server && npm install && npm run build'...
+2026-03-27T09:45:01.518126481Z 
+2026-03-27T09:45:01.518142981Z added 196 packages, and audited 197 packages in 6s
+2026-03-27T09:45:01.518152542Z 
+2026-03-27T09:45:01.518159112Z 24 packages are looking for funding
+2026-03-27T09:45:01.518194472Z   run `npm fund` for details
+2026-03-27T09:45:01.528044659Z 
+2026-03-27T09:45:01.528070999Z 2 high severity vulnerabilities
+2026-03-27T09:45:01.528074039Z 
+2026-03-27T09:45:01.52807648Z To address all issues, run:
+2026-03-27T09:45:01.52807894Z   npm audit fix
+2026-03-27T09:45:01.52808128Z 
+2026-03-27T09:45:01.52808391Z Run `npm audit` for details.
+2026-03-27T09:45:01.786495737Z 
+2026-03-27T09:45:01.786515747Z > squidjob-client@1.0.1 build
+2026-03-27T09:45:01.786519427Z > vite build
+2026-03-27T09:45:01.786521878Z 
+2026-03-27T09:45:02.13976034Z vite v6.4.1 building for production...
+2026-03-27T09:45:02.37021813Z transforming...
+2026-03-27T09:45:12.243452105Z ✓ 3220 modules transformed.
+2026-03-27T09:45:13.57740936Z [plugin vite:reporter] 
+2026-03-27T09:45:13.57742972Z (!) /opt/render/project/src/client/src/components/Office3D/Office3D.tsx is dynamically imported by /opt/render/project/src/client/src/pages/OfficePage.tsx but also statically imported by /opt/render/project/src/client/src/pages/NodeOfficePage.tsx, dynamic import will not move module into another chunk.
+2026-03-27T09:45:13.57743624Z 
+2026-03-27T09:45:13.577505982Z rendering chunks...
+2026-03-27T09:45:13.683755004Z computing gzip size...
+2026-03-27T09:45:14.23793426Z dist/index.html                     0.79 kB │ gzip:   0.43 kB
+2026-03-27T09:45:14.238154525Z dist/assets/index-CFFT05th.css     43.48 kB │ gzip:   8.84 kB
+2026-03-27T09:45:14.23833668Z dist/assets/index-B0BzKMO_.js   2,553.31 kB │ gzip: 683.56 kB
+2026-03-27T09:45:14.238458043Z 
+2026-03-27T09:45:14.238472414Z (!) Some chunks are larger than 500 kB after minification. Consider:
+2026-03-27T09:45:14.238477664Z - Using dynamic import() to code-split the application
+2026-03-27T09:45:14.238484734Z - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+2026-03-27T09:45:14.238489064Z - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+2026-03-27T09:45:14.238758681Z ✓ built in 12.06s
