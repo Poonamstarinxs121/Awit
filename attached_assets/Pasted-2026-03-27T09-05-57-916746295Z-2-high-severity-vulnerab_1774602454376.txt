@@ -1,0 +1,50 @@
+2026-03-27T09:05:57.916746295Z 2 high severity vulnerabilities
+2026-03-27T09:05:57.916752045Z 
+2026-03-27T09:05:57.916757185Z To address all issues, run:
+2026-03-27T09:05:57.916762455Z   npm audit fix
+2026-03-27T09:05:57.916767405Z 
+2026-03-27T09:05:57.916772465Z Run `npm audit` for details.
+2026-03-27T09:05:58.227100287Z 
+2026-03-27T09:05:58.227128617Z > squidjob-client@1.0.0 build
+2026-03-27T09:05:58.227134377Z > vite build
+2026-03-27T09:05:58.227139257Z 
+2026-03-27T09:05:58.78110455Z vite v6.4.1 building for production...
+2026-03-27T09:05:59.111816509Z transforming...
+2026-03-27T09:06:15.409145693Z ✓ 3220 modules transformed.
+2026-03-27T09:06:17.513472582Z [plugin vite:reporter] 
+2026-03-27T09:06:17.513511873Z (!) /opt/render/project/src/client/src/components/Office3D/Office3D.tsx is dynamically imported by /opt/render/project/src/client/src/pages/OfficePage.tsx but also statically imported by /opt/render/project/src/client/src/pages/NodeOfficePage.tsx, dynamic import will not move module into another chunk.
+2026-03-27T09:06:17.513521493Z 
+2026-03-27T09:06:17.513622725Z rendering chunks...
+2026-03-27T09:06:18.167912942Z computing gzip size...
+2026-03-27T09:06:19.143248216Z dist/index.html                     0.79 kB │ gzip:   0.43 kB
+2026-03-27T09:06:19.143615693Z dist/assets/index-CFFT05th.css     43.48 kB │ gzip:   8.84 kB
+2026-03-27T09:06:19.143722195Z dist/assets/index-B0BzKMO_.js   2,553.31 kB │ gzip: 683.56 kB
+2026-03-27T09:06:19.144184943Z 
+2026-03-27T09:06:19.144198703Z (!) Some chunks are larger than 500 kB after minification. Consider:
+2026-03-27T09:06:19.144204523Z - Using dynamic import() to code-split the application
+2026-03-27T09:06:19.144210653Z - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+2026-03-27T09:06:19.144215913Z - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+2026-03-27T09:06:19.144671791Z ✓ built in 20.31s
+2026-03-27T09:06:36.48611621Z 
+2026-03-27T09:06:36.486155621Z added 241 packages, and audited 242 packages in 17s
+2026-03-27T09:06:36.486248273Z 
+2026-03-27T09:06:36.486257583Z 38 packages are looking for funding
+2026-03-27T09:06:36.486339224Z   run `npm fund` for details
+2026-03-27T09:06:36.499530465Z 
+2026-03-27T09:06:36.499561525Z 8 vulnerabilities (7 moderate, 1 high)
+2026-03-27T09:06:36.499585436Z 
+2026-03-27T09:06:36.499589546Z To address issues that do not require attention, run:
+2026-03-27T09:06:36.499592786Z   npm audit fix
+2026-03-27T09:06:36.499595676Z 
+2026-03-27T09:06:36.499599196Z To address all issues (including breaking changes), run:
+2026-03-27T09:06:36.499602996Z   npm audit fix --force
+2026-03-27T09:06:36.499606166Z 
+2026-03-27T09:06:36.499609776Z Run `npm audit` for details.
+2026-03-27T09:06:36.720708543Z 
+2026-03-27T09:06:36.720748584Z > squidjob-server@1.0.0 build
+2026-03-27T09:06:36.720752584Z > tsc
+2026-03-27T09:06:36.720756124Z 
+2026-03-27T09:06:45.021090929Z src/services/llmProviderClient.ts(2,20): error TS2307: Cannot find module 'openai' or its corresponding type declarations.
+2026-03-27T09:06:45.021357254Z src/services/memorySearchService.ts(3,20): error TS2307: Cannot find module 'openai' or its corresponding type declarations.
+2026-03-27T09:06:45.197278757Z ==> Build failed 😞
+2026-03-27T09:06:45.197322518Z ==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
