@@ -1,0 +1,150 @@
+2026-03-27T10:03:53.75385899Z SquidJob server running on port 5000 (production)
+2026-03-27T10:03:53.760097612Z Migration failed (retrying in 10s): error: SSL/TLS required
+2026-03-27T10:03:53.760111503Z     at /opt/render/project/src/server/node_modules/pg-pool/index.js:45:11
+2026-03-27T10:03:53.760116053Z     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-03-27T10:03:53.760119343Z     at async runMigrations (file:///opt/render/project/src/server/dist/db/migrations.js:5:20)
+2026-03-27T10:03:53.760122243Z     at async file:///opt/render/project/src/server/dist/index.js:52:13 {
+2026-03-27T10:03:53.760125464Z   length: 37,
+2026-03-27T10:03:53.760129364Z   severity: 'FATAL',
+2026-03-27T10:03:53.760132544Z   code: '28000',
+2026-03-27T10:03:53.760135784Z   detail: undefined,
+2026-03-27T10:03:53.760139084Z   hint: undefined,
+2026-03-27T10:03:53.760142264Z   position: undefined,
+2026-03-27T10:03:53.760145605Z   internalPosition: undefined,
+2026-03-27T10:03:53.760148685Z   internalQuery: undefined,
+2026-03-27T10:03:53.760151865Z   where: undefined,
+2026-03-27T10:03:53.760155115Z   schema: undefined,
+2026-03-27T10:03:53.760158055Z   table: undefined,
+2026-03-27T10:03:53.760160976Z   column: undefined,
+2026-03-27T10:03:53.760163876Z   dataType: undefined,
+2026-03-27T10:03:53.760166856Z   constraint: undefined,
+2026-03-27T10:03:53.760169616Z   file: undefined,
+2026-03-27T10:03:53.760172306Z   line: undefined,
+2026-03-27T10:03:53.760175086Z   routine: undefined
+2026-03-27T10:03:53.760177886Z }
+2026-03-27T10:03:53.761586612Z Failed to setup PG LISTEN: error: SSL/TLS required
+2026-03-27T10:03:53.761597762Z     at parseErrorMessage (/opt/render/project/src/server/node_modules/pg-protocol/dist/parser.js:305:11)
+2026-03-27T10:03:53.761601422Z     at Parser.handlePacket (/opt/render/project/src/server/node_modules/pg-protocol/dist/parser.js:143:27)
+2026-03-27T10:03:53.761603682Z     at Parser.parse (/opt/render/project/src/server/node_modules/pg-protocol/dist/parser.js:37:38)
+2026-03-27T10:03:53.761605602Z     at Socket.<anonymous> (/opt/render/project/src/server/node_modules/pg-protocol/dist/index.js:11:42)
+2026-03-27T10:03:53.761608042Z     at Socket.emit (node:events:519:28)
+2026-03-27T10:03:53.761610003Z     at addChunk (node:internal/streams/readable:561:12)
+2026-03-27T10:03:53.761612133Z     at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+2026-03-27T10:03:53.761614033Z     at Readable.push (node:internal/streams/readable:392:5)
+2026-03-27T10:03:53.761615993Z     at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+2026-03-27T10:03:53.761617993Z   length: 37,
+2026-03-27T10:03:53.761620263Z   severity: 'FATAL',
+2026-03-27T10:03:53.761622193Z   code: '28000',
+2026-03-27T10:03:53.761624083Z   detail: undefined,
+2026-03-27T10:03:53.761625943Z   hint: undefined,
+2026-03-27T10:03:53.761627804Z   position: undefined,
+2026-03-27T10:03:53.761630194Z   internalPosition: undefined,
+2026-03-27T10:03:53.761632144Z   internalQuery: undefined,
+2026-03-27T10:03:53.761634064Z   where: undefined,
+2026-03-27T10:03:53.761635954Z   schema: undefined,
+2026-03-27T10:03:53.761637834Z   table: undefined,
+2026-03-27T10:03:53.761639684Z   column: undefined,
+2026-03-27T10:03:53.761641864Z   dataType: undefined,
+2026-03-27T10:03:53.761644435Z   constraint: undefined,
+2026-03-27T10:03:53.761646365Z   file: undefined,
+2026-03-27T10:03:53.761648245Z   line: undefined,
+2026-03-27T10:03:53.761661216Z   routine: undefined
+2026-03-27T10:03:53.761663665Z }
+2026-03-27T10:04:03.762391762Z WebSocket server initialized on /v1/realtime
+2026-03-27T10:04:03.763635568Z node:events:497
+2026-03-27T10:04:03.763651869Z       throw er; // Unhandled 'error' event
+2026-03-27T10:04:03.763655449Z       ^
+2026-03-27T10:04:03.763658059Z 
+2026-03-27T10:04:03.763661909Z Error: listen EADDRINUSE: address already in use 0.0.0.0:5000
+2026-03-27T10:04:03.763664979Z     at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+2026-03-27T10:04:03.76366805Z     at listenInCluster (node:net:1997:12)
+2026-03-27T10:04:03.76367834Z     at node:net:2206:7
+2026-03-27T10:04:03.7636818Z     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+2026-03-27T10:04:03.763684351Z Emitted 'error' event on WebSocketServer instance at:
+2026-03-27T10:04:03.763687611Z     at Server.emit (node:events:519:28)
+2026-03-27T10:04:03.763690791Z     at emitErrorNT (node:net:1976:8)
+2026-03-27T10:04:03.763694041Z     at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+2026-03-27T10:04:03.763697321Z   code: 'EADDRINUSE',
+2026-03-27T10:04:03.763700091Z   errno: -98,
+2026-03-27T10:04:03.763703732Z   syscall: 'listen',
+2026-03-27T10:04:03.763706872Z   address: '0.0.0.0',
+2026-03-27T10:04:03.763708842Z   port: 5000
+2026-03-27T10:04:03.763710762Z }
+2026-03-27T10:04:03.763712572Z 
+2026-03-27T10:04:03.763714482Z Node.js v22.22.0
+2026-03-27T10:04:18.213636317Z ==> Running 'cd server && NODE_ENV=production node dist/index.js'
+2026-03-27T10:04:19.907197427Z WebSocket server initialized on /v1/realtime
+2026-03-27T10:04:19.910459591Z SquidJob server running on port 5000 (production)
+2026-03-27T10:04:19.916513163Z Failed to setup PG LISTEN: error: SSL/TLS required
+2026-03-27T10:04:19.916530864Z     at parseErrorMessage (/opt/render/project/src/server/node_modules/pg-protocol/dist/parser.js:305:11)
+2026-03-27T10:04:19.916535174Z     at Parser.handlePacket (/opt/render/project/src/server/node_modules/pg-protocol/dist/parser.js:143:27)
+2026-03-27T10:04:19.916537984Z     at Parser.parse (/opt/render/project/src/server/node_modules/pg-protocol/dist/parser.js:37:38)
+2026-03-27T10:04:19.916540545Z     at Socket.<anonymous> (/opt/render/project/src/server/node_modules/pg-protocol/dist/index.js:11:42)
+2026-03-27T10:04:19.916543935Z     at Socket.emit (node:events:519:28)
+2026-03-27T10:04:19.916546645Z     at addChunk (node:internal/streams/readable:561:12)
+2026-03-27T10:04:19.916549785Z     at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+2026-03-27T10:04:19.916552515Z     at Readable.push (node:internal/streams/readable:392:5)
+2026-03-27T10:04:19.916555516Z     at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+2026-03-27T10:04:19.916558496Z   length: 37,
+2026-03-27T10:04:19.916562036Z   severity: 'FATAL',
+2026-03-27T10:04:19.916564476Z   code: '28000',
+2026-03-27T10:04:19.916566926Z   detail: undefined,
+2026-03-27T10:04:19.916569456Z   hint: undefined,
+2026-03-27T10:04:19.916571716Z   position: undefined,
+2026-03-27T10:04:19.916574377Z   internalPosition: undefined,
+2026-03-27T10:04:19.916576607Z   internalQuery: undefined,
+2026-03-27T10:04:19.916579007Z   where: undefined,
+2026-03-27T10:04:19.916581317Z   schema: undefined,
+2026-03-27T10:04:19.916583617Z   table: undefined,
+2026-03-27T10:04:19.916585907Z   column: undefined,
+2026-03-27T10:04:19.916588897Z   dataType: undefined,
+2026-03-27T10:04:19.916591257Z   constraint: undefined,
+2026-03-27T10:04:19.916593607Z   file: undefined,
+2026-03-27T10:04:19.916595978Z   line: undefined,
+2026-03-27T10:04:19.916598628Z   routine: undefined
+2026-03-27T10:04:19.916601048Z }
+2026-03-27T10:04:19.918113988Z Migration failed (retrying in 10s): error: SSL/TLS required
+2026-03-27T10:04:19.918130549Z     at /opt/render/project/src/server/node_modules/pg-pool/index.js:45:11
+2026-03-27T10:04:19.91813436Z     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-03-27T10:04:19.91813732Z     at async runMigrations (file:///opt/render/project/src/server/dist/db/migrations.js:5:20)
+2026-03-27T10:04:19.91814011Z     at async file:///opt/render/project/src/server/dist/index.js:52:13 {
+2026-03-27T10:04:19.91814267Z   length: 37,
+2026-03-27T10:04:19.91814584Z   severity: 'FATAL',
+2026-03-27T10:04:19.91814842Z   code: '28000',
+2026-03-27T10:04:19.918150921Z   detail: undefined,
+2026-03-27T10:04:19.918153461Z   hint: undefined,
+2026-03-27T10:04:19.918156061Z   position: undefined,
+2026-03-27T10:04:19.918158741Z   internalPosition: undefined,
+2026-03-27T10:04:19.918161261Z   internalQuery: undefined,
+2026-03-27T10:04:19.918163861Z   where: undefined,
+2026-03-27T10:04:19.918166491Z   schema: undefined,
+2026-03-27T10:04:19.918169231Z   table: undefined,
+2026-03-27T10:04:19.918171851Z   column: undefined,
+2026-03-27T10:04:19.918174472Z   dataType: undefined,
+2026-03-27T10:04:19.918177072Z   constraint: undefined,
+2026-03-27T10:04:19.918179712Z   file: undefined,
+2026-03-27T10:04:19.918182282Z   line: undefined,
+2026-03-27T10:04:19.918198753Z   routine: undefined
+2026-03-27T10:04:19.918201683Z }
+2026-03-27T10:04:29.920347501Z WebSocket server initialized on /v1/realtime
+2026-03-27T10:04:29.921743715Z node:events:497
+2026-03-27T10:04:29.921761056Z       throw er; // Unhandled 'error' event
+2026-03-27T10:04:29.921765406Z       ^
+2026-03-27T10:04:29.921769177Z 
+2026-03-27T10:04:29.921773577Z Error: listen EADDRINUSE: address already in use 0.0.0.0:5000
+2026-03-27T10:04:29.921777417Z     at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+2026-03-27T10:04:29.921780937Z     at listenInCluster (node:net:1997:12)
+2026-03-27T10:04:29.921784898Z     at node:net:2206:7
+2026-03-27T10:04:29.921792548Z     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+2026-03-27T10:04:29.921796448Z Emitted 'error' event on WebSocketServer instance at:
+2026-03-27T10:04:29.921800228Z     at Server.emit (node:events:519:28)
+2026-03-27T10:04:29.921804428Z     at emitErrorNT (node:net:1976:8)
+2026-03-27T10:04:29.921808379Z     at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+2026-03-27T10:04:29.921812019Z   code: 'EADDRINUSE',
+2026-03-27T10:04:29.921815659Z   errno: -98,
+2026-03-27T10:04:29.921819689Z   syscall: 'listen',
+2026-03-27T10:04:29.92182314Z   address: '0.0.0.0',
+2026-03-27T10:04:29.92182718Z   port: 5000
+2026-03-27T10:04:29.9218314Z }
+2026-03-27T10:04:29.92183524Z 
+2026-03-27T10:04:29.921839421Z Node.js v22.22.0
