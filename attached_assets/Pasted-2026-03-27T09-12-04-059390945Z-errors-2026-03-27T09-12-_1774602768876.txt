@@ -1,0 +1,50 @@
+2026-03-27T09:12:04.059390945Z   [errors]: [
+2026-03-27T09:12:04.059394556Z     Error: connect ECONNREFUSED ::1:5432
+2026-03-27T09:12:04.059397516Z         at createConnectionError (node:net:1678:14)
+2026-03-27T09:12:04.059400386Z         at afterConnectMultiple (node:net:1708:16) {
+2026-03-27T09:12:04.059403336Z       errno: -111,
+2026-03-27T09:12:04.059407036Z       code: 'ECONNREFUSED',
+2026-03-27T09:12:04.059410186Z       syscall: 'connect',
+2026-03-27T09:12:04.059412486Z       address: '::1',
+2026-03-27T09:12:04.059414447Z       port: 5432
+2026-03-27T09:12:04.059416407Z     },
+2026-03-27T09:12:04.059418487Z     Error: connect ECONNREFUSED 127.0.0.1:5432
+2026-03-27T09:12:04.059420457Z         at createConnectionError (node:net:1678:14)
+2026-03-27T09:12:04.059423047Z         at afterConnectMultiple (node:net:1708:16) {
+2026-03-27T09:12:04.059426187Z       errno: -111,
+2026-03-27T09:12:04.059429257Z       code: 'ECONNREFUSED',
+2026-03-27T09:12:04.059432178Z       syscall: 'connect',
+2026-03-27T09:12:04.059435018Z       address: '127.0.0.1',
+2026-03-27T09:12:04.059437968Z       port: 5432
+2026-03-27T09:12:04.059440688Z     }
+2026-03-27T09:12:04.059443428Z   ]
+2026-03-27T09:12:04.059445948Z }
+2026-03-27T09:12:11.622791105Z ==> Running 'cd server && NODE_ENV=production node dist/index.js'
+2026-03-27T09:12:13.394882181Z Failed to start server: AggregateError [ECONNREFUSED]: 
+2026-03-27T09:12:13.394905753Z     at /opt/render/project/src/server/node_modules/pg-pool/index.js:45:11
+2026-03-27T09:12:13.394910303Z     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-03-27T09:12:13.394913043Z     at async runMigrations (file:///opt/render/project/src/server/dist/db/migrations.js:5:20)
+2026-03-27T09:12:13.394915843Z     at async start (file:///opt/render/project/src/server/dist/index.js:45:9) {
+2026-03-27T09:12:13.394919613Z   code: 'ECONNREFUSED',
+2026-03-27T09:12:13.394922753Z   [errors]: [
+2026-03-27T09:12:13.394927104Z     Error: connect ECONNREFUSED ::1:5432
+2026-03-27T09:12:13.394929884Z         at createConnectionError (node:net:1678:14)
+2026-03-27T09:12:13.394932494Z         at afterConnectMultiple (node:net:1708:16) {
+2026-03-27T09:12:13.394935304Z       errno: -111,
+2026-03-27T09:12:13.394940365Z       code: 'ECONNREFUSED',
+2026-03-27T09:12:13.394943055Z       syscall: 'connect',
+2026-03-27T09:12:13.394946075Z       address: '::1',
+2026-03-27T09:12:13.394948745Z       port: 5432
+2026-03-27T09:12:13.394951355Z     },
+2026-03-27T09:12:13.394953955Z     Error: connect ECONNREFUSED 127.0.0.1:5432
+2026-03-27T09:12:13.394956715Z         at createConnectionError (node:net:1678:14)
+2026-03-27T09:12:13.394959366Z         at afterConnectMultiple (node:net:1708:16) {
+2026-03-27T09:12:13.394961976Z       errno: -111,
+2026-03-27T09:12:13.394964666Z       code: 'ECONNREFUSED',
+2026-03-27T09:12:13.394967256Z       syscall: 'connect',
+2026-03-27T09:12:13.394969846Z       address: '127.0.0.1',
+2026-03-27T09:12:13.394972386Z       port: 5432
+2026-03-27T09:12:13.394974946Z     }
+2026-03-27T09:12:13.394977476Z   ]
+2026-03-27T09:12:13.394980087Z }
+2026-03-27T09:12:38.608295872Z ==> Running 'cd server && NODE_ENV=production node dist/index.js'

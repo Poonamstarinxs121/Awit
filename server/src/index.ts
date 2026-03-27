@@ -51,21 +51,27 @@ if (isProduction) {
 app.use(errorHandler);
 
 async function start() {
-  try {
-    await runMigrations();
-    const server = http.createServer(app);
-    initWebSocket(server);
-    server.listen(PORT, '0.0.0.0', () => {
-      console.log(`SquidJob server running on port ${PORT} (${isProduction ? 'production' : 'development'})`);
+  const server = http.createServer(app);
+  initWebSocket(server);
+  
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`SquidJob server running on port ${PORT} (${isProduction ? 'production' : 'development'})`);
+  });
+
+  // Run migrations in background, don't block startup
+  (async () => {
+    try {
+      await runMigrations();
+      console.log('Database migrations completed');
       startHeartbeatService();
       startCronScheduler();
       startAllPollers();
       startMachineMonitor();
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
+    } catch (error) {
+      console.error('Migration failed (retrying in 10s):', error);
+      setTimeout(() => start(), 10000);
+    }
+  })();
 }
 
 start();
