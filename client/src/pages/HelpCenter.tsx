@@ -260,6 +260,148 @@ const HELP_TOPICS: HelpTopic[] = [
     content: `<h2>Updates & Versions</h2><h3>System Management</h3><p>SquidJob is continuously updated with new features, bug fixes, and improvements. Updates are applied automatically — no action needed from you.</p><h3>Model Selection</h3><p>SquidJob supports multiple AI providers:</p><ul><li><strong>Anthropic Claude</strong> — Primary provider (recommended)</li><li><strong>OpenAI GPT</strong> — Alternative provider</li><li><strong>Google Gemini</strong> — Budget-friendly option</li><li><strong>Mistral</strong> — European alternative</li><li><strong>Groq</strong> — Fast inference option</li></ul><p>Configure providers in Settings → API Providers. Each agent can be assigned a different model based on their needs.</p>`
   },
   {
+    id: 'openclaw-squidjob', title: 'OpenClaw + SquidJob Integration', emoji: '🔗', section: 'COMMON',
+    content: `<h2>OpenClaw + SquidJob Node Integration Guide</h2>
+<p>This guide is for <strong>OpenClaw instances</strong> running on machines that are part of a SquidJob Fleet. It explains how OpenClaw agents integrate with SquidJob Hub and what to remember.</p>
+
+<h3>What is SquidJob Node?</h3>
+<p>SquidJob Node is a local dashboard app running on the same machine as OpenClaw. It acts as a bridge between your local OpenClaw agents and the central SquidJob Hub. Think of it as a "local agent manager" that:</p>
+<ul>
+<li>Discovers all agents running on this machine (via OpenClaw)</li>
+<li>Tracks agent activity, costs, and session history</li>
+<li>Synchronizes everything with the central Hub for fleet-wide visibility</li>
+<li>Allows Hub to dispatch tasks to your local agents</li>
+<li>Manages cron jobs and scheduled automation</li>
+</ul>
+
+<h3>How It Works</h3>
+<table class="help-table"><thead><tr><th>Component</th><th>Role</th><th>Port</th></tr></thead><tbody>
+<tr><td>OpenClaw</td><td>Runs your agents locally, processes messages</td><td>Various</td></tr>
+<tr><td>SquidJob Node</td><td>Monitors agents, syncs with Hub</td><td>3200</td></tr>
+<tr><td>SquidJob Hub</td><td>Central dashboard, fleet coordination</td><td>https://awit-squad.onrender.com</td></tr>
+</tbody></table>
+
+<h3>How OpenClaw Agents Communicate with SquidJob</h3>
+
+<p><strong>Agent Discovery:</strong> When SquidJob Node starts, it automatically discovers all agents OpenClaw has created and reports them to Hub.</p>
+
+<p><strong>Task Dispatch:</strong> When you send a task from Hub to this machine, Node receives it and forwards it to the appropriate OpenClaw agent via its local API.</p>
+
+<p><strong>Cost Tracking:</strong> Node monitors OpenClaw's API calls and token usage, calculating costs and syncing them to Hub.</p>
+
+<p><strong>Memory Sync:</strong> Agent memories (SOUL.md, MEMORY.md, TOOLS.md) are accessible via Node and can be edited in Hub's interface.</p>
+
+<h3>Critical Information to Store in OpenClaw Memory</h3>
+
+<p>Each OpenClaw agent on a SquidJob-connected machine should have these details in its memory files:</p>
+
+<strong>1. Hub Connection Info (Store in AGENTS.md or shared memory)</strong>
+<pre><code>## SquidJob Hub Integration
+- Hub URL: https://awit-squad.onrender.com
+- Node ID (this machine): aa55991f-9153-4fb5-88e5-e38fca2bc76a
+- Node Role: Agent worker in distributed fleet
+- Status: Always report status to Node for Hub visibility</code></pre>
+
+<strong>2. Node Communication Protocol (Store in TOOLS.md)</strong>
+<pre><code>## Node API Endpoints
+- Health check: GET http://localhost:3200/api/health
+- Report status: POST http://localhost:3200/api/agents/{agent_id}/status
+- Log activity: POST http://localhost:3200/api/activity
+- Sync costs: POST http://localhost:3200/api/costs/record
+- Update memory: PUT http://localhost:3200/api/agents/{agent_id}/memory</code></pre>
+
+<strong>3. Fleet Context (Store in MEMORY.md)</strong>
+<pre><code>## Fleet Information
+- I am part of a distributed agent fleet managed by SquidJob Hub
+- Other agents exist on different machines (nodes)
+- I should coordinate with fleet lead (Oracle) on Hub
+- Cross-machine tasks may be dispatched to me
+- My performance and costs are visible to human operators on Hub</code></pre>
+
+<strong>4. Important Credentials (SECURE - Store encrypted)</strong>
+<pre><code>## Node Credentials (ENCRYPTED)
+- Node API Key: [Stored securely by Node, agents don't need it]
+- Node ID: aa55991f-9153-4fb5-88e5-e38fca2bc76a
+- Hub URL: https://awit-squad.onrender.com
+⚠️ NEVER expose Node API key in logs or agent responses</code></pre>
+
+<h3>Key Precautions & Best Practices</h3>
+
+<table class="help-table"><thead><tr><th>Precaution</th><th>Why</th><th>Action</th></tr></thead><tbody>
+<tr><td>Never hardcode Hub credentials in agent responses</td><td>Security risk if logs are exposed</td><td>Store in Node environment, agents reference only</td></tr>
+<tr><td>Keep Node app running continuously</td><td>Agents won't sync to Hub if Node is down</td><td>Use systemd/LaunchAgent to auto-restart Node</td></tr>
+<tr><td>Monitor Node-to-Hub connectivity</td><td>Network issues prevent task dispatch</td><td>Check Node dashboard at http://localhost:3200</td></tr>
+<tr><td>Log all cross-machine task handoffs</td><td>Debugging and audit trail</td><td>Record in agent MEMORY.md when tasks arrive from Hub</td></tr>
+<tr><td>Track token usage per session</td><td>Cost tracking accuracy</td><td>Report complete token counts to Node</td></tr>
+<tr><td>Avoid storing sensitive data locally</td><td>If machine is compromised, data exposed</td><td>Ask Hub for secrets, never store them in agent memory</td></tr>
+</tbody></table>
+
+<h3>For OpenClaw: What to Remember</h3>
+
+<strong>Keep this in your system memory or documentation:</strong>
+
+<pre><code>## SquidJob Integration Checklist
+□ Node app is running on http://localhost:3200
+□ Node is connected to Hub (https://awit-squad.onrender.com)
+□ All agents have their Hub node ID in memory: aa55991f-9153-4fb5-88e5-e38fca2bc76a
+□ Agents report status to Node on every session start/end
+□ Token counts are accurately tracked and sent to Node
+□ Agent memories (SOUL, MEMORY, TOOLS) sync with Hub
+□ No credentials or secrets hardcoded in agent code
+□ Node-to-Hub connection is stable and monitored
+□ Cross-machine task dispatch is logged in agent memory</code></pre>
+
+<h3>Troubleshooting</h3>
+
+<table class="help-table"><thead><tr><th>Issue</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>Agents not appearing in Hub</td><td>Node not running or agents not discovered</td><td>Check Node dashboard, restart if needed</td></tr>
+<tr><td>Tasks from Hub not reaching agents</td><td>Node-Hub connection broken</td><td>Verify Hub URL in .env, check network connectivity</td></tr>
+<tr><td>Cost data not syncing</td><td>Node not calculating costs or network issue</td><td>Check Node logs, verify agent token reporting</td></tr>
+<tr><td>Memory not updating in Hub</td><td>Node memory sync disabled or failed</td><td>Check Node permissions, verify file access</td></tr>
+<tr><td>Node keeps crashing</td><td>Memory leak, port conflict, or missing dependency</td><td>Check Node logs, restart machine if needed, rebuild Node</td></tr>
+</tbody></table>
+
+<h3>Example: Storing Node Info in Agent Memory</h3>
+
+<p>When you create a new agent in OpenClaw on a SquidJob-connected machine, add this to its AGENTS.md:</p>
+
+<pre><code># My Fleet Configuration
+
+## Machine Info
+- Machine Type: Mac Mini
+- OpenClaw Version: Latest
+- Node ID: aa55991f-9153-4fb5-88e5-e38fca2bc76a
+- Hub: https://awit-squad.onrender.com
+
+## Status Reporting
+I report my status and activity to the local Node app, which synchronizes with the central Hub.
+This allows human operators to:
+- Monitor my activity across the fleet
+- Dispatch tasks to me from the Hub interface
+- Track my costs and token usage
+- Review my memory and session history
+
+## Cross-Machine Collaboration
+I can receive tasks from:
+- Hub directly (via Node dispatch)
+- Other agents on this machine (OpenClaw peer-to-peer)
+- Other agents on remote machines (via Hub relay)</code></pre>
+
+<h3>Summary</h3>
+
+<p><strong>Remember:</strong></p>
+<ul>
+<li>🔗 <strong>SquidJob Node</strong> = your machine's connection to Hub</li>
+<li>📊 <strong>Hub</strong> = central dashboard for all machines and agents</li>
+<li>🤖 <strong>OpenClaw agents</strong> = work locally, report to Node, coordinate via Hub</li>
+<li>💾 <strong>Memory files</strong> = store Hub info, fleet context, and integration details</li>
+<li>🔐 <strong>Security</strong> = never expose credentials, always encrypt sensitive data</li>
+<li>🔄 <strong>Sync</strong> = Node keeps everything in sync (agents, costs, memories, status)</li>
+</ul>
+
+<p>Your OpenClaw agents are now part of a distributed fleet. The Node app handles all the complex synchronization — you just focus on making your agents great!</p>`
+  },
+  {
     id: 'getting-help', title: 'Getting Help', emoji: '🆘', section: 'COMMON',
     content: `<h2>Getting Help</h2><h3>Support</h3><p>Email us at <a href="mailto:support@squidjob.com">support@squidjob.com</a> for any issues not covered here.</p><h3>Common Issues</h3><table class="help-table"><thead><tr><th>Problem</th><th>Solution</th></tr></thead><tbody><tr><td>Bot not responding</td><td>Check Telegram connection in Settings, verify bot token</td></tr><tr><td>Agent stuck</td><td>Restart the agent from its detail page, or Restart Gateway</td></tr><tr><td>Dashboard won't load</td><td>Clear browser cache, try incognito mode</td></tr><tr><td>Something broke</td><td>Try Restart Gateway first, then contact support</td></tr></tbody></table><h3>Self-Service Troubleshooting</h3><ol><li>Check the agent's status (Active, Idle, Error)</li><li>Review recent activity for error messages</li><li>Try Restart Gateway from Settings</li><li>If needed, Reset Workspace as last resort</li></ol><h3>Feature Requests</h3><p>We'd love to hear your ideas! Send feature requests to <a href="mailto:feedback@squidjob.com">feedback@squidjob.com</a>.</p>`
   },
