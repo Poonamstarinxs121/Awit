@@ -1,0 +1,50 @@
+2026-03-27T09:49:09.744189285Z 
+2026-03-27T09:49:09.744213695Z > squidjob-server@1.0.0 build
+2026-03-27T09:49:09.744216235Z > tsc
+2026-03-27T09:49:09.744217985Z 
+2026-03-27T09:49:14.307121588Z src/db/index.ts(1,16): error TS7016: Could not find a declaration file for module 'pg'. '/opt/render/project/src/server/node_modules/pg/esm/index.mjs' implicitly has an 'any' type.
+2026-03-27T09:49:14.307148269Z   Try `npm i --save-dev @types/pg` if it exists or add a new declaration (.d.ts) file containing `declare module 'pg';`
+2026-03-27T09:49:14.307643432Z src/db/migrations.ts(2,20): error TS7016: Could not find a declaration file for module 'bcryptjs'. '/opt/render/project/src/server/node_modules/bcryptjs/index.js' implicitly has an 'any' type.
+2026-03-27T09:49:14.307656962Z   Try `npm i --save-dev @types/bcryptjs` if it exists or add a new declaration (.d.ts) file containing `declare module 'bcryptjs';`
+2026-03-27T09:49:14.307673903Z src/index.ts(5,18): error TS7016: Could not find a declaration file for module 'cors'. '/opt/render/project/src/server/node_modules/cors/lib/index.js' implicitly has an 'any' type.
+2026-03-27T09:49:14.307685853Z   Try `npm i --save-dev @types/cors` if it exists or add a new declaration (.d.ts) file containing `declare module 'cors';`
+2026-03-27T09:49:14.307819687Z src/middleware/auth.ts(2,17): error TS7016: Could not find a declaration file for module 'jsonwebtoken'. '/opt/render/project/src/server/node_modules/jsonwebtoken/index.js' implicitly has an 'any' type.
+2026-03-27T09:49:14.307828277Z   Try `npm i --save-dev @types/jsonwebtoken` if it exists or add a new declaration (.d.ts) file containing `declare module 'jsonwebtoken';`
+2026-03-27T09:49:14.307867308Z src/routes/admin.ts(4,20): error TS7016: Could not find a declaration file for module 'bcryptjs'. '/opt/render/project/src/server/node_modules/bcryptjs/index.js' implicitly has an 'any' type.
+2026-03-27T09:49:14.307875318Z   Try `npm i --save-dev @types/bcryptjs` if it exists or add a new declaration (.d.ts) file containing `declare module 'bcryptjs';`
+2026-03-27T09:49:14.307879098Z src/routes/auth.ts(2,20): error TS7016: Could not find a declaration file for module 'bcryptjs'. '/opt/render/project/src/server/node_modules/bcryptjs/index.js' implicitly has an 'any' type.
+2026-03-27T09:49:14.307884148Z   Try `npm i --save-dev @types/bcryptjs` if it exists or add a new declaration (.d.ts) file containing `declare module 'bcryptjs';`
+2026-03-27T09:49:14.3079258Z src/routes/auth.ts(3,17): error TS7016: Could not find a declaration file for module 'jsonwebtoken'. '/opt/render/project/src/server/node_modules/jsonwebtoken/index.js' implicitly has an 'any' type.
+2026-03-27T09:49:14.30793321Z   Try `npm i --save-dev @types/jsonwebtoken` if it exists or add a new declaration (.d.ts) file containing `declare module 'jsonwebtoken';`
+2026-03-27T09:49:14.308020212Z src/services/agentService.ts(2,33): error TS7016: Could not find a declaration file for module 'pg'. '/opt/render/project/src/server/node_modules/pg/esm/index.mjs' implicitly has an 'any' type.
+2026-03-27T09:49:14.308029502Z   Try `npm i --save-dev @types/pg` if it exists or add a new declaration (.d.ts) file containing `declare module 'pg';`
+2026-03-27T09:49:14.308133635Z src/services/analyticsService.ts(110,24): error TS7006: Parameter 'a' implicitly has an 'any' type.
+2026-03-27T09:49:14.30831817Z src/services/analyticsService.ts(110,27): error TS7006: Parameter 'b' implicitly has an 'any' type.
+2026-03-27T09:49:14.30834606Z src/services/realtimeService.ts(1,44): error TS7016: Could not find a declaration file for module 'ws'. '/opt/render/project/src/server/node_modules/ws/wrapper.mjs' implicitly has an 'any' type.
+2026-03-27T09:49:14.308349631Z   Try `npm i --save-dev @types/ws` if it exists or add a new declaration (.d.ts) file containing `declare module 'ws';`
+2026-03-27T09:49:14.308355321Z src/services/realtimeService.ts(3,17): error TS7016: Could not find a declaration file for module 'jsonwebtoken'. '/opt/render/project/src/server/node_modules/jsonwebtoken/index.js' implicitly has an 'any' type.
+2026-03-27T09:49:14.308358521Z   Try `npm i --save-dev @types/jsonwebtoken` if it exists or add a new declaration (.d.ts) file containing `declare module 'jsonwebtoken';`
+2026-03-27T09:49:14.308382441Z src/services/realtimeService.ts(4,16): error TS7016: Could not find a declaration file for module 'pg'. '/opt/render/project/src/server/node_modules/pg/esm/index.mjs' implicitly has an 'any' type.
+2026-03-27T09:49:14.308386741Z   Try `npm i --save-dev @types/pg` if it exists or add a new declaration (.d.ts) file containing `declare module 'pg';`
+2026-03-27T09:49:14.308474824Z src/services/realtimeService.ts(40,18): error TS2339: Property 'readyState' does not exist on type 'AuthenticatedSocket'.
+2026-03-27T09:49:14.308479334Z src/services/realtimeService.ts(42,18): error TS2339: Property 'send' does not exist on type 'AuthenticatedSocket'.
+2026-03-27T09:49:14.308486154Z src/services/realtimeService.ts(52,38): error TS7006: Parameter 'msg' implicitly has an 'any' type.
+2026-03-27T09:49:14.308489384Z src/services/realtimeService.ts(62,31): error TS7006: Parameter 'err' implicitly has an 'any' type.
+2026-03-27T09:49:14.308522745Z src/services/realtimeService.ts(87,12): error TS2339: Property 'on' does not exist on type 'AuthenticatedSocket'.
+2026-03-27T09:49:14.308538395Z src/services/realtimeService.ts(91,12): error TS2339: Property 'on' does not exist on type 'AuthenticatedSocket'.
+2026-03-27T09:49:14.308544856Z src/services/realtimeService.ts(91,27): error TS7006: Parameter 'raw' implicitly has an 'any' type.
+2026-03-27T09:49:14.308552416Z src/services/realtimeService.ts(96,18): error TS2339: Property 'send' does not exist on type 'AuthenticatedSocket'.
+2026-03-27T09:49:14.308576626Z src/services/realtimeService.ts(99,18): error TS2339: Property 'send' does not exist on type 'AuthenticatedSocket'.
+2026-03-27T09:49:14.308584346Z src/services/realtimeService.ts(102,16): error TS2339: Property 'send' does not exist on type 'AuthenticatedSocket'.
+2026-03-27T09:49:14.308587257Z src/services/realtimeService.ts(106,12): error TS2339: Property 'send' does not exist on type 'AuthenticatedSocket'.
+2026-03-27T09:49:14.308618527Z src/services/realtimeService.ts(113,20): error TS2339: Property 'terminate' does not exist on type 'AuthenticatedSocket'.
+2026-03-27T09:49:14.308622147Z src/services/realtimeService.ts(117,18): error TS2339: Property 'ping' does not exist on type 'AuthenticatedSocket'.
+2026-03-27T09:49:14.308738021Z src/services/sessionManager.ts(2,30): error TS7016: Could not find a declaration file for module 'uuid'. '/opt/render/project/src/server/node_modules/uuid/wrapper.mjs' implicitly has an 'any' type.
+2026-03-27T09:49:14.308744331Z   Try `npm i --save-dev @types/uuid` if it exists or add a new declaration (.d.ts) file containing `declare module 'uuid';`
+2026-03-27T09:49:14.308747131Z src/services/sshService.ts(2,24): error TS7016: Could not find a declaration file for module 'ssh2'. '/opt/render/project/src/server/node_modules/ssh2/lib/index.js' implicitly has an 'any' type.
+2026-03-27T09:49:14.308750071Z   Try `npm i --save-dev @types/ssh2` if it exists or add a new declaration (.d.ts) file containing `declare module 'ssh2';`
+2026-03-27T09:49:14.308758571Z src/services/sshService.ts(64,27): error TS7006: Parameter 'err' implicitly has an 'any' type.
+2026-03-27T09:49:14.308769971Z src/services/sshService.ts(64,32): error TS7006: Parameter 'stream' implicitly has an 'any' type.
+2026-03-27T09:49:14.308772951Z src/services/sshService.ts(80,21): error TS7006: Parameter 'err' implicitly has an 'any' type.
+2026-03-27T09:49:14.416764114Z ==> Build failed 😞
+2026-03-27T09:49:14.416784704Z ==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
