@@ -176,6 +176,86 @@ const HELP_TOPICS: HelpTopic[] = [
     content: `<h2>Node Setup</h2><p>SquidJob Nodes are local dashboards that run alongside OpenClaw on your machines, providing agent monitoring, file browsing, cost tracking, and Hub synchronization.</p><h3>Getting Started</h3><ol><li>Download the Node app from <a href="/settings">Settings &rarr; Downloads</a></li><li>Unzip and run <code>npm install</code></li><li>Register a new node on the <a href="/fleet">Fleet page</a> to get your Node ID and API key</li><li>Copy <code>.env.example</code> to <code>.env</code> and fill in:<br><code>NODE_HUB_URL</code> — your Hub URL<br><code>NODE_HUB_API_KEY</code> — the API key from registration<br><code>NODE_ID</code> — the node ID from registration</li><li>Run <code>npm run dev</code> to start the Node dashboard on port 3200</li></ol><h3>Requirements</h3><ul><li>Node.js 18 or higher</li><li>npm package manager</li><li>OpenClaw running on the same machine (for agent discovery)</li></ul><h3>Node Features</h3><table class="help-table"><thead><tr><th>Feature</th><th>Description</th></tr></thead><tbody><tr><td>Agent Monitor</td><td>View all discovered agents and their statuses</td></tr><tr><td>File Browser</td><td>Browse and edit files with Monaco editor</td></tr><tr><td>Memory Browser</td><td>Read/edit agent memory files (SOUL, TOOLS, etc.)</td></tr><tr><td>Sessions</td><td>View session history with token counts</td></tr><tr><td>Costs</td><td>Track per-agent costs with daily trend charts</td></tr><tr><td>Cron Manager</td><td>Manage OpenClaw scheduled tasks</td></tr><tr><td>Terminal</td><td>Execute commands on the machine</td></tr><tr><td>Hub Sync</td><td>Automatic telemetry and heartbeat sync</td></tr></tbody></table>`
   },
   {
+    id: 'servers-ssh', title: 'Servers (SSH Management)', emoji: '🖥️', section: 'COMMON',
+    content: `<h2>Servers (SSH Management)</h2><p>The Servers section lets you manage remote machines for command execution and automation. SSH Servers are separate from Fleet Nodes — they're pure SSH access for operational tasks.</p>
+
+<h3>Fleet Nodes vs. Servers</h3>
+<table class="help-table"><thead><tr><th>Feature</th><th>Fleet Nodes</th><th>Servers (SSH)</th></tr></thead><tbody>
+<tr><td>What it is</td><td>SquidJob Node app running on a machine</td><td>SSH remote access to any Linux/Mac server</td></tr>
+<tr><td>Setup complexity</td><td>Download and install Node app</td><td>Just add SSH credentials</td></tr>
+<tr><td>Integration</td><td>Full agent sync, memory, costs tracking</td><td>Command execution only</td></tr>
+<tr><td>Purpose</td><td>Run agents as part of your fleet</td><td>Ops, automation, deployment scripts</td></tr>
+<tr><td>Use cases</td><td>Distributed agent teams across machines</td><td>Maintenance, monitoring, infrastructure tasks</td></tr>
+</tbody></table>
+
+<h3>Adding a Server</h3>
+<ol>
+<li>Go to <strong>Servers</strong> in the Infrastructure section</li>
+<li>Click <strong>"Add Server"</strong></li>
+<li>Fill in the details:
+  <ul>
+  <li><strong>Name</strong> — Display name (e.g., "Production API Server")</li>
+  <li><strong>Host</strong> — IP address or hostname</li>
+  <li><strong>Port</strong> — SSH port (default 22)</li>
+  <li><strong>Username</strong> — SSH user account</li>
+  <li><strong>Auth Type</strong> — Password or SSH key</li>
+  <li><strong>Group</strong> — Optional group for organizing servers</li>
+  </ul>
+</li>
+<li>Click <strong>"Save"</strong></li>
+</ol>
+
+<h3>Authentication Methods</h3>
+<table class="help-table"><thead><tr><th>Method</th><th>Setup</th><th>Security</th></tr></thead><tbody>
+<tr><td>Password</td><td>Enter your SSH password</td><td>Good (encrypted at rest)</td></tr>
+<tr><td>SSH Key</td><td>Paste your private key (pem/ppk format)</td><td>Better (key-based auth)</td></tr>
+</tbody></table>
+
+<h3>Running Commands</h3>
+<ol>
+<li>Select a server from the list</li>
+<li>In the <strong>Terminal</strong> tab, type your command</li>
+<li>Press Enter to execute</li>
+<li>View output and any errors</li>
+</ol>
+
+<h3>Server Groups</h3>
+<p>Organize related servers into groups for bulk operations:</p>
+<ol>
+<li>Click <strong>"Add Group"</strong></li>
+<li>Enter a name and optional description</li>
+<li>Add servers to the group</li>
+<li>Later, run commands across all servers in a group at once</li>
+</ol>
+
+<h3>Monitoring Server Status</h3>
+<p>Each server shows its current status:</p>
+<ul>
+<li><strong>🟢 Online</strong> — Connected and responsive</li>
+<li><strong>🔴 Offline</strong> — Connection failed</li>
+<li><strong>⚪ Unknown</strong> — Last status not updated yet</li>
+</ul>
+<p>Status is checked every 60 seconds. Click "Refresh" to check immediately.</p>
+
+<h3>Security Best Practices</h3>
+<ul>
+<li>Use SSH keys instead of passwords when possible</li>
+<li>Rotate passwords regularly</li>
+<li>Restrict SSH users to minimal required permissions</li>
+<li>Use dedicated SSH accounts (not root) for automation</li>
+<li>Keep the Servers list organized — document each server's purpose</li>
+</ul>
+
+<h3>Use Cases</h3>
+<table class="help-table"><thead><tr><th>Task</th><th>Example Command</th></tr></thead><tbody>
+<tr><td>Deploy code</td><td><code>cd /app && git pull && npm install && npm run build</code></td></tr>
+<tr><td>Check system health</td><td><code>df -h && free -h && uptime</code></td></tr>
+<tr><td>View logs</td><td><code>tail -f /var/log/app.log</code></td></tr>
+<tr><td>Restart service</td><td><code>systemctl restart myapp</code></td></tr>
+<tr><td>Monitor processes</td><td><code>top -b -n 1</code></td></tr>
+</tbody></table>`
+  },
+  {
     id: 'updates-versions', title: 'Updates & Versions', emoji: '🔄', section: 'COMMON',
     content: `<h2>Updates & Versions</h2><h3>System Management</h3><p>SquidJob is continuously updated with new features, bug fixes, and improvements. Updates are applied automatically — no action needed from you.</p><h3>Model Selection</h3><p>SquidJob supports multiple AI providers:</p><ul><li><strong>Anthropic Claude</strong> — Primary provider (recommended)</li><li><strong>OpenAI GPT</strong> — Alternative provider</li><li><strong>Google Gemini</strong> — Budget-friendly option</li><li><strong>Mistral</strong> — European alternative</li><li><strong>Groq</strong> — Fast inference option</li></ul><p>Configure providers in Settings → API Providers. Each agent can be assigned a different model based on their needs.</p>`
   },

@@ -14,7 +14,7 @@ const quickLinks = [
   { to: '/boards', label: 'Boards', icon: Columns3, color: 'var(--info)' },
   { to: '/kanban', label: 'Board', icon: MessageSquare, color: 'var(--positive)' },
   { to: '/memory', label: 'Memory', icon: Brain, color: 'var(--type-command)' },
-  { to: '/machines', label: 'Machines', icon: Server, color: 'var(--type-file)' },
+  { to: '/servers', label: 'Servers', icon: Server, color: 'var(--type-file)' },
   { to: '/approvals', label: 'Approvals', icon: ShieldCheck, color: 'var(--warning)' },
   { to: '/analytics', label: 'Analytics', icon: BarChart3, color: '#FF9500' },
   { to: '/costs', label: 'Costs', icon: DollarSign, color: 'var(--positive)' },

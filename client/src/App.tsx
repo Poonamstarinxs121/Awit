@@ -120,7 +120,7 @@ export default function App() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/documents" element={<Documents />} />
 
-              <Route path="/machines" element={<Machines />} />
+              <Route path="/servers" element={<Machines />} />
               <Route path="/activity" element={<LogsPage />} />
               <Route path="/approvals" element={<Approvals />} />
               <Route path="/help" element={<HelpCenter />} />

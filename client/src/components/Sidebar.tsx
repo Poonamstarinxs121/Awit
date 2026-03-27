@@ -22,7 +22,7 @@ const commsNav = [
 ];
 
 const infraNav = [
-  { to: '/machines', label: 'Machines', icon: Server },
+  { to: '/servers', label: 'Servers', icon: Server },
 ];
 
 const governanceNav = [

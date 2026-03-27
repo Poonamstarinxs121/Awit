@@ -61,7 +61,7 @@ const dockSections = [
     label: 'Infrastructure',
     items: [
       { href: '/fleet',    label: 'Fleet',    icon: Wifi },
-      { href: '/machines', label: 'Machines', icon: Server },
+      { href: '/servers', label: 'Servers', icon: Server },
       { href: '/terminal', label: 'Terminal', icon: Terminal },
     ],
   },
