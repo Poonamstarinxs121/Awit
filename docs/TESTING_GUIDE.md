@@ -119,7 +119,9 @@ The SaaS Admin console manages the entire platform — all tenants, plans, and b
 The system creates:
 - A new tenant row in the database
 - An owner-role user with the provided email/password
-- A set of default agents seeded for the tenant
+- A subscription record with the selected plan
+
+> **Note:** No default agents are created automatically — the tenant owner creates their first agent during the onboarding wizard (Step 6) or manually from Hub → Agents.
 
 > **✅ Test:** After creation, verify the tenant appears in the Tenants list with status "Active", correct plan badge, and 0 tasks. Click the tenant row to see the detail view.
 
@@ -332,8 +334,8 @@ The first time you run `npm run dev`, the app detects that setup is incomplete a
 **Step 2 — Hub Connection:** Enter your Hub URL, `NODE_HUB_API_KEY`, and `NODE_ID` (from Hub → Fleet → Register Node). The wizard tests connectivity before advancing.
 > **✅ Test (step 2):** Enter correct Hub credentials — confirm green "Connected" indicator and wizard advances. Enter a wrong API key — confirm red error and step is blocked.
 
-**Step 3 — Admin Password:** The default password `admin` must be changed. Enter a new password (minimum 8 characters). This sets `ADMIN_PASSWORD` in the Node's config.
-> **✅ Test (step 3):** Leave the password as `admin` — confirm wizard blocks with an error message. Set a new password — confirm you can advance.
+**Step 3 — Admin Password:** Enter a new password (minimum 6 characters). This sets `ADMIN_PASSWORD` in the Node's config.
+> **✅ Test (step 3):** Enter a 5-character password — confirm wizard blocks with "Password must be at least 6 characters". Enter a 6+ character password — confirm you can advance.
 
 **Step 4 — Node Identity:** Enter a friendly display name for this machine (e.g. "Mac Studio — Home Office"). This is shown on the Hub Fleet page.
 > **✅ Test (step 4):** Enter a unique name, advance to step 5. Confirm the name later appears on Hub → Fleet.
@@ -344,8 +346,8 @@ The first time you run `npm run dev`, the app detects that setup is incomplete a
 **Step 6 — Messaging:** Optionally enter a Telegram bot token and/or a Discord webhook URL for local notifications. Both fields are independent and optional.
 > **✅ Test (step 6):** Skip this step. Confirm wizard advances without error.
 
-**Step 7 — Launch:** Finishes setup and redirects to `http://localhost:3200` (the main dashboard).
-> **✅ Test (step 7):** Click Launch. Verify you land on the Node dashboard, and revisiting `/setup` redirects back to `/` (setup is marked complete).
+**Step 7 — Launch:** Finishes setup and redirects to `http://localhost:3200/login` (the Node app login page).
+> **✅ Test (step 7):** Click Launch. Verify you are redirected to the login page. Log in with the admin password you set in step 3. Verify you land on the Node dashboard, and revisiting `/setup` no longer shows the wizard.
 
 ### 8.3 Getting Hub Connection Credentials
 
@@ -384,9 +386,10 @@ Then restart the app: `npm run dev`
 
 | URL | Description |
 |-----|-------------|
-| `http://localhost:3200` | Main dashboard |
+| `http://localhost:3200` | Main dashboard (requires login) |
+| `http://localhost:3200/login` | Node app login page |
 | `http://localhost:3200/setup` | Setup wizard (only shown if not yet configured) |
-| `http://localhost:3200/api/health` | Health check JSON |
+| `http://localhost:3200/api/health` | Health check JSON (no auth required) |
 
 > **If/else — Hub connected vs standalone:**
 > - **Hub configured:** Heartbeats sent every 60 seconds; telemetry (sessions, costs, activity) synced every 5 minutes to Hub
@@ -454,11 +457,11 @@ Agents are managed by OpenClaw, not directly by the Node app. To add a new agent
    }
    ```
 2. The Node app will discover the new agent on its next scan (within 30 seconds)
-3. The agent appears in **Node → Agents** with status "unknown" until it runs a session
+3. The agent appears in **Node → Agents** with status "active" if its workspace directory exists, or "unknown" if the workspace directory has not yet been created
 
 > **If/else:**
-> - **`openclaw.json` has `agents.list`:** Node uses this as the source of truth
-> - **No `agents.list`:** Node scans `workspace-*/` directories as fallback — any folder with a `SOUL.md` file becomes an agent
+> - **`openclaw.json` has `agents.list`:** Node uses this as the source of truth — status is `active` if the workspace dir exists, `unknown` if not
+> - **No `agents.list`:** Node scans the filesystem for directories matching the pattern `workspace-<id>` or `workspace_<id>` alongside the default workspace. Any matching directory becomes an agent with status `active` (no further file check is required)
 
 ### 10.3 Importing Existing Agents
 
@@ -779,6 +782,7 @@ cp ~/.openclaw/backups/squidjob-node.db.TIMESTAMP.bak ~/.openclaw/squidjob-node.
 | Hub admin console | `https://your-hub.onrender.com/admin` |
 | Hub fleet page | `https://your-hub.onrender.com/fleet` |
 | Node app local | `http://localhost:3200` |
+| Node app login | `http://localhost:3200/login` |
 | Node health check | `http://localhost:3200/api/health` |
 | Node setup wizard | `http://localhost:3200/setup` |
 | Hub version endpoint | `https://your-hub.onrender.com/v1/version` |
