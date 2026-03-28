@@ -187,7 +187,7 @@ router.delete('/:id', authMiddleware, tenantMiddleware, async (req: Request, res
          deletion_reason = $4
        WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
        RETURNING id`,
-      [req.params.id, tenantId, req.user!.id, reason || null]
+      [req.params.id, tenantId, req.user!.userId, reason || null]
     );
     if (result.rows.length === 0) {
       res.status(404).json({ error: 'Node not found' });
@@ -202,7 +202,7 @@ router.delete('/:id', authMiddleware, tenantMiddleware, async (req: Request, res
          deletion_reason = EXCLUDED.deletion_reason,
          deleted_at = NOW(),
          can_restore_until = NOW() + INTERVAL '30 days'`,
-      [req.params.id, req.user!.id, reason || null]
+      [req.params.id, req.user!.userId, reason || null]
     );
     res.json({ ok: true });
   } catch (error) {

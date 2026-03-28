@@ -129,7 +129,7 @@ export default function ActivityPage() {
         tips={[
           'Use the agent and event type filters to narrow down entries',
           'Metadata is shown inline — expand a row to see the full payload',
-          'Activity data is stored locally in SQLite and never sent to Hub',
+          'Activity data is stored locally in SQLite and synced to Hub as part of telemetry',
         ]}
       />
 
