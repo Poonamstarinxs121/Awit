@@ -582,6 +582,100 @@ NODE_ID=${registerResult.node_id}`}
           </div>
         </>
       )}
+
+      {deleteConfirm && (
+        <>
+          <div
+            onClick={() => { setDeleteConfirm(null); setDeleteConfirmText(''); setDeleteReason(''); }}
+            style={{
+              position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)',
+              zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          />
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+              width: '440px', maxWidth: 'calc(100vw - 32px)',
+              backgroundColor: 'var(--card)', border: '1px solid #FF453A',
+              borderRadius: '16px', padding: '24px', zIndex: 301,
+              boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <XCircle size={20} color="#FF453A" />
+              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}>
+                Remove Node
+              </div>
+            </div>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 20px', lineHeight: 1.5 }}>
+              You are about to remove <strong style={{ color: 'var(--text-primary)' }}>{deleteConfirm.nodeName}</strong> from the fleet.
+              This node will be soft-deleted and can be restored within 30 days.
+            </p>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>
+                Reason (optional)
+              </label>
+              <input
+                value={deleteReason}
+                onChange={e => setDeleteReason(e.target.value)}
+                placeholder="e.g. Decommissioned, replaced by newer node..."
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  padding: '8px 12px', borderRadius: '8px',
+                  backgroundColor: 'var(--surface)', border: '1px solid var(--border)',
+                  color: 'var(--text-primary)', fontSize: '13px', outline: 'none',
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 600, color: '#FF453A', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>
+                Type the node name to confirm
+              </label>
+              <input
+                value={deleteConfirmText}
+                onChange={e => setDeleteConfirmText(e.target.value)}
+                placeholder={deleteConfirm.nodeName}
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  padding: '8px 12px', borderRadius: '8px',
+                  backgroundColor: 'var(--surface)', border: '1px solid #FF453A',
+                  color: 'var(--text-primary)', fontSize: '13px', outline: 'none',
+                  fontFamily: 'var(--font-mono)',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => { setDeleteConfirm(null); setDeleteConfirmText(''); setDeleteReason(''); }}
+                style={{
+                  flex: 1, padding: '10px', borderRadius: '8px', fontSize: '13px', fontWeight: 600,
+                  backgroundColor: 'var(--surface)', border: '1px solid var(--border)',
+                  color: 'var(--text-secondary)', cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                disabled={deleteConfirmText !== deleteConfirm.nodeName || deleteMutation.isPending}
+                onClick={() => deleteMutation.mutate({ id: deleteConfirm.nodeId, reason: deleteReason || undefined })}
+                style={{
+                  flex: 1, padding: '10px', borderRadius: '8px', fontSize: '13px', fontWeight: 600,
+                  backgroundColor: deleteConfirmText === deleteConfirm.nodeName ? '#FF453A' : '#2A1A1A',
+                  border: '1px solid #FF453A', color: '#fff',
+                  cursor: deleteConfirmText !== deleteConfirm.nodeName || deleteMutation.isPending ? 'not-allowed' : 'pointer',
+                  opacity: deleteMutation.isPending ? 0.6 : 1,
+                }}
+              >
+                {deleteMutation.isPending ? 'Removing…' : 'Remove Node'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

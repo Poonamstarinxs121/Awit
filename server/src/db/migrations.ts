@@ -804,6 +804,27 @@ export async function runMigrations(): Promise<void> {
     `);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_node_messages_target ON node_messages(target_node_id, status)`);
 
+    // Soft-delete for nodes
+    await client.query(`ALTER TABLE nodes ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`);
+    await client.query(`ALTER TABLE nodes ADD COLUMN IF NOT EXISTS deleted_by UUID REFERENCES users(id) ON DELETE SET NULL`);
+    await client.query(`ALTER TABLE nodes ADD COLUMN IF NOT EXISTS deletion_reason TEXT`);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS deleted_nodes_history (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        node_id UUID NOT NULL UNIQUE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        deleted_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        deletion_reason TEXT,
+        deleted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        can_restore_until TIMESTAMPTZ NOT NULL,
+        restored_at TIMESTAMPTZ,
+        node_snapshot JSONB
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_deleted_nodes_tenant ON deleted_nodes_history(tenant_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_deleted_nodes_restore ON deleted_nodes_history(can_restore_until) WHERE restored_at IS NULL`);
+
     await client.query('COMMIT');
     console.log('Migrations completed successfully');
 

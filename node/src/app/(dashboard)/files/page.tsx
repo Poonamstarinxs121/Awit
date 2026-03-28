@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Save, Lock, Unlock, FolderOpen, ChevronRight, Info } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import FileTree from '@/components/FileTree';
+import HelpBanner from '@/components/HelpBanner';
 
 const Editor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 
@@ -136,6 +137,17 @@ export default function FilesPage() {
           File Browser
         </h1>
       </div>
+
+      <HelpBanner
+        pageKey="files"
+        title="File Browser"
+        description="Browse, read, and edit files on this machine. Navigate any path on the filesystem using the directory tree on the left."
+        tips={[
+          'Click a file to open it in the Monaco editor on the right',
+          'Save changes with Cmd+S (Mac) or Ctrl+S (Windows)',
+          'The node API restricts access to paths outside the configured base directory',
+        ]}
+      />
 
       <div style={{
         flex: 1,

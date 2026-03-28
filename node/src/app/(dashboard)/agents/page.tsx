@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Bot, FolderOpen, Cpu } from 'lucide-react';
+import HelpBanner from '@/components/HelpBanner';
 
 interface Agent {
   id: string;
@@ -42,7 +43,7 @@ export default function AgentsPage() {
 
   return (
     <div>
-      <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 22, fontWeight: 600, marginBottom: 20 }}>
+      <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 22, fontWeight: 600, marginBottom: 16 }}>
         Agents
         <span style={{
           marginLeft: 10,
@@ -54,6 +55,17 @@ export default function AgentsPage() {
           fontWeight: 500,
         }}>{agents.length}</span>
       </h1>
+
+      <HelpBanner
+        pageKey="agents"
+        title="OpenClaw Agent Discovery"
+        description="Agents are discovered from your openclaw.json file at ~/.openclaw/openclaw.json. If no agents appear, the node will automatically detect the 'main' workspace at ~/.openclaw/workspace."
+        tips={[
+          'The main agent workspace is ~/.openclaw/workspace by default',
+          'Additional agents are found in workspace-* sibling directories',
+          'Click an agent card to view its full configuration files',
+        ]}
+      />
 
       <div style={{ display: 'grid', gridTemplateColumns: selected ? '1fr 1fr' : '1fr', gap: 16 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

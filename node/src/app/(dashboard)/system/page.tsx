@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Cpu, HardDrive, MemoryStick, Clock, Monitor, Server } from 'lucide-react';
+import HelpBanner from '@/components/HelpBanner';
 
 interface SystemStats {
   cpu_percent: number;
@@ -79,9 +80,20 @@ export default function SystemPage() {
 
   return (
     <div>
-      <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 22, fontWeight: 600, marginBottom: 20 }}>
+      <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 22, fontWeight: 600, marginBottom: 16 }}>
         System Monitor
       </h1>
+
+      <HelpBanner
+        pageKey="system"
+        title="System Monitor"
+        description="Live CPU, memory, and disk usage for this machine. Stats refresh every 5 seconds and are sent to Hub every 60 seconds via heartbeat."
+        tips={[
+          'Red bars indicate usage above 85% — consider freeing resources',
+          'System data is included in every heartbeat sent to Hub',
+          'Uptime resets on machine restart or node app restart',
+        ]}
+      />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
         <GaugeBar label="CPU" value={stats.cpu_percent} icon={Cpu} color="#3B82F6" />

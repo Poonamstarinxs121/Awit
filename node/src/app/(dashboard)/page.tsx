@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Bot, MessageSquare, Activity, DollarSign, Wifi, WifiOff } from 'lucide-react';
+import HelpBanner from '@/components/HelpBanner';
 
 interface Agent {
   id: string;
@@ -42,9 +43,20 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 22, fontWeight: 600, marginBottom: 20 }}>
+      <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 22, fontWeight: 600, marginBottom: 16 }}>
         Dashboard
       </h1>
+
+      <HelpBanner
+        pageKey="dashboard"
+        title="Welcome to SquidJob Node"
+        description="This node connects to your Hub to report agent activity, system stats, and sessions in real-time."
+        tips={[
+          'Set NODE_HUB_URL, NODE_HUB_API_KEY, and NODE_ID in your .env file to connect to Hub',
+          'Get your credentials from Hub → Fleet → Register Node',
+          'Once connected, this node will appear Online in the Hub Fleet page',
+        ]}
+      />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         {STAT_CARDS.map(card => {

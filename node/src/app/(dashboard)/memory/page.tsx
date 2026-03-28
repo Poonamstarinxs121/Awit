@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Brain, Save, Eye, EyeOff, Plus, AlertTriangle, ChevronDown } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import HelpBanner from '@/components/HelpBanner';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 
@@ -208,6 +209,17 @@ export default function MemoryPage() {
           Memory Browser
         </h1>
       </div>
+
+      <HelpBanner
+        pageKey="memory"
+        title="Memory Browser"
+        description="Read and edit the markdown memory files used by OpenClaw agents: SOUL.md, MEMORY.md, AGENTS.md, TOOLS.md, HEARTBEAT.md, and IDENTITY.md."
+        tips={[
+          'SOUL.md defines the agent\'s identity and personality — changes take effect on next session',
+          'MEMORY.md is the agent\'s working memory — agents write to it automatically',
+          'Select an agent from the dropdown, then pick a memory file type to view',
+        ]}
+      />
 
       <div style={{ position: 'relative', marginBottom: 16 }}>
         <button

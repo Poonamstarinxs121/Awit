@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Activity, RefreshCw, Filter } from 'lucide-react';
+import HelpBanner from '@/components/HelpBanner';
 
 interface ActivityLog {
   id: string;
@@ -120,6 +121,17 @@ export default function ActivityPage() {
           All operations and events across your node
         </p>
       </div>
+
+      <HelpBanner
+        pageKey="activity"
+        title="Activity Log"
+        description="A chronological log of all operations and events on this node — agent runs, file changes, cron triggers, and system events."
+        tips={[
+          'Use the agent and event type filters to narrow down entries',
+          'Metadata is shown inline — expand a row to see the full payload',
+          'Activity data is stored locally in SQLite and never sent to Hub',
+        ]}
+      />
 
       {/* Filters */}
       <div style={{

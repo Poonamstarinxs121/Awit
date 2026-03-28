@@ -24,7 +24,7 @@ async function authenticateNodeApiKey(req: Request, res: Response): Promise<{ no
   const hash = hashApiKey(token);
   const nodeId = req.params.id;
   const result = await pool.query(
-    'SELECT id, tenant_id FROM nodes WHERE id = $1 AND api_key_hash = $2',
+    'SELECT id, tenant_id FROM nodes WHERE id = $1 AND api_key_hash = $2 AND deleted_at IS NULL',
     [nodeId, hash]
   );
   if (result.rows.length === 0) {
@@ -66,7 +66,7 @@ router.get('/', authMiddleware, tenantMiddleware, async (req: Request, res: Resp
     const tenantId = req.user!.tenantId;
     const result = await pool.query(
       `SELECT id, name, url, status, last_heartbeat, system_info, openclaw_version, agent_count, created_at, updated_at
-       FROM nodes WHERE tenant_id = $1 ORDER BY created_at DESC`,
+       FROM nodes WHERE tenant_id = $1 AND deleted_at IS NULL ORDER BY created_at DESC`,
       [tenantId]
     );
     res.json({ nodes: result.rows });
@@ -179,14 +179,31 @@ router.delete('/:id', authMiddleware, tenantMiddleware, async (req: Request, res
       res.status(403).json({ error: 'Only owners and admins can remove nodes' });
       return;
     }
+    const { reason } = req.body || {};
     const result = await pool.query(
-      'DELETE FROM nodes WHERE id = $1 AND tenant_id = $2 RETURNING id',
-      [req.params.id, tenantId]
+      `UPDATE nodes SET
+         deleted_at = NOW(),
+         deleted_by = $3,
+         deletion_reason = $4
+       WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
+       RETURNING id`,
+      [req.params.id, tenantId, req.user!.id, reason || null]
     );
     if (result.rows.length === 0) {
       res.status(404).json({ error: 'Node not found' });
       return;
     }
+    await pool.query(
+      `INSERT INTO deleted_nodes_history (node_id, tenant_id, deleted_by, deletion_reason, can_restore_until)
+       SELECT id, tenant_id, $2, $3, NOW() + INTERVAL '30 days'
+       FROM nodes WHERE id = $1
+       ON CONFLICT (node_id) DO UPDATE SET
+         deleted_by = EXCLUDED.deleted_by,
+         deletion_reason = EXCLUDED.deletion_reason,
+         deleted_at = NOW(),
+         can_restore_until = NOW() + INTERVAL '30 days'`,
+      [req.params.id, req.user!.id, reason || null]
+    );
     res.json({ ok: true });
   } catch (error) {
     console.error('Delete node error:', error);

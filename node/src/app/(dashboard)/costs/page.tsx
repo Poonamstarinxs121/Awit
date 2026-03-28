@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { DollarSign, Coins, Zap, TrendingUp, Calendar } from 'lucide-react';
+import HelpBanner from '@/components/HelpBanner';
 
 interface CostSummary {
   total_cost: number;
@@ -164,6 +165,17 @@ export default function CostsPage() {
           ))}
         </div>
       </div>
+
+      <HelpBanner
+        pageKey="costs"
+        title="Cost Tracking"
+        description="Estimated API costs per session, calculated from token usage × model pricing. Data is stored locally and synced to Hub every 5 minutes."
+        tips={[
+          'Costs are estimates based on standard provider pricing',
+          'Use the time range selector to view 7d, 30d, 90d, or all-time costs',
+          'Per-agent and per-model breakdowns help identify expensive workflows',
+        ]}
+      />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         {STAT_CARDS.map(card => {

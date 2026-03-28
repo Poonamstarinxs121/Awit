@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Clock, Play, Plus, Edit2, X, ChevronDown } from 'lucide-react';
+import HelpBanner from '@/components/HelpBanner';
 
 interface CronTask {
   id: string;
@@ -133,6 +134,17 @@ export default function CronPage() {
           Add Cron Job
         </button>
       </div>
+
+      <HelpBanner
+        pageKey="cron"
+        title="Scheduled Jobs"
+        description="OpenClaw cron jobs are defined in your openclaw.json file and run on their defined schedules. Manage and monitor them here."
+        tips={[
+          'Cron expressions use standard format: minute hour day month weekday',
+          'Common presets: Every 5 min (*/5 * * * *), Hourly (0 * * * *), Daily (0 0 * * *)',
+          'Paused jobs are stored but won\'t run until resumed',
+        ]}
+      />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
         {[

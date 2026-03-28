@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, KeyboardEvent } from 'react';
+import HelpBanner from '@/components/HelpBanner';
 
 interface CommandBlock {
   id: number;
@@ -195,6 +196,17 @@ export default function TerminalPage() {
             ))}
           </div>
         </div>
+
+        <HelpBanner
+          pageKey="terminal"
+          title="Command Terminal"
+          description="Execute shell commands directly on this machine. Commands run as the node app's process user and output is displayed below."
+          tips={[
+            'Use the quick command buttons above to run common diagnostics instantly',
+            'Click breadcrumbs to navigate to a parent directory',
+            'Command history is stored in memory — refresh clears the log',
+          ]}
+        />
 
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {QUICK_COMMANDS.map(cmd => (

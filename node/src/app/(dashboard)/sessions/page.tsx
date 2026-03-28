@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { MessageSquare, Zap, Clock, Hash, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import HelpBanner from '@/components/HelpBanner';
 
 interface Session {
   id: number;
@@ -190,6 +191,17 @@ export default function SessionsPage() {
           Refresh
         </button>
       </div>
+
+      <HelpBanner
+        pageKey="sessions"
+        title="Session History"
+        description="Sessions are logged each time an agent runs a conversation. All data is stored locally in SQLite and synced to Hub every 5 minutes."
+        tips={[
+          'Sessions track token usage, cost, and duration per conversation',
+          'Click a session row to expand and see full details',
+          'Filter by agent or status to drill into specific activity',
+        ]}
+      />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         {STAT_CARDS.map(card => {
