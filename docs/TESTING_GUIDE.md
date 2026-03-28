@@ -130,10 +130,12 @@ The system creates:
 From the Tenants list you can:
 - **Change plan** — click the plan badge to switch starter/professional/enterprise
 - **Suspend / Activate** — toggle the tenant's status (suspended users can't log in)
-- **Delete** — permanently removes tenant and all data (confirmation required)
+- **Delete** — permanently removes tenant and all data; **the tenant must be in `suspended` status before deletion is permitted**
 - **View detail** — see all users, agent count, task count, and last active timestamp
 
-> **✅ Test:** Suspend a test tenant, then try logging in as that tenant's owner — confirm you're blocked. Reactivate and verify login works again.
+> **✅ Test (suspend):** Suspend a test tenant, then try logging in as that tenant's owner — confirm you're blocked. Reactivate and verify login works again.
+
+> **✅ Test (delete):** Attempt to delete an Active tenant — confirm the action is blocked. Suspend the tenant first, then attempt deletion — confirm the confirmation modal appears and, after confirming, the tenant is removed from the list.
 
 ---
 
