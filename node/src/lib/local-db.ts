@@ -59,6 +59,12 @@ export function getDb(): Database.Database {
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS setup_config (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   return db;
@@ -338,4 +344,34 @@ export function listActivity(filters?: {
   const activities = stmt.all({ ...params, limit, offset });
 
   return { activities, total };
+}
+
+export function getSetupConfig(key: string): string | null {
+  const d = getDb();
+  const row = d.prepare('SELECT value FROM setup_config WHERE key = @key').get({ key }) as { value: string } | undefined;
+  return row?.value ?? null;
+}
+
+export function setSetupConfig(key: string, value: string): void {
+  const d = getDb();
+  d.prepare('INSERT OR REPLACE INTO setup_config (key, value, updated_at) VALUES (@key, @value, CURRENT_TIMESTAMP)').run({ key, value });
+}
+
+export function getAllSetupConfig(): Record<string, string> {
+  const d = getDb();
+  const rows = d.prepare('SELECT key, value FROM setup_config').all() as { key: string; value: string }[];
+  const config: Record<string, string> = {};
+  for (const row of rows) {
+    config[row.key] = row.value;
+  }
+  return config;
+}
+
+export function clearSetupComplete(): void {
+  const d = getDb();
+  d.prepare("DELETE FROM setup_config WHERE key = 'setup_complete'").run();
+}
+
+export function isSetupComplete(): boolean {
+  return getSetupConfig('setup_complete') === 'true';
 }

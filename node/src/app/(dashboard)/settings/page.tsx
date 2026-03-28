@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Wifi, WifiOff, Server, FolderOpen, ExternalLink,
   ChevronDown, ChevronUp, Activity, CheckCircle, XCircle, Clock,
@@ -123,9 +124,11 @@ function stateColor(state: UpdateState): string {
 }
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [hubStatus, setHubStatus] = useState<HubStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [envExpanded, setEnvExpanded] = useState(false);
+  const [resettingSetup, setResettingSetup] = useState(false);
 
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -724,6 +727,43 @@ ADMIN_PASSWORD=changeme`}
               <ExternalLink size={13} style={{ color: 'var(--text-muted)' }} />
             </a>
           )}
+          <button
+            onClick={async () => {
+              setResettingSetup(true);
+              try {
+                const res = await fetch('/api/setup/reset', { method: 'POST' });
+                const result = await res.json();
+                if (result.success) {
+                  router.push('/setup');
+                }
+              } catch {
+              } finally {
+                setResettingSetup(false);
+              }
+            }}
+            disabled={resettingSetup}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '12px 16px',
+              background: 'var(--background)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              color: 'var(--text-primary)',
+              textDecoration: 'none',
+              fontSize: 13,
+              cursor: resettingSetup ? 'wait' : 'pointer',
+              width: '100%',
+              fontFamily: 'var(--font-body)',
+            }}
+          >
+            <RotateCcw size={16} style={{ color: 'var(--warning)', flexShrink: 0 }} />
+            <div style={{ flex: 1, textAlign: 'left' }}>
+              <div style={{ fontWeight: 500 }}>{resettingSetup ? 'Resetting...' : 'Re-run Setup Wizard'}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Change Hub connection, password, or integrations</div>
+            </div>
+          </button>
         </div>
       </Section>
 

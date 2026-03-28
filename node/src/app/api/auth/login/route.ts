@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { NODE_CONFIG } from '@/config/node';
+import { generateAuthToken } from '@/lib/auth';
 
 export async function POST(req: Request) {
   try {
@@ -10,7 +11,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
     }
 
-    const token = Buffer.from(`${Date.now()}:${NODE_CONFIG.nodeName}`).toString('base64');
+    const token = generateAuthToken();
 
     const cookieStore = cookies();
     cookieStore.set('node_auth', token, {

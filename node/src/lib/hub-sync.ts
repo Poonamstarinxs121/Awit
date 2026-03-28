@@ -9,16 +9,6 @@ function isUpdatePaused(): boolean {
 }
 
 export class HubSyncClient {
-  private hubUrl: string;
-  private apiKey: string;
-  private nodeId: string;
-
-  constructor() {
-    this.hubUrl = NODE_CONFIG.hubUrl;
-    this.apiKey = NODE_CONFIG.hubApiKey;
-    this.nodeId = NODE_CONFIG.nodeId;
-  }
-
   isConfigured(): boolean {
     return isHubConfigured();
   }
@@ -35,11 +25,11 @@ export class HubSyncClient {
         status: a.status,
         model: a.model,
       }));
-      const res = await fetch(`${this.hubUrl}/v1/nodes/${this.nodeId}/heartbeat`, {
+      const res = await fetch(`${NODE_CONFIG.hubUrl}/v1/nodes/${NODE_CONFIG.nodeId}/heartbeat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
+          'Authorization': `Bearer ${NODE_CONFIG.hubApiKey}`,
         },
         body: JSON.stringify({
           cpu_percent: stats.cpu_percent,
@@ -59,11 +49,11 @@ export class HubSyncClient {
   async sendTelemetry(entries: Array<{ type: string; payload: any; recorded_at?: string }>): Promise<boolean> {
     if (!this.isConfigured()) return false;
     try {
-      const res = await fetch(`${this.hubUrl}/v1/nodes/${this.nodeId}/telemetry`, {
+      const res = await fetch(`${NODE_CONFIG.hubUrl}/v1/nodes/${NODE_CONFIG.nodeId}/telemetry`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
+          'Authorization': `Bearer ${NODE_CONFIG.hubApiKey}`,
         },
         body: JSON.stringify({ entries }),
       });
@@ -78,6 +68,9 @@ export class HubSyncClient {
 let syncClient: HubSyncClient | null = null;
 let lastHeartbeat: Date | null = null;
 let lastTelemetry: Date | null = null;
+let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+let telemetryInterval: ReturnType<typeof setInterval> | null = null;
+let schedulerRunning = false;
 
 export function getHubSyncClient(): HubSyncClient {
   if (!syncClient) syncClient = new HubSyncClient();
@@ -104,13 +97,19 @@ export function startHubScheduler() {
     return;
   }
 
+  if (schedulerRunning) {
+    console.log('[HubSync] Scheduler already running, skipping');
+    return;
+  }
+
+  schedulerRunning = true;
   console.log('[HubSync] Starting hub sync to', NODE_CONFIG.hubUrl);
 
   client.sendHeartbeat().then(ok => {
     if (ok) lastHeartbeat = new Date();
   });
 
-  setInterval(async () => {
+  heartbeatInterval = setInterval(async () => {
     const ok = await client.sendHeartbeat();
     if (ok) lastHeartbeat = new Date();
   }, 60000);
@@ -119,12 +118,22 @@ export function startHubScheduler() {
     if (ok) lastTelemetry = new Date();
   });
 
-  setInterval(async () => {
+  telemetryInterval = setInterval(async () => {
     const ok = await collectAndSendTelemetry(client);
     if (ok) lastTelemetry = new Date();
   }, 300000);
 
   startDispatchWorker();
+}
+
+export function reinitializeHubSync() {
+  if (heartbeatInterval) clearInterval(heartbeatInterval);
+  if (telemetryInterval) clearInterval(telemetryInterval);
+  heartbeatInterval = null;
+  telemetryInterval = null;
+  schedulerRunning = false;
+  syncClient = null;
+  startHubScheduler();
 }
 
 const SYNC_STATE_KEY = 'lastTelemetrySyncAt';

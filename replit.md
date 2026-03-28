@@ -70,8 +70,10 @@ The codebase is a monorepo with `server/`, `client/`, `node/`, and `extension/` 
 - `costs` — per-session cost records (agent_id, model, tokens, estimated_cost)
 - `activity` — local activity log (event_type, description, metadata)
 - `sync_state` — tracks last telemetry sync timestamp for Hub sync
+- `setup_config` — key-value config store for setup wizard (key, value, updated_at)
 
 ## Node Pages
+- `/setup` — First-run setup wizard (7 steps: Welcome, Hub Connection, Admin Password, Node Identity, LLM API, Messaging, Launch)
 - `/` — Dashboard with system stats, agent overview, recent activity
 - `/agents` — Agent list from OpenClaw discovery
 - `/system` — System monitor (CPU, RAM, disk, network)
@@ -152,6 +154,10 @@ Located in `client/src/components/Office3D/` — 22 components extracted from te
 - `POST /api/terminal/exec` — execute command
 - `GET /api/search?q=` — local search
 - `GET /api/dispatches` — local dispatch history
+- `GET /api/setup/status` — check if setup wizard has been completed
+- `POST /api/setup/save` — save wizard config to SQLite + .env file
+- `POST /api/setup/test-hub` — test Hub connectivity with provided credentials
+- `POST /api/setup/reset` — clear setup completion flag (requires auth)
 
 ## Chrome Extension (`extension/`)
 - Manifest V3, vanilla JS, no build step
