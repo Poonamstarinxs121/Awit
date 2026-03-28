@@ -154,35 +154,52 @@ The first time a tenant owner logs in, they see the **Setup Wizard**. It guides 
 
 Optional steps can be skipped with the **"Skip for now"** button and completed later from Settings.
 
-### 5.2 LLM Provider (Step 2) — Critical Path
+### 5.2 Step 1 — Welcome
 
-- Enter your API key for the chosen provider
-- The wizard validates the key before proceeding
-- **If/else:** If you enter an invalid key, you'll see a red error and cannot advance — re-enter a valid key or choose a different provider
+- Read-only introduction page
+- Click **"Get Started"** or **"Next"**
 
-> **✅ Test:** Enter a deliberately wrong API key — confirm validation error appears. Enter a correct key — confirm green indicator and "Next" becomes active.
+> **✅ Test (step 1):** Wizard loads without errors, welcome screen is shown, navigation to step 2 works.
 
-### 5.3 Messaging Setup (Steps 3–5)
+### 5.3 Step 2 — LLM Provider (Critical Path)
 
-- All three are optional — skip all if messaging is not needed
-- **Telegram:** Requires a bot token from @BotFather + a chat ID
-- **WhatsApp:** Requires Twilio Account SID, Auth Token, and WhatsApp number
-- **Discord:** Requires a webhook URL from a Discord channel
+- Select a provider (OpenAI / Anthropic / Gemini / Groq / Mistral)
+- Enter your API key
+- The wizard validates the key before allowing you to advance
+- **If/else:** Invalid key → red error message, cannot advance. Valid key → green indicator, "Next" becomes active.
 
-> **✅ Test:** Skip all three messaging steps. Verify the wizard still advances to Step 6.
+> **✅ Test (step 2):** Enter a deliberately wrong API key — confirm error appears and "Next" is blocked. Enter a valid key — confirm you can advance to step 3.
 
-### 5.4 First Agent (Step 6)
+### 5.4 Steps 3–5 — Messaging Setup (All Optional)
+
+- **Telegram (Step 3):** Requires a bot token from @BotFather + a chat ID
+- **WhatsApp (Step 4):** Requires Twilio Account SID, Auth Token, and WhatsApp number
+- **Discord (Step 5):** Requires a webhook URL from a Discord channel
+
+> **✅ Test (steps 3–5):** Click "Skip for now" on all three messaging steps. Verify you reach step 6 without errors.
+
+### 5.5 Step 6 — First Agent
 
 - Give your agent a name, choose a model, and optionally write a brief role description
 - The SoulCraft wizard generates the `SOUL.md` personality file
-- **If/else:** If you skip this step, a default "Assistant" agent is still available from the Agents page
+- **If/else:** Skip → a default "Assistant" agent is still available from the Agents page
 
-### 5.5 Launch (Step 8)
+> **✅ Test (step 6):** Create an agent named "Research Assistant". Advance to step 7 — confirm no errors.
+
+### 5.6 Step 7 — Register Node
+
+- Click **"Register Node"** to generate a Node ID and API key for a machine
+- Copy the credentials — they are used in the Node app setup wizard
+- Skipping this step is fine — nodes can be registered later from Hub → Fleet
+
+> **✅ Test (step 7):** Register a node. Copy the credentials. Confirm they appear under Hub → Fleet on the next page.
+
+### 5.7 Step 8 — Launch
 
 - Review a summary of what was configured
-- Click **"Launch Mission Control"** — this marks `setup_completed = true` in tenant settings and redirects to the main Dashboard
+- Click **"Launch Mission Control"** — marks `setup_completed = true` in tenant settings and redirects to Dashboard
 
-> **✅ Test:** Complete all steps including Launch. Verify you land on the Dashboard, the setup wizard no longer appears on refresh, and the top navigation is fully visible.
+> **✅ Test (step 8):** Click Launch. Verify you land on the Dashboard, the wizard no longer appears on refresh, and the full top navigation is visible.
 
 ---
 
@@ -307,6 +324,29 @@ The first time you run `npm run dev`, the app detects that setup is incomplete a
 | 6 | Messaging | No | Telegram bot token and/or Discord webhook for notifications |
 | 7 | Launch | No | Completes setup and opens the dashboard |
 
+**Per-step walk-through:**
+
+**Step 1 — Welcome:** Read-only introduction. Click Next.
+> **✅ Test (step 1):** Setup wizard loads at `http://localhost:3200/setup`. No errors in the browser console.
+
+**Step 2 — Hub Connection:** Enter your Hub URL, `NODE_HUB_API_KEY`, and `NODE_ID` (from Hub → Fleet → Register Node). The wizard tests connectivity before advancing.
+> **✅ Test (step 2):** Enter correct Hub credentials — confirm green "Connected" indicator and wizard advances. Enter a wrong API key — confirm red error and step is blocked.
+
+**Step 3 — Admin Password:** The default password `admin` must be changed. Enter a new password (minimum 8 characters). This sets `ADMIN_PASSWORD` in the Node's config.
+> **✅ Test (step 3):** Leave the password as `admin` — confirm wizard blocks with an error message. Set a new password — confirm you can advance.
+
+**Step 4 — Node Identity:** Enter a friendly display name for this machine (e.g. "Mac Studio — Home Office"). This is shown on the Hub Fleet page.
+> **✅ Test (step 4):** Enter a unique name, advance to step 5. Confirm the name later appears on Hub → Fleet.
+
+**Step 5 — LLM API:** Enter an API key for a local LLM provider (used by locally-executed agent sessions). Optional — can be skipped if agents run entirely on the Hub.
+> **✅ Test (step 5):** Skip this step. Confirm wizard advances without error.
+
+**Step 6 — Messaging:** Optionally enter a Telegram bot token and/or a Discord webhook URL for local notifications. Both fields are independent and optional.
+> **✅ Test (step 6):** Skip this step. Confirm wizard advances without error.
+
+**Step 7 — Launch:** Finishes setup and redirects to `http://localhost:3200` (the main dashboard).
+> **✅ Test (step 7):** Click Launch. Verify you land on the Node dashboard, and revisiting `/setup` redirects back to `/` (setup is marked complete).
+
 ### 8.3 Getting Hub Connection Credentials
 
 Before Step 2, you need to register the node on the Hub:
@@ -362,6 +402,8 @@ Then restart the app: `npm run dev`
 
 Shows system metrics (CPU, RAM, disk) refreshed every 30 seconds, plus a summary of agents, recent sessions, and today's costs.
 
+> **✅ Test:** Open `http://localhost:3200`. Verify CPU, RAM, and disk percentages are displayed and are non-zero (system is running).
+
 ### 9.2 Pages Reference
 
 | Page | URL | What it shows |
@@ -378,6 +420,8 @@ Shows system metrics (CPU, RAM, disk) refreshed every 30 seconds, plus a summary
 | Activity | `/activity` | Event timeline for all agent actions |
 | Settings | `/settings` | Hub connection status, update system |
 
+> **✅ Test (pages):** Navigate to each of the 11 pages above. Verify each loads without a 404 or uncaught error. The Agents page should list at least one agent if OpenClaw is installed. The Terminal page should present a shell prompt.
+
 ---
 
 ## 10. Agent Management via Node
@@ -391,7 +435,7 @@ The Node app reads agents from the OpenClaw configuration:
 
 Each discovered agent has:
 - An ID (from config or folder name)
-- A status: `active` (heartbeat < 5 min) · `idle` · `unknown`
+- A status: `active` (agent's workspace directory exists on disk) · `unknown` (workspace directory missing — agent configured but not yet initialized)
 - A model (from config or defaults)
 
 ### 10.2 Adding a New Agent
@@ -440,11 +484,14 @@ If agents were created on another machine or migrated from a previous installati
 
 ### 10.5 Agent Status Meanings
 
+Status is determined by the Node app at discovery time — it is filesystem-based, not heartbeat-based:
+
 | Status | Meaning | Action |
 |--------|---------|--------|
-| Active | Heartbeat received in last 5 minutes | — |
-| Idle | No recent heartbeat but workspace exists | Check if OpenClaw is running |
-| Unknown | No heartbeat data at all | Agent may not have run yet |
+| Active | Agent's workspace directory exists on disk | Normal — agent is ready |
+| Unknown | Workspace directory missing (agent in `openclaw.json` list but folder not created yet) | Create the workspace folder or run OpenClaw once to initialize it |
+
+> **Note:** The Node app sets all filesystem-scan agents (Strategy 2) to `active` by definition — those agents are only discoverable if their workspace folder already exists.
 
 ---
 
@@ -483,15 +530,25 @@ Since the extension is not published to the Chrome Web Store, it must be loaded 
 
 ### 11.4 What the Extension Shows
 
-**Popup (click toolbar icon):**
-- Total nodes in fleet (online / degraded / offline counts)
-- Agent count per online node
-- CPU and memory averages
-- Last sync timestamp
+**Popup states (click toolbar icon):**
+
+| State | What you see |
+|-------|-------------|
+| Not configured | "Not Connected" message + "Open Settings" button |
+| Cannot reach Hub | "Cannot Reach Hub" error + last-successful-connection time + "Retry" button |
+| Loading | Spinner + "Connecting..." |
+| Connected | Summary bar + Nodes list + Agents list (see below) |
+
+**Connected popup content:**
+- **Summary bar:** Online count · Degraded count · Offline count · Total Agents across all nodes
+- **Header status dot:** Green (all online) · Amber (any degraded) · Red (offline / unreachable)
+- **Nodes list:** Each node card shows: status dot + name + agent count; CPU% / RAM% / DSK% progress bars; heartbeat time-ago (e.g. "30s ago", "2m ago")
+- **Agents list:** Each agent row shows: status dot + agent name + model + node-name badge; clicking opens Hub `/agents` page
+- Clicking any node card opens the Hub `/fleet` page
 
 **Badge (on the toolbar icon):**
-- Number of offline or degraded nodes (if any)
-- No badge = all nodes healthy
+- Red count = number of nodes that are not Online (offline or degraded)
+- No badge (empty) = all nodes are Online
 
 **Notifications** (triggered on status transitions):
 - `online → offline`: browser notification "Node Offline — [name] is now offline" (high priority)
@@ -560,7 +617,16 @@ The node is **soft-deleted** (not permanently removed):
 
 ### 12.4 Task Dispatch to Nodes
 
-From the Board, assign a task to a specific node by setting the **Target Node** field. The Hub dispatches the task and tracks the lifecycle: `dispatched → running → completed / failed`.
+From the Board, assign a task to a specific node by setting the **Target Node** field. The Hub dispatches the task and tracks the lifecycle:
+
+```
+dispatched → running → completed
+                     ↘ failed (with error message)
+```
+
+The Node app's **dispatch worker** polls the Hub for pending dispatches, executes them locally, and reports the result back to the Hub.
+
+> **✅ Test:** Create a task on the Board, set Target Node to an Online node, and move the task to "In Progress". Within 60 seconds, verify the task status updates on the Board (running → completed). Check the Node app's Activity log for the dispatch execution record.
 
 ### 12.5 Fleet Analytics
 
@@ -569,6 +635,8 @@ From the Board, assign a task to a specific node by setting the **Target Node** 
 - Aggregated cost and usage data across all nodes
 - Filter by date range, model, or individual agent
 - Per-node cost comparison chart
+
+> **✅ Test:** After at least one agent session has run on a Node, open Fleet Analytics. Verify cost data is visible and can be filtered by the agent or node name.
 
 ---
 
@@ -597,15 +665,19 @@ End of day:
 1. Hub → **Board** → click **"+ New Task"**
 2. Enter title, description, priority, and assign an agent
 3. Set **Target Node** to the machine where the agent runs
-4. Move to **In Progress** column or Hub will auto-dispatch
+4. Move to **In Progress** column — the Hub dispatches the task to the target node
+
+> **✅ Test:** Create a task, assign it to an agent on an Online node, and move it to "In Progress". Verify the task card shows "Running" status within 60 seconds, and eventually "Completed". Open the task detail to see the execution output.
 
 ### 13.3 Fleet-Wide Search
 
 **Hub → Search** (`/search`)
 
 - Searches across Hub board memory AND all connected Node agents' memory simultaneously
-- Results ranked by relevance using hybrid BM25 + vector search
-- Useful for finding past decisions, agent notes, or memory entries
+- Results ranked by relevance using hybrid BM25 + vector search (Reciprocal Rank Fusion)
+- Useful for finding past decisions, agent notes, or memory entries across the entire fleet
+
+> **✅ Test:** Enter a keyword from a known agent memory entry (e.g. the agent name or a unique word from a SOUL.md file). Verify the search returns results from both Hub memory and the connected Node's agent memory.
 
 ---
 
