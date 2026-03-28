@@ -1,4 +1,6 @@
 #!/bin/bash
+# post-merge.sh v1.0.0
+# Runs automatically after task merges to install dependencies
 set -e
 
 echo "[post-merge] Installing server dependencies..."
