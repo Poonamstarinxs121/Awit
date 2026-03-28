@@ -81,7 +81,7 @@ router.get('/:id', authMiddleware, tenantMiddleware, async (req: Request, res: R
     const tenantId = req.user!.tenantId;
     const nodeResult = await pool.query(
       `SELECT id, name, url, status, last_heartbeat, system_info, openclaw_version, agent_count, created_at, updated_at
-       FROM nodes WHERE id = $1 AND tenant_id = $2`,
+       FROM nodes WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL`,
       [req.params.id, tenantId]
     );
     if (nodeResult.rows.length === 0) {

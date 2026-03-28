@@ -40,6 +40,7 @@ export default function SkillsPage() {
         setLoading(false);
         if (list.length > 0) {
           setExpanded({ [list[0].id]: true });
+          loadAgentDetail(list[0].id);
         }
       })
       .catch(() => setLoading(false));

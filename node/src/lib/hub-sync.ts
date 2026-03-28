@@ -85,6 +85,8 @@ export function getHubStatus() {
     configured: client.isConfigured(),
     hubUrl: NODE_CONFIG.hubUrl || null,
     nodeId: NODE_CONFIG.nodeId || null,
+    nodeName: NODE_CONFIG.nodeName || null,
+    openclawDir: NODE_CONFIG.openclawDir || null,
     lastHeartbeat: lastHeartbeat?.toISOString() || null,
     lastTelemetry: lastTelemetry?.toISOString() || null,
   };

@@ -11,6 +11,8 @@ interface HubStatus {
   configured: boolean;
   hubUrl: string | null;
   nodeId: string | null;
+  nodeName: string | null;
+  openclawDir: string | null;
   lastHeartbeat: string | null;
   lastTelemetry: string | null;
 }
@@ -174,6 +176,33 @@ export default function SettingsPage() {
             )}
           </>
         )}
+      </Section>
+
+      {/* Node Identity */}
+      <Section title="Node Identity">
+        <InfoRow
+          label="Node Name"
+          value={hubStatus?.nodeName || 'Not set (using hostname)'}
+          muted={!hubStatus?.nodeName}
+        />
+        <InfoRow
+          label="OpenClaw Directory"
+          value={hubStatus?.openclawDir || '~/.openclaw (default)'}
+          mono
+          muted={!hubStatus?.openclawDir}
+        />
+        <InfoRow
+          label="Node ID"
+          value={hubStatus?.nodeId || 'Not set'}
+          mono
+          muted={!hubStatus?.nodeId}
+        />
+        <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 8 }}>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, lineHeight: 1.6 }}>
+            Set <code style={{ fontFamily: 'var(--font-mono)' }}>NODE_NAME</code> in your .env to give this node a friendly name.
+            Set <code style={{ fontFamily: 'var(--font-mono)' }}>OPENCLAW_DIR</code> to point to a custom OpenClaw workspace location.
+          </p>
+        </div>
       </Section>
 
       {/* Environment Setup */}
