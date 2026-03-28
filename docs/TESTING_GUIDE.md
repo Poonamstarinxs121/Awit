@@ -102,7 +102,7 @@ The SaaS Admin console manages the entire platform — all tenants, plans, and b
 2. Log in with your SaaS admin credentials (user with `is_saas_admin = true`)
 3. You land on the **Admin Dashboard** showing MRR, ARR, plan counts, and active/trial/suspended tenant counts
 
-> **If/else:** Regular tenant users who try `/admin` are redirected to `/login` — the route is protected by `is_saas_admin` check.
+> **If/else:** Regular tenant users who try `/admin` are redirected to `/admin/login` — a dedicated SaaS admin login page separate from the regular tenant login (`/login`).
 
 ### 4.2 Creating a New Tenant (Company)
 
@@ -220,13 +220,37 @@ Optional steps can be skipped with the **"Skip for now"** button and completed l
 
 > **✅ Test:** Create a task from the Board, drag it through all columns, and verify status updates are reflected on the Activity feed.
 
-### 6.4 API Tokens
+### 6.4 Cron Jobs
+
+**From:** Hub → **Cron Jobs**
+
+- Create scheduled tasks that run on a cron schedule (standard 5-field cron syntax)
+- Assign each cron job to an agent and optionally to a target node
+- Enable / disable jobs individually
+- View run history with last-run timestamp and status
+
+> **✅ Test:** Create a cron job with schedule `* * * * *` (every minute), assign it to an agent, and enable it. Wait 2 minutes and verify it appears in the run history with status. Then disable it and confirm it stops running.
+
+### 6.5 Memory Graph
+
+**From:** Hub → **Memory Graph**
+
+- Visual graph of connections between agent memory entries across the fleet
+- Use the search bar to filter by keyword or agent
+- Click any node in the graph to see the memory entry detail
+- Useful for debugging agent context and finding related memory entries across agents
+
+> **✅ Test:** With at least one active agent, open the Memory Graph. Verify nodes appear in the graph. Click one node and confirm the detail panel shows the memory entry content and its agent association.
+
+### 6.6 API Tokens
 
 **From:** Hub → **Settings** → **API Tokens**
 
 - Create named tokens for programmatic access
 - Tokens are shown only once on creation — copy immediately
 - Used by nodes, extensions, and external integrations
+
+> **✅ Test:** Create an API token named "test-token". Copy it immediately (it will not be shown again). Make a test request to `GET /v1/nodes` with `Authorization: Bearer <token>` and verify you receive a valid response. Then delete the token and confirm the same request returns 401.
 
 ---
 
@@ -280,7 +304,7 @@ The first time you run `npm run dev`, the app detects that setup is incomplete a
 | 3 | Admin Password | **Yes** | Set a local admin password (default is `admin` — must change) |
 | 4 | Node Identity | **Yes** | Set a friendly name for this machine |
 | 5 | LLM API | No | Enter LLM API key for local agent operations |
-| 6 | Messaging | No | Telegram/WhatsApp token for notifications |
+| 6 | Messaging | No | Telegram bot token and/or Discord webhook for notifications |
 | 7 | Launch | No | Completes setup and opens the dashboard |
 
 ### 8.3 Getting Hub Connection Credentials
@@ -469,11 +493,17 @@ Since the extension is not published to the Chrome Web Store, it must be loaded 
 - Number of offline or degraded nodes (if any)
 - No badge = all nodes healthy
 
-**Notifications:**
-- Node goes offline: browser notification
-- Node recovers: notification cleared
+**Notifications** (triggered on status transitions):
+- `online → offline`: browser notification "Node Offline — [name] is now offline" (high priority)
+- `online → degraded`: browser notification "Node Degraded — [name] is experiencing issues"
+- No recovery notification is sent — the badge simply clears when all nodes return to Online
+- Clicking a notification opens the Hub Fleet page in a new tab
 
-> **✅ Test:** With the extension configured, take a Node app offline (stop `npm run dev`). Within 2 minutes, verify the badge count increments and a notification appears.
+> **✅ Test:** With the extension configured, stop a Node app (`npm run dev`). Within 2–3 minutes, verify:
+> 1. The toolbar badge shows a red count of offline/degraded nodes
+> 2. A browser notification appears
+> 3. The popup shows the node as Offline or Degraded
+> 4. Restart the Node app — within ~90 seconds the badge clears and popup shows Online again
 
 ---
 
@@ -504,9 +534,9 @@ Shows all registered nodes with:
 **Node status logic:**
 | Condition | Status |
 |-----------|--------|
-| Heartbeat received < 2 minutes ago | Online |
-| Heartbeat received 2–10 minutes ago | Degraded |
-| Heartbeat received > 10 minutes ago, or never | Offline |
+| Heartbeat received in last 90 seconds | Online |
+| Heartbeat between 90 seconds and 3 minutes old | Degraded |
+| Heartbeat more than 3 minutes old, or never received | Offline |
 
 ### 12.3 Removing a Node (Soft Delete)
 
@@ -658,7 +688,7 @@ cp ~/.openclaw/backups/squidjob-node.db.TIMESTAMP.bak ~/.openclaw/squidjob-node.
 | Symptom | Likely Cause | Fix |
 |---------|-------------|-----|
 | Node shows "Offline" on Fleet | Node app not running or no internet | Start `npm run dev`; check `.env` `NODE_HUB_URL` |
-| Node shows "Degraded" | Heartbeat delayed > 2 min | Wait for next cycle (60s) or restart Node app |
+| Node shows "Degraded" | Heartbeat delayed > 90 seconds | Wait for next heartbeat cycle (60s interval) or restart Node app |
 | Heartbeat failing with 401 | Invalid `NODE_HUB_API_KEY` or node was deleted | Re-register node on Hub Fleet page; update `.env` |
 | No agents on Node → Agents page | OpenClaw not installed or wrong `OPENCLAW_DIR` | Install OpenClaw; verify `OPENCLAW_DIR` in `.env` |
 | Setup wizard loops (won't complete) | `ADMIN_PASSWORD` still set to `admin` | Change to any other value in `.env` |
