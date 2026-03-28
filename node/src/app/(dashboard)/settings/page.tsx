@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Wifi, WifiOff, Server, FolderOpen, ExternalLink,
   ChevronDown, ChevronUp, Activity, CheckCircle, XCircle, Clock,
+  Download, RotateCcw, RefreshCw, AlertTriangle, ArrowUpCircle, Terminal,
 } from 'lucide-react';
 import HelpBanner from '@/components/HelpBanner';
 
@@ -15,6 +16,24 @@ interface HubStatus {
   openclawDir: string | null;
   lastHeartbeat: string | null;
   lastTelemetry: string | null;
+}
+
+type UpdateState =
+  | 'idle' | 'checking' | 'backing_up' | 'pausing_services' | 'downloading'
+  | 'installing' | 'resuming_services' | 'complete' | 'failed'
+  | 'rollback_in_progress' | 'rolled_back';
+
+interface UpdateStatus {
+  state: UpdateState;
+  currentVersion: string;
+  latestVersion: string | null;
+  logs: string[];
+  backupPath: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  error: string | null;
+  requiresRestart: boolean;
+  updateAvailable: boolean;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -74,10 +93,45 @@ function timeSince(dateStr: string | null): string {
   return `${Math.floor(s / 3600)}h ago`;
 }
 
+const IN_PROGRESS_STATES: UpdateState[] = [
+  'backing_up', 'pausing_services', 'downloading', 'installing',
+  'resuming_services', 'rollback_in_progress', 'checking',
+];
+
+function stateLabel(state: UpdateState): string {
+  const labels: Record<UpdateState, string> = {
+    idle: 'Up to date',
+    checking: 'Checking for updates…',
+    backing_up: 'Backing up database…',
+    pausing_services: 'Pausing services…',
+    downloading: 'Downloading update…',
+    installing: 'Installing…',
+    resuming_services: 'Resuming services…',
+    complete: 'Update complete',
+    failed: 'Update failed',
+    rollback_in_progress: 'Rolling back…',
+    rolled_back: 'Rolled back',
+  };
+  return labels[state] || state;
+}
+
+function stateColor(state: UpdateState): string {
+  if (state === 'complete' || state === 'rolled_back') return 'var(--positive)';
+  if (state === 'failed') return 'var(--negative)';
+  if (IN_PROGRESS_STATES.includes(state)) return '#F59E0B';
+  return 'var(--text-muted)';
+}
+
 export default function SettingsPage() {
   const [hubStatus, setHubStatus] = useState<HubStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [envExpanded, setEnvExpanded] = useState(false);
+
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [customDownloadUrl, setCustomDownloadUrl] = useState('');
+  const logsRef = useRef<HTMLDivElement>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     fetch('/api/hub/status')
@@ -85,6 +139,95 @@ export default function SettingsPage() {
       .then(d => { setHubStatus(d); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
+
+  const fetchUpdateStatus = async () => {
+    try {
+      const r = await fetch('/api/update');
+      const d = await r.json();
+      setUpdateStatus(d);
+      return d as UpdateStatus;
+    } catch {
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    fetchUpdateStatus();
+  }, []);
+
+  useEffect(() => {
+    if (updateStatus && IN_PROGRESS_STATES.includes(updateStatus.state)) {
+      if (!pollRef.current) {
+        pollRef.current = setInterval(async () => {
+          const d = await fetchUpdateStatus();
+          if (d && !IN_PROGRESS_STATES.includes(d.state)) {
+            if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+          }
+        }, 2000);
+      }
+    } else {
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+    }
+    return () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } };
+  }, [updateStatus?.state]);
+
+  useEffect(() => {
+    if (logsRef.current) {
+      logsRef.current.scrollTop = logsRef.current.scrollHeight;
+    }
+  }, [updateStatus?.logs?.length]);
+
+  const handleCheckForUpdates = async () => {
+    setUpdateLoading(true);
+    try {
+      const r = await fetch('/api/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'check' }) });
+      const d = await r.json();
+      setUpdateStatus(d);
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
+  const handleStartUpdate = async () => {
+    if (!confirm('Start the update process? Services will be paused briefly and you will need to restart the node app when complete.')) return;
+    setUpdateLoading(true);
+    try {
+      const body: Record<string, string> = { action: 'start' };
+      if (customDownloadUrl) body.downloadUrl = customDownloadUrl;
+      const r = await fetch('/api/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const d = await r.json();
+      if (d.error) { alert(`Failed to start update: ${d.error}`); }
+      else { await fetchUpdateStatus(); }
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
+  const handleRollback = async () => {
+    if (!confirm('Roll back to the previous database backup? App files will not change.')) return;
+    setUpdateLoading(true);
+    try {
+      const r = await fetch('/api/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'rollback' }) });
+      const d = await r.json();
+      if (d.error) { alert(`Rollback failed: ${d.error}`); }
+      else { await fetchUpdateStatus(); }
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
+  const handleReset = async () => {
+    setUpdateLoading(true);
+    try {
+      await fetch('/api/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'reset' }) });
+      await fetchUpdateStatus();
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
+  const isUpdateInProgress = updateStatus ? IN_PROGRESS_STATES.includes(updateStatus.state) : false;
+  const hubUrl = hubStatus?.hubUrl;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -204,6 +347,256 @@ export default function SettingsPage() {
           </p>
         </div>
       </Section>
+
+      {/* ── Software Update ───────────────────────────────────────────── */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <ArrowUpCircle size={15} style={{ color: updateStatus?.updateAvailable ? '#F59E0B' : 'var(--text-muted)' }} />
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Software Update</span>
+          </div>
+          {updateStatus && (
+            <span style={{
+              fontSize: 11,
+              fontWeight: 500,
+              color: stateColor(updateStatus.state),
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+            }}>
+              {isUpdateInProgress && (
+                <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#F59E0B', animation: 'pulse 1.5s infinite' }} />
+              )}
+              {stateLabel(updateStatus.state)}
+            </span>
+          )}
+        </div>
+
+        <div style={{ padding: '16px 20px' }}>
+          {/* Version info row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>Current Version</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                v{updateStatus?.currentVersion || '0.1.0'}
+              </div>
+            </div>
+            {updateStatus?.latestVersion && (
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>Latest Version</div>
+                <div style={{
+                  fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600,
+                  color: updateStatus.updateAvailable ? '#F59E0B' : 'var(--positive)',
+                  display: 'flex', alignItems: 'center', gap: 5,
+                }}>
+                  v{updateStatus.latestVersion}
+                  {updateStatus.updateAvailable && <AlertTriangle size={12} />}
+                </div>
+              </div>
+            )}
+            {updateStatus?.backupPath && (
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>Backup Available</div>
+                <div style={{ fontSize: 12, color: 'var(--positive)', fontWeight: 500 }}>
+                  <CheckCircle size={12} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />
+                  DB backed up
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Update complete / restart required */}
+          {(updateStatus?.state === 'complete' || updateStatus?.state === 'rolled_back') && (
+            <div style={{
+              padding: '10px 14px',
+              background: 'rgba(34,197,94,0.07)',
+              border: '1px solid rgba(34,197,94,0.2)',
+              borderRadius: 8,
+              marginBottom: 14,
+              fontSize: 13,
+              color: 'var(--positive)',
+            }}>
+              <strong>{updateStatus.state === 'complete' ? '✓ Update installed' : '✓ Rolled back'}</strong> — restart the app to apply changes:
+              <pre style={{ fontFamily: 'var(--font-mono)', fontSize: 12, margin: '6px 0 0', color: 'var(--text-secondary)' }}>
+                npm run dev{'\n'}# or: pm2 restart squidjob-node
+              </pre>
+            </div>
+          )}
+
+          {/* Failed state */}
+          {updateStatus?.state === 'failed' && updateStatus.error && (
+            <div style={{
+              padding: '10px 14px',
+              background: 'rgba(239,68,68,0.07)',
+              border: '1px solid rgba(239,68,68,0.2)',
+              borderRadius: 8,
+              marginBottom: 14,
+              fontSize: 12,
+              color: 'var(--negative)',
+            }}>
+              <strong>Error:</strong> {updateStatus.error}
+            </div>
+          )}
+
+          {/* Progress log */}
+          {updateStatus && updateStatus.logs && updateStatus.logs.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+                <Terminal size={11} />
+                Progress Log
+              </div>
+              <div
+                ref={logsRef}
+                style={{
+                  background: 'var(--background)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  padding: '10px 12px',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 11,
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.7,
+                  maxHeight: 160,
+                  overflowY: 'auto',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all',
+                }}
+              >
+                {updateStatus.logs.join('\n')}
+              </div>
+            </div>
+          )}
+
+          {/* Custom download URL (shown when not connected to Hub) */}
+          {!hubUrl && !isUpdateInProgress && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 5 }}>Custom Download URL</div>
+              <input
+                type="text"
+                value={customDownloadUrl}
+                onChange={e => setCustomDownloadUrl(e.target.value)}
+                placeholder="https://your-hub.onrender.com/v1/downloads/node"
+                style={{
+                  width: '100%',
+                  padding: '8px 10px',
+                  background: 'var(--background)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 6,
+                  color: 'var(--text-primary)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 12,
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {/* Check for updates */}
+            {!isUpdateInProgress && (
+              <button
+                onClick={handleCheckForUpdates}
+                disabled={updateLoading || !hubUrl}
+                title={!hubUrl ? 'Connect to Hub to check for updates' : undefined}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '8px 14px', background: 'var(--background)',
+                  border: '1px solid var(--border)', borderRadius: 7,
+                  color: hubUrl ? 'var(--text-primary)' : 'var(--text-muted)',
+                  fontSize: 12, fontWeight: 500, cursor: hubUrl ? 'pointer' : 'not-allowed',
+                }}
+              >
+                <RefreshCw size={13} style={{ opacity: updateLoading ? 0.5 : 1 }} />
+                Check for Updates
+              </button>
+            )}
+
+            {/* Start update */}
+            {!isUpdateInProgress && (updateStatus?.updateAvailable || customDownloadUrl || updateStatus?.state === 'failed') && (
+              <button
+                onClick={handleStartUpdate}
+                disabled={updateLoading || isUpdateInProgress}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '8px 14px',
+                  background: updateStatus?.updateAvailable ? 'rgba(245,158,11,0.15)' : 'rgba(59,130,246,0.1)',
+                  border: `1px solid ${updateStatus?.updateAvailable ? 'rgba(245,158,11,0.3)' : 'rgba(59,130,246,0.3)'}`,
+                  borderRadius: 7,
+                  color: updateStatus?.updateAvailable ? '#F59E0B' : '#3B82F6',
+                  fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                <Download size={13} />
+                {updateStatus?.state === 'failed' ? 'Retry Update' : 'Install Update'}
+              </button>
+            )}
+
+            {/* Rollback */}
+            {!isUpdateInProgress && updateStatus?.backupPath && ['complete', 'failed', 'rolled_back'].includes(updateStatus.state) && (
+              <button
+                onClick={handleRollback}
+                disabled={updateLoading}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '8px 14px',
+                  background: 'rgba(239,68,68,0.08)',
+                  border: '1px solid rgba(239,68,68,0.2)',
+                  borderRadius: 7, color: 'var(--negative)',
+                  fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                }}
+              >
+                <RotateCcw size={13} />
+                Rollback Database
+              </button>
+            )}
+
+            {/* Reset state (if stuck in failed) */}
+            {!isUpdateInProgress && updateStatus?.state === 'failed' && (
+              <button
+                onClick={handleReset}
+                disabled={updateLoading}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '8px 14px',
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  borderRadius: 7, color: 'var(--text-muted)',
+                  fontSize: 12, cursor: 'pointer',
+                }}
+              >
+                <XCircle size={13} />
+                Clear Error
+              </button>
+            )}
+
+            {/* In progress spinner */}
+            {isUpdateInProgress && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                padding: '8px 14px',
+                background: 'rgba(245,158,11,0.08)',
+                border: '1px solid rgba(245,158,11,0.2)',
+                borderRadius: 7, color: '#F59E0B', fontSize: 12, fontWeight: 500,
+              }}>
+                <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} />
+                {stateLabel(updateStatus!.state)}
+              </div>
+            )}
+          </div>
+
+          {/* Manual script hint */}
+          <div style={{ marginTop: 14, padding: '8px 12px', background: 'rgba(59,130,246,0.04)', border: '1px solid var(--border)', borderRadius: 7 }}>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, lineHeight: 1.7 }}>
+              You can also update manually by running{' '}
+              <code style={{ fontFamily: 'var(--font-mono)', background: 'var(--border)', padding: '1px 5px', borderRadius: 3 }}>
+                bash scripts/squidjob-update.sh
+              </code>{' '}
+              from the node app directory. The script backs up the database, preserves your .env, and requires a restart when done.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Environment Setup */}
       <div style={{
@@ -333,6 +726,11 @@ ADMIN_PASSWORD=changeme`}
           )}
         </div>
       </Section>
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+      `}</style>
     </div>
   );
 }

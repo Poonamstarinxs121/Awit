@@ -123,6 +123,17 @@ Located in `client/src/components/Office3D/` — 22 components extracted from te
 - `GET /v1/nodes/:id/messages/inbox` — poll incoming messages
 - `PATCH /v1/node-messages/:id` — mark message delivered/processed
 
+## Node Self-Update System
+- `GET /api/update` — returns update state (version, logs, backupPath, state)
+- `POST /api/update { action: 'check' }` — fetches latest version from Hub's `/v1/version`
+- `POST /api/update { action: 'start', downloadUrl? }` — starts update (backup→pause→download→extract→install→resume)
+- `POST /api/update { action: 'rollback' }` — restores SQLite DB from backup, resumes services
+- `POST /api/update { action: 'reset' }` — clears error state
+- State persisted to `$OPENCLAW_DIR/update-state.json`; backups kept in `$OPENCLAW_DIR/backups/` (last 5 kept)
+- Services paused during update via `services_paused` flag in SQLite sync_state; hub-sync + dispatch-worker check this flag
+- Manual update also available via `node/scripts/squidjob-update.sh` (v1.0.0)
+- Hub serves `GET /v1/version` (public) returning `{ nodeVersion, hubVersion }` for version checks
+
 ## Node API Endpoints
 - `GET /api/agents` — list discovered agents
 - `GET /api/agents/:id` — agent detail

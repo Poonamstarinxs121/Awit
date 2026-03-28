@@ -46,6 +46,10 @@ router.use('/v1/whatsapp', whatsappWebhookRouter);
 
 router.use('/health', healthRoutes);
 router.use('/v1/health', healthRoutes);
+
+router.get('/v1/version', (_req, res) => {
+  res.json({ nodeVersion: '0.1.0', hubVersion: '0.1.0' });
+});
 router.use('/v1/weather', authMiddleware, tenantMiddleware, weatherRoutes);
 router.use('/v1/system', authMiddleware, tenantMiddleware, systemRoutes);
 router.use('/v1/sessions', authMiddleware, tenantMiddleware, sessionsRoutes);

@@ -4,6 +4,10 @@ import { discoverAgents } from './openclaw-reader';
 import { getSyncState, setSyncState, getSessionsSince, getCostsSince, getActivitySince } from './local-db';
 import { startDispatchWorker } from './dispatch-worker';
 
+function isUpdatePaused(): boolean {
+  try { return getSyncState('services_paused') === 'true'; } catch { return false; }
+}
+
 export class HubSyncClient {
   private hubUrl: string;
   private apiKey: string;
@@ -21,6 +25,7 @@ export class HubSyncClient {
 
   async sendHeartbeat(): Promise<boolean> {
     if (!this.isConfigured()) return false;
+    if (isUpdatePaused()) { console.log('[HubSync] Skipping heartbeat — services paused for update'); return false; }
     try {
       const stats = getSystemStats();
       const agents = discoverAgents();
@@ -126,6 +131,7 @@ const SYNC_STATE_KEY = 'lastTelemetrySyncAt';
 
 async function collectAndSendTelemetry(client: HubSyncClient): Promise<boolean> {
   if (!client.isConfigured()) return false;
+  if (isUpdatePaused()) { console.log('[HubSync] Skipping telemetry — services paused for update'); return false; }
 
   try {
     const lastSync = getSyncState(SYNC_STATE_KEY) || '1970-01-01T00:00:00.000Z';

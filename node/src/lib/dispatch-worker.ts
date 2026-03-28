@@ -188,6 +188,13 @@ async function processDispatch(dispatch: DispatchRecord): Promise<void> {
 
 async function pollDispatches(): Promise<void> {
   if (!isHubConfigured()) return;
+  try {
+    const { getSyncState } = await import('./local-db');
+    if (getSyncState('services_paused') === 'true') {
+      console.log('[DispatchWorker] Skipping poll — services paused for update');
+      return;
+    }
+  } catch { /* ignore if db not ready */ }
 
   try {
     const res = await fetch(
