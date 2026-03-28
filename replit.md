@@ -78,6 +78,7 @@ The codebase is a monorepo with `server/`, `client/`, `node/`, and `extension/` 
 - `/memory` — Memory browser for agent .md files (SOUL, AGENTS, TOOLS, MEMORY, HEARTBEAT, IDENTITY)
 - `/sessions` — Session history with stats, filters, inline expansion
 - `/costs` — Cost tracking with breakdowns, daily trend SVG chart
+- `/activity` — Application activity log with event filtering, agent filtering, and metadata display
 - `/cron` — Cron manager for OpenClaw scheduled tasks
 - `/terminal` — Command execution terminal with history, quick commands
 
