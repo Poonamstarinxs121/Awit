@@ -108,6 +108,9 @@ export function FleetPage() {
   const [registerResult, setRegisterResult] = useState<RegisterResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ nodeId: string; nodeName: string } | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteReason, setDeleteReason] = useState('');
 
   const { data: nodesData, isLoading } = useQuery({
     queryKey: ['fleet-nodes'],
@@ -131,10 +134,13 @@ export function FleetPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => apiDelete(`/v1/nodes/${id}`),
+    mutationFn: (data: { id: string; reason?: string }) => apiDelete(`/v1/nodes/${data.id}`, { reason: data.reason }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fleet-nodes'] });
       setDetailNodeId(null);
+      setDeleteConfirm(null);
+      setDeleteConfirmText('');
+      setDeleteReason('');
     },
   });
 
@@ -374,7 +380,7 @@ export function FleetPage() {
               <DetailPanel
                 data={detailData}
                 onClose={() => setDetailNodeId(null)}
-                onDelete={() => deleteMutation.mutate(detailNodeId)}
+                onDelete={() => detailData?.node && setDeleteConfirm({ nodeId: detailData.node.id, nodeName: detailData.node.name })}
                 deleting={deleteMutation.isPending}
               />
             ) : (

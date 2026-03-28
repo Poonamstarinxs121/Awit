@@ -531,8 +531,27 @@ CREATE TABLE IF NOT EXISTS nodes (
   system_info      JSONB DEFAULT '{}',
   openclaw_version TEXT,
   agent_count      INTEGER DEFAULT 0,
+  deleted_at       TIMESTAMPTZ,
+  deleted_by       UUID REFERENCES users(id) ON DELETE SET NULL,
+  deletion_reason  TEXT,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS deleted_nodes_history (
+  id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id        UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  node_id          UUID NOT NULL,
+  name             TEXT NOT NULL,
+  url              TEXT,
+  system_info      JSONB DEFAULT '{}',
+  openclaw_version TEXT,
+  agent_count      INTEGER DEFAULT 0,
+  deleted_by       UUID REFERENCES users(id) ON DELETE SET NULL,
+  deletion_reason  TEXT,
+  deleted_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  can_restore_until TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '30 days'),
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS node_heartbeats (
