@@ -45,6 +45,7 @@ The codebase is a monorepo with `server/`, `client/`, `node/`, and `extension/` 
 - **Security**: BYOK API keys are encrypted with AES-256; API tokens use SHA-256 hashing.
 - **SaaS Admin Console**: Provides tools for managing tenants, plans, and usage for SaaS administrators.
 - **Stripe Billing**: Integrates with Stripe for subscription management, checkout sessions, and billing portals.
+- **Onboarding Wizard**: Multi-step setup wizard at `/setup` guiding new tenant admins through LLM provider, Telegram, WhatsApp, Discord, first agent creation, node registration, and provisioning. Progress persisted to localStorage; optional steps skippable; re-runnable from Settings > General.
 - **Approval Flows**: Implements approval workflows with pending/approved/rejected states and a dedicated UI.
 - **Board Groups**: Organizes tasks into board groups with filtering capabilities in the Kanban view.
 - **Activity Timeline**: Provides a comprehensive event timeline with filtering by event type and pagination.

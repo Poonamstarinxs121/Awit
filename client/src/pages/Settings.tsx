@@ -4,7 +4,7 @@ import {
   Key, Trash2, Plus, LogOut, ChevronDown, ChevronUp, Webhook, Eye, ToggleLeft, ToggleRight,
   Send, MessageCircle, Unlink, Mail, Hash, Save, Tag, Copy, Check, AlertCircle,
   Settings as SettingsIcon, Shield, Zap, Bell, Globe, User, Building2, CreditCard, Lock,
-  Download, Monitor, Chrome, ExternalLink, Package
+  Download, Monitor, Chrome, ExternalLink, Package, Rocket
 } from 'lucide-react';
 import { apiGet, apiPost, apiDelete, apiPatch, apiPut } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
@@ -424,6 +424,22 @@ export function Settings() {
             <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Plan</span>
             <SmallBadge color="#0A84FF">Starter</SmallBadge>
           </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Setup Wizard" icon={Rocket} subtitle="Re-run the onboarding wizard to add integrations">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+            Re-run the setup wizard to add integrations you may have skipped during initial onboarding.
+          </p>
+          <ActionButton
+            onClick={() => {
+              localStorage.removeItem('squidjob_wizard_progress');
+              window.location.href = '/setup';
+            }}
+          >
+            <Rocket size={14} /> Re-run Setup Wizard
+          </ActionButton>
         </div>
       </SectionCard>
 

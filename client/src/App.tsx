@@ -20,7 +20,6 @@ import { AgentNew } from './pages/AgentNew';
 import { Standups } from './pages/Standups';
 import { Settings } from './pages/Settings';
 import { Setup } from './pages/Setup';
-import { Provisioning } from './pages/Provisioning';
 import { Documents } from './pages/Documents';
 import { MemoryGraph } from './pages/MemoryGraph';
 import { HelpCenter } from './pages/HelpCenter';
@@ -101,7 +100,7 @@ export default function App() {
             <Route path="/admin/finance" element={<AdminRoute><FinancePage /></AdminRoute>} />
             <Route path="/register" element={<Register />} />
             <Route path="/setup" element={<ProtectedRoute><Setup /></ProtectedRoute>} />
-            <Route path="/setup/provisioning" element={<ProtectedRoute><Provisioning /></ProtectedRoute>} />
+            <Route path="/setup/provisioning" element={<Navigate to="/setup" replace />} />
             <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
             <Route
               element={
